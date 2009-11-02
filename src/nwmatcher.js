@@ -649,16 +649,16 @@ NW.Dom = (function(global) {
     } :
     function(className, from) {
       // context is handled in byTag for non native gEBCN
-      var i = -1, j = i, results = [ ], element,
-        elements = from.getElementsByTagName('*'),
-        cn = isClassNameLowered ? className.toLowerCase() : className;
+      var element, i = -1, j = i, results = [ ],
+       elements = from.getElementsByTagName('*'),
+       cn = isClassNameLowered ? className.toLowerCase() : className;
       className = ' ' + cn.replace(/\\/g, '') + ' ';
+
       while ((element = elements[++i])) {
-        if ((cn = element.className)) {
-          if ((' ' + (isClassNameLowered ? cn.toLowerCase() : cn).
-            replace(reEdgeSpaces, ' ') + ' ').indexOf(className) > -1) {
-            results[++j] = element;
-          }
+        if ((cn = element.className).length &&
+            (' ' + (isClassNameLowered ? cn.toLowerCase() : cn) + ' ')
+            .replace(/[\t\n\r\f]/g, ' ').indexOf(className) > -1) {
+          results[++j] = element;
         }
       }
       return results;

@@ -1,3 +1,5 @@
+* Ensure byClass() coerces element.className to a string before attempting indexOf() because SVG elements have a non-string value for `className`. [jddalton]
+
 * Ensure normalize() performs a quote safe approach if a selector contains `[` or `(`. [jddalton]
 
 * Only normalize selectors that contain edge case whitespace like \t, \n , \r, \f and consecutive spaces. [jddalton]
