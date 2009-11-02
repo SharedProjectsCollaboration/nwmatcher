@@ -1059,24 +1059,22 @@ NW.Dom = (function(global) {
   match =
     function(element, selector, from) {
       // make sure an element node was passed
-      if (element && element.nodeType == 1) {
-        if (typeof selector == 'string' && selector.length) {
-          base = element.ownerDocument;
-          root = base.documentElement;
+      if (reValidator.test(selector)) {
+        base = element.ownerDocument;
+        root = base.documentElement;
 
-          // remove extraneous whitespace
-          if (reWhitespace.test(selector))
-            selector = normalize(selector);
+        // remove extraneous whitespace
+        if (reWhitespace.test(selector))
+          selector = normalize(selector);
 
-          // save compiled matchers
-          if (!compiledMatchers[selector]) {
-            compiledMatchers[selector] = compileGroup(selector, '', false);
-          }
-          // result of compiled matcher
-          return compiledMatchers[selector](element, snap, base, root, from || base);
-        } else {
-          emit('DOMException: "' + selector + '" is not a valid CSS selector.');
+        // save compiled matchers
+        if (!compiledMatchers[selector]) {
+          compiledMatchers[selector] = compileGroup(selector, '', false);
         }
+        // result of compiled matcher
+        return compiledMatchers[selector](element, snap, base, root, from || base);
+      } else {
+        emit('DOMException: "' + selector + '" is not a valid CSS selector.');
       }
       return false;
     },
