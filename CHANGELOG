@@ -1,3 +1,5 @@
+* Tweak the `reUnnormalized` regexp and make `RE_BUGGY_MUTATION` match `:disabled` and `:checked`. [jddalton]
+
 * Make match() only process elements that have a `ownerDocument` property to avoid the document object. [jddalton]
 
 * Expose NW.Dom.normalize() for testing purposes and ensure NW.Dom.compile() normalizes the selector. [jddalton]

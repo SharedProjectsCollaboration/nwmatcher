@@ -66,11 +66,14 @@ NW.Dom = (function(global) {
 
   strMultiSpace = '\\x20{2,}',
 
-  reClassValue   = /([-\w]+)/,
-  reDescendants  = /[^> \w]/,
-  reIdSelector   = /^\#[-\w]+$/,
-  reSiblings     = /[^+~\w]/,
-  reUnNormalized = /(?:[\t\n\r\f]|\x20{2,})|(?:\x20+([\]\)=>+~,^$|!]|\*=))|(?:([\[\(=>+~,^$|!]|\*=)\x20+)/,
+  reClassValue  = /([-\w]+)/,
+  reDescendants = /[^> \w]/,
+  reIdSelector  = /^\#[-\w]+$/,
+  reSiblings    = /[^+~\w]/,
+
+  reUseSafeNormalize = /[\[\(]/,
+
+  reUnnormalized = /[\t\n\r\f]|\x20{2,}|(?:\x20(?:[\]\)=>+~,^$|!]|\*=))|(?:(?:[\[\(=>+~,^$|!]|\*=)\x20)/,
 
   // matches simple id, tagname & classname selectors
   reSimpleSelector = /^[.#]?[-\w]+$/,
@@ -107,7 +110,7 @@ NW.Dom = (function(global) {
       if (cached) return cached;
 
       original = selector;
-      if (selector.search(/[\[\(]/) > -1) {
+      if (reUseSafeNormalize.test(selector)) {
         while (match = reEdgeSpacesWithQuotes.exec(selector)) {
           if ((token = match[1])) {
             selector = selector.replace(token, ' ');
@@ -280,7 +283,7 @@ NW.Dom = (function(global) {
       var input = document.createElement('input');
       if ((isSupported = testSupport('id', 'x'))) {
         RE_BUGGY_MUTATION = testSupport('disabled', true) ? testFalse :
-          /\[(?:checked|disabled)/i;
+          /[\[:](?:checked|disabled)/i;
       }
       return isSupported;
     })() :
@@ -1089,7 +1092,7 @@ NW.Dom = (function(global) {
       if (!(compiled = compiledMatchers[original])) {
         if (reValidator.test(selector)) {
           // remove extraneous whitespace
-          if (reUnNormalized.test(selector))
+          if (reUnnormalized.test(selector))
             selector = normalize(selector);
 
           // save compiled matchers
@@ -1241,7 +1244,7 @@ NW.Dom = (function(global) {
           lastSelector = selector;
 
           // remove extraneous whitespace
-          if (reUnNormalized.test(selector))
+          if (reUnnormalized.test(selector))
             selector = normalize(selector);
         }
         else {
