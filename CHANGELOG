@@ -1,3 +1,5 @@
+* Expose NW.Dom.normalize() for testing purposes and ensure NW.Dom.compile() normalizes the selector. [jddalton]
+
 * Make `reUnNormalized` more procise and ensure client_api() doesn't pave the `data` argument in Firefox. [jddalton]
 
 * unit test: Update Prototype and jQuery unit tests. [jddalton]

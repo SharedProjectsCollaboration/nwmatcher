@@ -1558,18 +1558,6 @@ NW.Dom = (function(global) {
     // element match selector, return boolean true/false
     'match': match,
 
-    // elements matching selector, starting from element
-    'select': select,
-
-    // enable/disable cache
-    'setCache': setCache,
-
-    // for testing purposes only
-    'compile':
-      function(selector, mode) {
-        return String(compileGroup(selector, '', mode || false));
-      },
-
     // add selector patterns for user defined callbacks
     'registerSelector':
       function (name, rexp, func) {
@@ -1586,6 +1574,20 @@ NW.Dom = (function(global) {
         if (!Operators[symbol]) {
           Operators[symbol] = resolver;
         }
+      },
+
+    // elements matching selector, starting from element
+    'select': select,
+
+    // enable/disable cache
+    'setCache': setCache,
+
+    // for testing purposes only
+    'normalize': normalize,
+
+    'compile':
+      function(selector, mode) {
+        return String(compileGroup(normalize(selector), '', mode || false));
       }
   };
 })(this);
