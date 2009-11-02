@@ -1132,9 +1132,10 @@ NW.Dom = (function(global) {
   client_api =
     function client_api(selector, from, data, callback) {
 
-      var done, now, className, element, elements,
-       hasChanged, isCacheable, isSingle, parts, token,
-       concat = callback ? concatCall : concatList;
+      var Contexts, Results, className, compiled, element, elements,
+       hasChanged, isCacheable, isSingle, now, parts, token,
+       concat = callback ? concatCall : concatList,
+       original = selector;
 
       // storage setup
       data || (data = [ ]);
@@ -1158,11 +1159,11 @@ NW.Dom = (function(global) {
         snap = base.snapshot;
         // valid base context storage
         if (snap && !snap.isExpired) {
-          if (snap.Results[selector] &&
+          if ((elements = snap.Results[selector]) &&
             snap.Contexts[selector] == from) {
-            return callback || data.length ?
-              concat(data, snap.Results[selector], callback) :
-              snap.Results[selector];
+            return callback ?
+              concat(data, elements, callback) :
+              elements;
           }
         } else {
           // temporarily pause caching while we are getting hammered with dom mutations (jdalton)
@@ -1175,6 +1176,9 @@ NW.Dom = (function(global) {
           snap = base.snapshot;
           lastCalled = now;
         }
+
+        Contexts = snap.Contexts;
+        Results  = snap.Results;
       }
 
       // pre-filtering pass allow to scale proportionally with big DOM trees;
@@ -1198,8 +1202,11 @@ NW.Dom = (function(global) {
             concat(data, byTag(selector, from), callback);
             break;
         }
-        snap.Contexts[selector] = from;
-        snap.Results[selector] = data;
+
+        if (isCacheable) {
+          Contexts[selector] = from;
+          Results[selector]  = data;
+        }
         return data;
       }
 
@@ -1244,38 +1251,61 @@ NW.Dom = (function(global) {
 
         // ID optimization RTL
         if ((parts = lastSlice.match(Optimize.id)) &&
-          (token = parts[parts.length - 1]) && NATIVE_GEBID) {
+            (token = parts[parts.length - 1]) && NATIVE_GEBID) {
 
           if ((element = byId(token, context))) {
             if (match(element, selector)) {
-              elements = [ element ];
-              done = true;
+              data[data.length] = element;
+              callback && callback(element);
             }
-          } else return data;
+          }
+
+          if (isCacheable) {
+            Contexts[original] =
+            Contexts[selector] = from;
+            Results[original]  =
+            Results[selector]  = data;
+          }
+          return data;
         }
 
         // CLASS optimization RTL
         else if ((parts = lastSlice.match(Optimize.className)) &&
-          (token = parts[parts.length - 1])) {
+            (token = parts[parts.length - 1])) {
           elements = byClass(token, from);
-          if (selector == '.' + token) done = true;
+          if (selector == '.' + token) {
+            concat(data, elements, callback);
+            if (isCacheable) {
+              Contexts[original] =
+              Contexts[selector] = from;
+              Results[original]  =
+              Results[selector]  = data;
+            }
+            return data;
+          }
         }
 
         // TAG optimization RTL
         else if ((parts = lastSlice.match(Optimize.tagName)) &&
-          (token = parts[parts.length - 1]) && NATIVE_GEBTN) {
+            (token = parts[parts.length - 1]) && NATIVE_GEBTN) {
           elements = byTag(token, from);
-          if (selector == token) done = true;
+          if (selector == token) {
+            concat(data, elements, callback);
+            if (isCacheable) {
+              Contexts[original] =
+              Contexts[selector] = from;
+              Results[original]  =
+              Results[selector]  = data;
+            }
+            return data;
+          }
         }
-
       }
 
       if (!elements || !elements.length) {
-
         if (isSingle && (parts = selector.match(/\#((?:[-\w]|[^\x00-\xa0]|\\.)+)(.*)/))) {
           if ((element = byId(parts[1]))) {
-            token = parts[2].replace(/[\x20\t\n\r\f]([ >+~])[\x20\t\n\r\f]/g, '$1');
-            switch (token.charAt(0)) {
+            switch ((token = parts[2]).charAt(0)) {
               case '.':
                 elements = byClass(token.slice(1), element);
                 break;
@@ -1312,18 +1342,24 @@ NW.Dom = (function(global) {
       // end of prefiltering pass
 
       // save compiled selectors
-      if (!compiledSelectors[selector]) {
+      if ((compiled = compiledSelectors[selector])) {
+        compiledSelectors[original] = compiled;
+      } else {
+        compiled =
+        compiledSelectors[original] =
         compiledSelectors[selector] = compileGroup(selector, '', true);
       }
 
-      data = done ?
-        concat(data, elements, callback) :
-        compiledSelectors[selector](elements, snap, data, base, root, from, callback);
+      data = compiledSelectors[selector](elements, snap, data, base, root, from, callback);
 
       if (isCacheable) {
-        snap.Results[selector] = data;
-        snap.Contexts[selector] = from;
-        return data;
+        // a cached result set for the requested selector
+        Contexts[original] =
+        Contexts[selector] = from;
+
+        return (
+          Results[original] =
+          Results[selector] = data;
       }
 
       return data;
