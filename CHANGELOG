@@ -1,3 +1,5 @@
+* Optimize compileSelector() by reducing property lookups in the while loop. [jddalton]
+
 * Make `concatList` and `concatCall` perform better in IE. [jddalton]
 
 * Make the `Optimize` object properties names more consistent with the rest of NWMatcher's coding style. [jddalton]

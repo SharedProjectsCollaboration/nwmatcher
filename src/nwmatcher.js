@@ -640,7 +640,7 @@ NW.Dom = (function(global) {
       var t = context.createElement('div');
       t.innerHTML = '<p>p</p>';
       t.style.display = 'none';
-      return t.innerText.length > 0 ?
+      return t.innerText ?
         'e.innerText' :
         's.stripTags(e.innerHTML)';
     })(),
@@ -677,15 +677,27 @@ NW.Dom = (function(global) {
   compileSelector =
     function(selector, source) {
 
-      var i, a, b, n, k, expr, match, result, status, test, type;
-
-      k = 0;
+      var i, a, b, n, expr, match, result, status, test, type,
+       pseudoStructural = CSS3PseudoClasses.Structural,
+       pseudoOthers = CSS3PseudoClasses.Others,
+       ptnAdjacent  = Patterns.adjacent,
+       ptnAncestor  = Patterns.ancestor,
+       ptnAttribute = Patterns.attribute,
+       ptnClassName = Patterns.className,
+       ptnChildren  = Patterns.children,
+       ptnDpseudos  = Patterns.dpseudos,
+       ptnId        = Patterns.id,
+       ptnRelative  = Patterns.relative,
+       ptnSpseudos  = Patterns.spseudos,
+       ptnTagName   = Patterns.tagName,
+       ptnUniversal = Patterns.universal,
+       k = 0;
 
       while (selector) {
 
         // *** Universal selector
         // * match all (empty block, do not remove)
-        if ((match = selector.match(Patterns.universal))) {
+        if ((match = selector.match(ptnUniversal))) {
           // do nothing, handled in the compiler where
           // BUGGY_GEBTN return comment nodes (ex: IE)
           true;
@@ -693,7 +705,7 @@ NW.Dom = (function(global) {
 
         // *** ID selector
         // #Foo Id case sensitive
-        else if ((match = selector.match(Patterns.id))) {
+        else if ((match = selector.match(ptnId))) {
           // document can contain conflicting elements (id/name)
           // prototype selector unit need this method to recover bad HTML forms
           source = 'if((e.submit?s.getAttribute(e,"id"):e.id)=="' +
@@ -702,7 +714,7 @@ NW.Dom = (function(global) {
 
         // *** Type selector
         // Foo Tag (case insensitive)
-        else if ((match = selector.match(Patterns.tagName))) {
+        else if ((match = selector.match(ptnTagName))) {
           // both tagName and nodeName properties may be upper or lower case
           // depending on their creation NAMESPACE in createElementNS()
           source = 'if(e.nodeName' + NODE_NAME_TO_UPPER_CASE + '=="' +
@@ -711,7 +723,7 @@ NW.Dom = (function(global) {
 
         // *** Class selector
         // .Foo Class (case sensitive)
-        else if ((match = selector.match(Patterns.className))) {
+        else if ((match = selector.match(ptnClassName))) {
           // W3C CSS3 specs: element whose "class" attribute has been assigned a
           // list of whitespace-separated values, see section 6.4 Class selectors
           // and notes at the bottom; explicitly non-normative in this specification.
@@ -725,7 +737,7 @@ NW.Dom = (function(global) {
         // *** Attribute selector
         // [attr] [attr=value] [attr="value"] [attr='value'] and !=, *=, ~=, |=, ^=, $=
         // case sensitivity is treated differently depending on the document type (see map)
-        else if ((match = selector.match(Patterns.attribute))) {
+        else if ((match = selector.match(ptnAttribute))) {
           // xml namespaced attribute ?
           expr = match[1].split(':');
           expr = expr.length == 2 ? expr[1] : expr[0] + '';
@@ -744,7 +756,7 @@ NW.Dom = (function(global) {
 
         // *** Adjacent sibling combinator
         // E + F (F adiacent sibling of E)
-        else if ((match = selector.match(Patterns.adjacent))) {
+        else if ((match = selector.match(ptnAdjacent))) {
           if (NATIVE_TRAVERSAL_API) {
             source = 'if((e=e.previousElementSibling)){' + source + '}';
           } else {
@@ -755,7 +767,7 @@ NW.Dom = (function(global) {
 
         // *** General sibling combinator
         // E ~ F (F relative sibling of E)
-        else if ((match = selector.match(Patterns.relative))) {
+        else if ((match = selector.match(ptnRelative))) {
           k++;
           if (NATIVE_TRAVERSAL_API) {
             // previousSibling particularly slow on Gecko based browsers prior to FF3.1
@@ -771,13 +783,13 @@ NW.Dom = (function(global) {
 
         // *** Child combinator
         // E > F (F children of E)
-        else if ((match = selector.match(Patterns.children))) {
+        else if ((match = selector.match(ptnChildren))) {
           source = 'if(e!==g&&(e=e.parentNode)){' + source + '}';
         }
 
         // *** Descendant combinator
         // E F (E ancestor of F)
-        else if ((match = selector.match(Patterns.ancestor))) {
+        else if ((match = selector.match(ptnAncestor))) {
           source = 'while(e!==g&&(e=e.parentNode)){' + source + '}';
         }
 
@@ -786,8 +798,8 @@ NW.Dom = (function(global) {
         // :first-child, :last-child, :only-child,
         // :first-of-type, :last-of-type, :only-of-type,
         // :nth-child(), :nth-last-child(), :nth-of-type(), :nth-last-of-type()
-        else if ((match = selector.match(Patterns.spseudos)) &&
-          CSS3PseudoClasses.Structural[selector.match(reClassValue)[0]]) {
+        else if ((match = selector.match(ptnSpseudos)) &&
+          pseudoStructural[selector.match(reClassValue)[0]]) {
 
           switch (match[1]) {
             case 'root':
@@ -864,8 +876,8 @@ NW.Dom = (function(global) {
         // CSS3 :not, :checked, :enabled, :disabled, :target
         // CSS3 :active, :hover, :focus
         // CSS3 :link, :visited
-        else if ((match = selector.match(Patterns.dpseudos)) &&
-          CSS3PseudoClasses.Others[selector.match(reClassValue)[0]]) {
+        else if ((match = selector.match(ptnDpseudos)) &&
+          pseudoOthers[selector.match(reClassValue)[0]]) {
 
           switch (match[1]) {
             // CSS3 negation pseudo-class
