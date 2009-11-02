@@ -1057,7 +1057,7 @@ NW.Dom = (function(global) {
   // match element with selector
   // @return boolean
   match =
-    function(element, selector, from) {
+    function(element, selector) {
       // make sure an element node was passed
       var compiled, original = selector;
       base = element.ownerDocument;
@@ -1083,7 +1083,7 @@ NW.Dom = (function(global) {
           return false;
         }
       }
-      return compiled(element, snap, base, root, from || base);
+      return compiled(element, snap, base, root, base);
     },
 
   // select elements matching selector
