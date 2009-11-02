@@ -1350,7 +1350,15 @@ NW.Dom = (function(global) {
               default:
                 break;
             }
-          } else if (selector.indexOf(':not') < 0) return data;
+          } else if (selector.indexOf(':not') < 0) {
+            if (isCacheable) {
+              Contexts[original] =
+              Contexts[selector] = from;
+              Results[original]  =
+              Results[selector]  = data;
+            }
+            return data;
+          }
         }
 
         if (!elements || !elements.length)
