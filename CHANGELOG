@@ -1,3 +1,5 @@
+* Normalize selectors to reduce selector parsing complexity and improve compiled/dom caching memory footprints. [jddalton]
+
 * Avoid setting the `elements` var in client_api() until necessary. [jddalton]
 
 * Make the cache pause timeout equal to the `minCacheRest`. [jddalton]

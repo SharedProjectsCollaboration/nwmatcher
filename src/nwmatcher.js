@@ -48,14 +48,24 @@ NW.Dom = (function(global) {
   // NOTE: Safari 2.0.x crashes with escaped (\\)
   // Unicode ranges in regular expressions so we
   // use a negated character range class instead
-  encoding = '((?:[-\\w]|[^\\x00-\\xa0]|\\\\.)+)',
+  strEncoding = '((?:[-\\w]|[^\\x00-\\xa0]|\\\\.)+)',
 
   // used to skip [ ] or ( ) groups in token tails
-  skipgroup = '(?:\\[.*\\]|\\(.*\\))',
+  strSkipGroup = '(?:\\[.*\\]|\\(.*\\))',
+
+  // used to skip "..." or '...' quoted attribute values
+  strSkipQuotes = '(?:(?:"(?:(?=\\\\?)\\\\?(?:\\n|\\r|.))*?")|(?:\'(?:(?=\\\\?)\\\\?(?:\\n|\\r|.))*?\'))',
+
+  strLeadingSpace = '\\x20+([\\]\\)=>+~,^$|!]|\\*=)',
+
+  strTrailingSpace = '([\\[\\(=>+~,^$|!]|\\*=)\\x20+',
+
+  strEdgeSpace = '[\\t\\n\\r\\f]',
+
+  strMultiSpace = '\\x20{2,}',
 
   reClassValue  = /([-\w]+)/,
   reDescendants = /[^> \w]/,
-  reEdgeSpaces  = /[\t\n\r\f]/g,
   reIdSelector  = /^\#[-\w]+$/,
   reSiblings    = /[^+~\w]/,
   reWhitespace  = /[\x20\t\n\r\f]/,
@@ -73,7 +83,72 @@ NW.Dom = (function(global) {
   // discard invalid chars found in passed selector
   reValidator = /([.:#*\w]|[^\x00-\xa0])/,
 
+  // for use with the normilize method
+  reEdgeSpaces     = new RegExp(strEdgeSpace, 'g'),
+  reMultiSpaces    = new RegExp(strMultiSpace, 'g'),
+  reLeadingSpaces  = new RegExp(strLeadingSpace, 'g'),
+  reTrailingSpaces = new RegExp(strTrailingSpace, 'g'),
+
+  reEdgeSpacesWithQuotes     = new RegExp('(' + strEdgeSpace  + ')|' + strSkipQuotes, 'g'),
+  reMultiSpacesWithQuotes    = new RegExp('(' + strMultiSpace + ')|' + strSkipQuotes, 'g'),
+  reLeadingSpacesWithQuotes  = new RegExp('(?:' + strLeadingSpace  + ')|' + strSkipQuotes, 'g'),
+  reTrailingSpacesWithQuotes = new RegExp('(?:' + strTrailingSpace + ')|' + strSkipQuotes, 'g'),
+
   /*----------------------------- UTILITY METHODS ----------------------------*/
+
+  // normalize whitespace and remove consecutive spaces
+  // http://www.w3.org/TR/css3-selectors/#selector-syntax
+  normalize =
+    function(selector) {
+      var index, match, original, token,
+       cached = normalizedSelectors[selector];
+      if (cached) return cached;
+
+      original = selector;
+      if (selector.indexOf('[') > -1) {
+        while (match = reEdgeSpacesWithQuotes.exec(selector)) {
+          if ((token = match[1])) {
+            selector = selector.replace(token, ' ');
+          }
+        }
+
+        selector = trim.call(selector);
+
+        while (match = reLeadingSpacesWithQuotes.exec(selector)) {
+          if ((token = match[1])) {
+            index = match.index;
+            selector = selector.slice(0, index) +
+              selector.slice(index).replace(match[0], token);
+            reLeadingSpacesWithQuotes.lastIndex = index + 1;
+          }
+        }
+        while (match = reTrailingSpacesWithQuotes.exec(selector)) {
+          if ((token = match[1])) {
+            index = match.index;
+            selector = selector.slice(0, index) +
+              selector.slice(index).replace(match[0], token);
+            reTrailingSpacesWithQuotes.lastIndex = index + 1;
+          }
+        }
+        while (match = reMultiSpacesWithQuotes.exec(selector)) {
+          if ((token = match[1])) {
+            index = match.index;
+            selector = selector.slice(0, index) +
+              selector.slice(index + token.length - 1);
+            reMultiSpacesWithQuotes.lastIndex = index + 1;
+          }
+        }
+      } else {
+        // do the same thing, without worrying about attribute values
+        selector = trim.call(selector.replace(reEdgeSpaces, ' '))
+          .replace(reLeadingSpaces, '$1').replace(reTrailingSpaces, '$1')
+            .replace(reMultiSpaces, ' ');
+      }
+
+      return (
+        normalizedSelectors[original] =
+        normalizedSelectors[selector] = selector);
+    },
 
   slice = [].slice,
 
@@ -83,14 +158,9 @@ NW.Dom = (function(global) {
     return s.replace(/<\/?("[^\"]*"|'[^\']*'|[^>])+>/gi, '');
   },
 
-  // Only five characters can occur in whitespace, they are:
-  // \x20 \t \n \r \f, checks now uniformed through the code
-  // http://www.w3.org/TR/css3-selectors/#selector-syntax
-
-  // trim leading/trailing whitespaces
-  trim = String.prototype.trim && !' \t\n\r\f'.trim() ?
-    String.prototype.trim :
-    function() { return this.replace(/^[\x20\t\n\r\f]+|[\x20\t\n\r\f]+$/g, ''); },
+  // trim leading/trailing spaces
+  trim = ''.trim && !' '.trim() ? ''.trim :
+    function() { return this.replace(/^\x20+|\x20+$/g, ''); },
 
   /*------------------------------- DEBUGGING --------------------------------*/
 
@@ -369,15 +439,15 @@ NW.Dom = (function(global) {
 
   // optimization expressions
   Optimize = {
-    'id':        new RegExp("#" + encoding + "|" + skipgroup + "*"),
-    'className': new RegExp("\\." + encoding + "|" + skipgroup + "*"),
-    'tagName':   new RegExp(encoding + "|" + skipgroup + "*")
+    'id':        new RegExp("#"   + strEncoding + "|" + strSkipGroup + "*"),
+    'className': new RegExp("\\." + strEncoding + "|" + strSkipGroup + "*"),
+    'tagName':   new RegExp(strEncoding + "|" + strSkipGroup + "*")
   },
 
   // precompiled Regular Expressions
   Patterns = {
     // element attribute matcher
-    'attribute': /^\[[\x20\t\n\r\f]*([-\w]*:?(?:[-\w])+)[\x20\t\n\r\f]*(?:([~*^$|!]?=)[\x20\t\n\r\f]*(["']*)([^'"()]*?)\3)?[\x20\t\n\r\f]*\](.*)/,
+    'attribute': /^\[([-\w]*:?(?:[-\w])+)(?:([~*^$|!]?=)(["']*)([^'"()]*?)\3)?\](.*)/,
 
     // structural pseudo-classes
     'spseudos': /^\:(root|empty|nth)?-?(first|last|only)?-?(child)?-?(of-type)?(\((?:even|odd|[^\)]*)\))?(.*)/,
@@ -386,28 +456,28 @@ NW.Dom = (function(global) {
     'dpseudos': /^\:([\w]+|[^\x00-\xa0]+)(?:\((["']*)(.*?(\(.*\))?[^'"()]*?)\2\))?(.*)/,
 
     // E > F
-    'children': /^[\x20\t\n\r\f]*\>[\x20\t\n\r\f]*(.*)/,
+    'children': /^\>(.*)/,
 
     // E + F
-    'adjacent': /^[\x20\t\n\r\f]*\+[\x20\t\n\r\f]*(.*)/,
+    'adjacent': /^\+(.*)/,
 
     // E ~ F
-    'relative': /^[\x20\t\n\r\f]*\~[\x20\t\n\r\f]*(.*)/,
+    'relative': /^\~(.*)/,
 
     // E F
-    'ancestor': /^[\x20\t\n\r\f]+(.*)/,
+    'ancestor': /^\x20(.*)/,
 
     // universal
     'universal': /^\*(.*)/,
 
     // id
-    'id': new RegExp("^#" + encoding + "(.*)"),
+    'id': new RegExp("^#" + strEncoding + "(.*)"),
 
     // tag
-    'tagName': new RegExp("^" + encoding + "(.*)"),
+    'tagName': new RegExp("^" + strEncoding + "(.*)"),
 
     // class
-    'className': new RegExp("^\\." + encoding + "(.*)")
+    'className': new RegExp("^\\." + strEncoding + "(.*)")
   },
 
   // place to add exotic functionalities
@@ -569,7 +639,7 @@ NW.Dom = (function(global) {
       while ((element = elements[++i])) {
         if ((cn = element.className)) {
           if ((' ' + (isClassNameLowered ? cn.toLowerCase() : cn).
-            replace(/[\t\n\r\f]/g, ' ') + ' ').indexOf(className) > -1) {
+            replace(reEdgeSpaces, ' ') + ' ').indexOf(className) > -1) {
             results[++j] = element;
           }
         }
@@ -654,7 +724,6 @@ NW.Dom = (function(global) {
       if ((parts = selector.match(reSplitGroup))) {
         // for each selector in the group
         while ((token = parts[++i])) {
-          token = trim.call(token);
           // avoid repeating the same token in comma separated group (p, p)
           if (!seen[token]) source += 'e=N;' + compileSelector(token, mode ? ACCEPT_NODE : 'return true;');
           seen[token] = true;
@@ -994,6 +1063,11 @@ NW.Dom = (function(global) {
         if (typeof selector == 'string' && selector.length) {
           base = element.ownerDocument;
           root = base.documentElement;
+
+          // remove extraneous whitespace
+          if (reWhitespace.test(selector))
+            selector = normalize(selector);
+
           // save compiled matchers
           if (!compiledMatchers[selector]) {
             compiledMatchers[selector] = compileGroup(selector, '', false);
@@ -1118,10 +1192,15 @@ NW.Dom = (function(global) {
       if ((hasChanged = lastSelector != selector)) {
         // process valid selector strings
         if (reValidator.test(selector)) {
+
           // save passed selector
           lastSelector = selector;
-          selector = trim.call(selector);
-        } else {
+
+          // remove extraneous whitespace
+          if (reWhitespace.test(selector))
+            selector = normalize(selector);
+        }
+        else {
           emit('DOMException: "' + selector + '" is not a valid CSS selector.');
           return data;
         }
@@ -1269,6 +1348,8 @@ NW.Dom = (function(global) {
 
   // compiled match functions returning booleans
   compiledMatchers  = { },
+
+  normalizedSelectors = { },
 
   // Keep caching states for each context document
   // set manually by using setCache(true, context)
