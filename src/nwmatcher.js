@@ -426,16 +426,17 @@ NW.Dom = (function(global) {
 
   concatList =
     function(listout, listin) {
-      var i = -1, element;
-      if (listout.length === 0 && Array.slice) return Array.slice(listin);
-      while ((element = listin[++i])) listout[listout.length] = element;
+      var element, i = -1, pad = listout.length;
+      if (!pad && Array.slice) return Array.slice(listin);
+      while (element = listin[++i]) listout[pad + i] = element;
       return listout;
     },
 
   concatCall =
     function(listout, listin, callback) {
-      var i = -1, element;
-      while ((element = listin[++i])) callback(listout[listout.length] = element);
+      var element, i = -1, pad = listout.length;
+      while (element = listin[++i])
+        callback(listout[listout.lengthpad + i] = element);
       return listout;
     },
 
