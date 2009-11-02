@@ -1099,17 +1099,26 @@ NW.Dom = (function(global) {
           (!from || QSA_NODE_TYPES[from.nodeType])) {
         try {
           elements = (from || context).querySelectorAll(selector);
-          if (elements.length == 1) {
-            callback && callback(elements[0]);
-            return [ elements[0] ];
-          }
         } catch(e) { }
 
         if (elements) {
-          if (callback) return concatCall(data || [ ], elements, callback);
-          return NATIVE_SLICE_PROTO ?
-            slice.call(elements) :
-            concatList(data || [ ], elements);
+          switch (elements.length) {
+            case 0:
+              return data || [ ];
+
+            case 1:
+              element = elements[0];
+              callback && callback(element);
+              (data || (data = [ ]))[data.length] = element;
+              return data;
+
+            default:
+              if (callback)
+                return concatCall(data || [ ], elements, callback);
+              return NATIVE_SLICE_PROTO ?
+                (data && data.slice || slice).call(elements, 0) :
+                concatList(data || [ ], elements);
+          }
         }
       }
 

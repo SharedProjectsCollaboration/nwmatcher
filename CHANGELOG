@@ -1,3 +1,5 @@
+* Optimize how select_qsa() processes the elements returned from querySelectorAll(). [jddalton]
+
 * Avoid using querySelectorAll() if a compiled selector exists. [jddalton]
 
 * Remove the unnecessary `from` argument from the match() method. [jddalton]
