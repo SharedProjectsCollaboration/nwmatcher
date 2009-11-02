@@ -1105,11 +1105,11 @@ NW.Dom = (function(global) {
             break;
 
           case '.':
-            data = concat(data, byClass(selector.slice(1), from), callback);
+            concat(data, byClass(selector.slice(1), from), callback);
             break;
 
           default:
-            data = concat(data, byTag(selector, from), callback);
+            concat(data, byTag(selector, from), callback);
             break;
         }
         snap.Contexts[selector] = from;
@@ -1183,13 +1183,13 @@ NW.Dom = (function(global) {
 
         if (isSingle && (parts = selector.match(/\#((?:[-\w]|[^\x00-\xa0]|\\.)+)(.*)/))) {
           if ((element = byId(parts[1]))) {
-            parts[2] = parts[2].replace(/[\x20\t\n\r\f]([ >+~])[\x20\t\n\r\f]/g, '$1');
-            switch (parts[2].charAt(0)) {
+            token = parts[2].replace(/[\x20\t\n\r\f]([ >+~])[\x20\t\n\r\f]/g, '$1');
+            switch (token.charAt(0)) {
               case '.':
-                elements = byClass(parts[2].slice(1), element);
+                elements = byClass(token.slice(1), element);
                 break;
               case ':':
-                if (parts[2].match(/[ >+~]/)) {
+                if (token.match(/[ >+~]/)) {
                   elements = element.getElementsByTagName('*');
                 } else elements = [ element ];
                 break;

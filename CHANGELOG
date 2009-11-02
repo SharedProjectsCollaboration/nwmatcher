@@ -1,3 +1,5 @@
+* Optimize client_api() by avoiding unnecessary property lookups and assignments. [jddalton]
+
 * Optimize compileSelector() by reducing property lookups in the while loop. [jddalton]
 
 * Make `concatList` and `concatCall` perform better in IE. [jddalton]
