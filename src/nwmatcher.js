@@ -158,42 +158,32 @@ NW.Dom = (function(global) {
   // Opera 9.27 and an id="length" will fold this
   NATIVE_SLICE_PROTO =
     (function() {
-      var isSupported = false, div = context.createElement('div');
       try {
         div.innerHTML = '<div id="length"></div>';
         root.insertBefore(div, root.firstChild);
         isSupported = !!slice.call(div.childNodes, 0)[0];
-      } catch(e) {
-      } finally {
-        root.removeChild(div).innerHTML = '';
-      }
-      return isSupported;
+      } catch(e) { }
+
+      root.removeChild(div);
+      return !!isSupported;
     })(),
 
   // check for Mutation Events, DOMAttrModified should be
   // enough to ensure DOMNodeInserted/DOMNodeRemoved exist
   NATIVE_MUTATION_EVENTS = root.addEventListener ?
     (function() {
-      var isSupported, id = root.id,
-        input = context.createElement('input'),
-        handler = function() { isSupported = true; };
-
-      // add a bogus control element
-      root.insertBefore(input, root.firstChild);
+      var id = root.id,
+      handler = function() {
+        root.removeEventListener('DOMAttrModified', handler, false);
+        isSupported = true;
+      };
 
       // add listener and modify attribute
+      isSupported = false;
       root.addEventListener('DOMAttrModified', handler, false);
       root.id = 'nw';
 
-      // now try to modify the bogus element
-      isSupported && !(isSupported = 0) && (input.disabled = 0);
-
-      // remove event listener and tested element
-      root.removeEventListener('DOMAttrModified', handler, false);
-      root.removeChild(input);
       root.id = id;
-
-      input = null;
       handler = null;
       return !!isSupported;
     })() :
@@ -203,13 +193,10 @@ NW.Dom = (function(global) {
 
   BUGGY_GEBID = NATIVE_GEBID ?
     (function() {
-      var isBuggy, div = context.createElement('div');
       div.innerHTML = '<a name="Z"></a>';
       root.insertBefore(div, root.firstChild);
       isBuggy = !!div.ownerDocument.getElementById('Z');
-      div.innerHTML = '';
-      root.removeChild(div);
-      div = null;
+      root.removeChild(div).innerHTML = '';
       return isBuggy;
     })() :
     true,
@@ -217,11 +204,8 @@ NW.Dom = (function(global) {
   // detect IE gEBTN comment nodes bug
   BUGGY_GEBTN = NATIVE_GEBTN ?
     (function() {
-      var isBuggy, div = context.createElement('div');
       div.appendChild(context.createComment(''));
       isBuggy = div.getElementsByTagName('*')[0];
-      div.innerHTML = '';
-      div = null;
       return isBuggy;
     })() :
     true,
@@ -231,28 +215,21 @@ NW.Dom = (function(global) {
   // tests are based on the jQuery selector test suite
   BUGGY_GEBCN = NATIVE_GEBCN ?
     (function() {
-      var isBuggy,
-        div = context.createElement('div'),
-        method = 'getElementsByClassName',
-        test = /\u53f0\u5317/;
-
       // Opera tests
+      var method = 'getElementsByClassName', test = /\u53f0\u5317/;
       div.innerHTML = '<span class="' + test + 'abc ' + test + '"></span><span class="x"></span>';
       isBuggy = !div[method](test)[0];
 
       // Safari test
       div.lastChild.className = test;
       if (!isBuggy) isBuggy = div[method](test).length !== 2;
-
-      div.innerHTML = '';
-      div = null;
       return isBuggy;
     })() :
     true,
 
   // check Seletor API implementations
   BUGGY_QSAPI = NATIVE_QSAPI ? (function() {
-    var pattern = [ '!=', ':contains', ':selected' ], div = context.createElement('div');
+    var pattern = [ '!=', ':contains', ':selected' ];
 
     // WebKit treats case insensitivity correctly with classNames (when no DOCTYPE)
     // obsolete bug https://bugs.webkit.org/show_bug.cgi?id=19047
@@ -280,9 +257,6 @@ NW.Dom = (function(global) {
     // :link bugs with hyperlinks matching (Firefox/Safari)
     div.innerHTML = '<a href="x"></a>';
     div.querySelectorAll(':link').length !== 1 && pattern.push(':link');
-
-    div.innerHTML = '';
-    div = null;
 
     return pattern.length ?
       new RegExp(pattern.join('|')) :
@@ -1284,7 +1258,7 @@ NW.Dom = (function(global) {
   // compiled match functions returning booleans
   compiledMatchers  = { },
 
-  // keep caching states for each context document
+  // Keep caching states for each context document
   // set manually by using setCache(true, context)
   // expired by Mutation Events on DOM tree changes
   Snapshot = (function() {
@@ -1380,7 +1354,10 @@ NW.Dom = (function(global) {
   // between selection calls
   snap = new Snapshot;
 
-  // END: local context caching system
+  // clear temp variables
+  div = isSupported = isBuggy = null;
+
+  /*------------------------------- PUBLIC API -------------------------------*/
 
   return {
     // retrieve element by id attr

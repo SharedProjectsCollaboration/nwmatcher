@@ -1,3 +1,5 @@
+* Simplify feature tests by recycling the div test element and temp vars. [jddalton]
+
 * Use native String#trim if available. [jddalton]
 
 * Reorganize source. [jddalton]
