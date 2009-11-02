@@ -75,9 +75,6 @@ NW.Dom = (function(global) {
 
   reUnnormalized = /[\t\n\r\f]|\x20{2,}|(?:\x20(?:[\]\)=>+~,^$|!]|\*=))|(?:(?:[\[\(=>+~,^$|!]|\*=)\x20)/,
 
-  // matches simple id, tagname & classname selectors
-  reSimpleSelector = /^[.#]?[-\w]+$/,
-
   // split comma separated selector groups, exclude commas inside '' "" () []
   // example: (#div a, ul > li a) group 1 is (#div a) group 2 is (ul > li a)
   reSplitGroup = /([^,()[\]]+|\([^()]+\)|\(.*\)|\[(?:\[[^[\]]*\]|["'][^'"]*["']|[^'"[\]]+)+\]|\[.*\]|\\.)+/g,
@@ -347,6 +344,11 @@ NW.Dom = (function(global) {
       return isBuggy;
     })() :
     true,
+
+  // matches simple id, tagname & classname selectors
+  RE_SIMPLE_SELECTOR = BUGGY_GEBCN
+    ? /^#?[-\w]+$/
+    : /^[.#]?[-\w]+$/,
 
   /*----------------------------- LOOKUP OBJECTS -----------------------------*/
 
@@ -1119,8 +1121,8 @@ NW.Dom = (function(global) {
     function (selector, from, callback) {
       var element, elements;
 
-      if (!compiledSelectors[selector] &&
-          !reSimpleSelector.test(selector) &&
+      if (!RE_SIMPLE_SELECTOR.test(selector) &&
+          !compiledSelectors[selector] &&
           !RE_BUGGY_QSAPI.test(selector) &&
           (!from || QSA_NODE_TYPES[from.nodeType])) {
         try {
@@ -1159,7 +1161,6 @@ NW.Dom = (function(global) {
 
       var Contexts, Results, className, compiled, data, element,
        elements, hasChanged, isCacheable, isSingle, now, parts, token,
-       concat = callback ? concatCall : concatList,
        original = selector;
 
       // ensure context is set
@@ -1191,6 +1192,7 @@ NW.Dom = (function(global) {
           // temporarily pause caching while we are getting hammered with dom mutations (jdalton)
           now = new Date;
           if ((now - lastCalled) < minCacheRest) {
+            isCacheable = false;
             isCachingPaused =
               (base.snapshot = new Snapshot).isExpired = true;
             setTimeout(function() { isCachingPaused = false; }, minCacheRest);
@@ -1203,14 +1205,12 @@ NW.Dom = (function(global) {
         Results  = snap.Results;
       }
 
-      // pre-filtering pass allow to scale proportionally with big DOM trees;
-      // this block can be safely removed, it is a speed booster on big pages
-      // and will still maintain the mandatory "document ordered" result set
-
-      if (reSimpleSelector.test(selector)) {
+      // use optimized fork for simple selector
+      if (RE_SIMPLE_SELECTOR.test(selector)) {
         switch (selector.charAt(0)) {
           case '#':
             if ((element = byId(selector.slice(1), from))) {
+            // if ((element = (from || context).getElementById(selector.slice(1)))) {
               data = [ element ];
               callback && callback(element);
             } else {
@@ -1224,7 +1224,9 @@ NW.Dom = (function(global) {
             break;
 
           default:
-            data = concat([ ], byTag(selector, from), callback);
+            data = callback
+              ? concatCall([ ], byTag(selector, from), callback)
+              : concatList([ ], byTag(selector, from));
             break;
         }
 
@@ -1234,6 +1236,8 @@ NW.Dom = (function(global) {
         }
         return data;
       }
+
+      // pre-filtering pass allow to scale proportionally with big DOM trees
 
       if ((hasChanged = lastSelector != selector)) {
         // process valid selector strings
@@ -1252,7 +1256,7 @@ NW.Dom = (function(global) {
         }
       }
 
-      // reinitialize indexes
+      // re-initialize indexes
       indexesByNodeType = { };
       indexesByNodeName = { };
 
@@ -1316,7 +1320,10 @@ NW.Dom = (function(global) {
             (token = parts[parts.length - 1]) && NATIVE_GEBTN) {
           elements = byTag(token, from);
           if (selector == token) {
-            data = concat([ ], elements, callback);
+            data = callback
+              ? concatCall([ ], elements, callback)
+              : concatList([ ], elements, callback);
+
             if (isCacheable) {
               Contexts[original] =
               Contexts[selector] = from;
