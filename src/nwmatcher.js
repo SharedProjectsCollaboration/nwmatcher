@@ -510,6 +510,12 @@ NW.Dom = (function(global) {
       return listout;
     },
 
+  forEachCall =
+    function(listout, callback) {
+      var element, i = 0;
+      while (element = listout[i++]) callback(element);
+    },
+
   getChildren =
     function(from) {
       var i = -1, element = from.firstChild, elements = [ ];
@@ -1161,9 +1167,8 @@ NW.Dom = (function(global) {
         if (snap && !snap.isExpired) {
           if ((elements = snap.Results[selector]) &&
             snap.Contexts[selector] == from) {
-            return callback ?
-              concat(data, elements, callback) :
-              elements;
+            callback && forEachCall(elements, callback);
+            return elements;
           }
         } else {
           // temporarily pause caching while we are getting hammered with dom mutations (jdalton)

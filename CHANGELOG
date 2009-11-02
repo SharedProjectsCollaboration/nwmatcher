@@ -1,3 +1,5 @@
+* Optimize client_api() cached performance when passing a callback. [jddalton]
+
 * Optimize client_api() compiled/dom caching. [jddalton]
 
 * Optimize how select_qsa() processes the elements returned from querySelectorAll(). [jddalton]
