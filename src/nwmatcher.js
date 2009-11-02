@@ -58,7 +58,6 @@ NW.Dom = (function(global) {
   reEdgeSpaces  = /[\t\n\r\f]/g,
   reIdSelector  = /^\#[-\w]+$/,
   reSiblings    = /[^+~\w]/,
-  reTrimSpaces  = /^[\x20\t\n\r\f]+|[\x20\t\n\r\f]+$/g,
   reWhitespace  = /[\x20\t\n\r\f]/,
 
   // matches simple id, tagname & classname selectors
@@ -83,6 +82,15 @@ NW.Dom = (function(global) {
   stripTags = function(s) {
     return s.replace(/<\/?("[^\"]*"|'[^\']*'|[^>])+>/gi, '');
   },
+
+  // Only five characters can occur in whitespace, they are:
+  // \x20 \t \n \r \f, checks now uniformed through the code
+  // http://www.w3.org/TR/css3-selectors/#selector-syntax
+
+  // trim leading/trailing whitespaces
+  trim = String.prototype.trim && !' \t\n\r\f'.trim() ?
+    String.prototype.trim :
+    function() { return this.replace(/^[\x20\t\n\r\f]+|[\x20\t\n\r\f]+$/g, ''); },
 
   /*------------------------------- DEBUGGING --------------------------------*/
 
@@ -671,7 +679,7 @@ NW.Dom = (function(global) {
       if ((parts = selector.match(reSplitGroup))) {
         // for each selector in the group
         while ((token = parts[++i])) {
-          token = token.replace(reTrimSpaces, '');
+          token = trim.call(token);
           // avoid repeating the same token in comma separated group (p, p)
           if (!seen[token]) source += 'e=N;' + compileSelector(token, mode ? ACCEPT_NODE : 'return true;');
           seen[token] = true;
@@ -1127,7 +1135,7 @@ NW.Dom = (function(global) {
         if (reValidator.test(selector)) {
           // save passed selector
           lastSelector = selector;
-          selector = selector.replace(reTrimSpaces, '');
+          selector = trim.call(selector);
         } else {
           emit('DOMException: "' + selector + '" is not a valid CSS selector.');
           return data;

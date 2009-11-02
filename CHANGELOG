@@ -1,3 +1,5 @@
+* Use native String#trim if available. [jddalton]
+
 * Reorganize source. [jddalton]
 
 *1.2.0* (November 2, 2009)
