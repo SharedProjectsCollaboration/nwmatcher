@@ -1082,6 +1082,8 @@ NW.Dom = (function(global) {
       // make sure an element node was passed
       var compiled, original = selector;
       base = element.ownerDocument;
+
+      if (!base) return false;
       root = base.documentElement;
 
       if (!(compiled = compiledMatchers[original])) {

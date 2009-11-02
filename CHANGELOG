@@ -1,3 +1,5 @@
+* Make match() only process elements that have a `ownerDocument` property to avoid the document object. [jddalton]
+
 * Expose NW.Dom.normalize() for testing purposes and ensure NW.Dom.compile() normalizes the selector. [jddalton]
 
 * Make `reUnNormalized` more procise and ensure client_api() doesn't pave the `data` argument in Firefox. [jddalton]
