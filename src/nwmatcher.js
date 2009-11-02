@@ -107,7 +107,7 @@ NW.Dom = (function(global) {
       if (cached) return cached;
 
       original = selector;
-      if (selector.indexOf('[') > -1) {
+      if (selector.search(/[\[\(]/) > -1) {
         while (match = reEdgeSpacesWithQuotes.exec(selector)) {
           if ((token = match[1])) {
             selector = selector.replace(token, ' ');

@@ -1,3 +1,5 @@
+* Ensure normalize() performs a quote safe approach if a selector contains `[` or `(`. [jddalton]
+
 * Only normalize selectors that contain edge case whitespace like \t, \n , \r, \f and consecutive spaces. [jddalton]
 
 * Reorganize the definition order of some of the feature test flags. [jddalton]
