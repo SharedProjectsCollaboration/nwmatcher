@@ -530,11 +530,12 @@ NW.Dom = (function(global) {
   getChildren =
     function(from) {
       var i = -1, element = from.firstChild, elements = [ ];
-      while (element) {
-        if ((element.nodeType == 1)) {
+      if (element) {
+        do {
+          if ((element.nodeType == 1)) {
             elements[++i] = element;
-        }
-        element = element.nextSibling;
+          }
+        } while ((element = element.nextSibling));
       }
       return elements;
     },
