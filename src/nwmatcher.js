@@ -369,9 +369,9 @@ NW.Dom = (function(global) {
 
   // optimization expressions
   Optimize = {
-    ID: new RegExp("#" + encoding + "|" + skipgroup + "*"),
-    TAG: new RegExp(encoding + "|" + skipgroup + "*"),
-    CLASS: new RegExp("\\." + encoding + "|" + skipgroup + "*")
+    'id':        new RegExp("#" + encoding + "|" + skipgroup + "*"),
+    'className': new RegExp("\\." + encoding + "|" + skipgroup + "*"),
+    'tagName':   new RegExp(encoding + "|" + skipgroup + "*")
   },
 
   // precompiled Regular Expressions
@@ -1132,14 +1132,14 @@ NW.Dom = (function(global) {
         }
 
         // reduce selection context
-        if ((parts = selector.match(Optimize.ID))) {
+        if ((parts = selector.match(Optimize.id))) {
           if ((element = context.getElementById(parts[1]))) {
             from = element.parentNode;
           }
         }
 
         // ID optimization RTL
-        if ((parts = lastSlice.match(Optimize.ID)) &&
+        if ((parts = lastSlice.match(Optimize.id)) &&
           (token = parts[parts.length - 1]) && NATIVE_GEBID) {
 
           if ((element = byId(token, context))) {
@@ -1151,14 +1151,14 @@ NW.Dom = (function(global) {
         }
 
         // CLASS optimization RTL
-        else if ((parts = lastSlice.match(Optimize.CLASS)) &&
+        else if ((parts = lastSlice.match(Optimize.className)) &&
           (token = parts[parts.length - 1])) {
           elements = byClass(token, from);
           if (selector == '.' + token) done = true;
         }
 
         // TAG optimization RTL
-        else if ((parts = lastSlice.match(Optimize.TAG)) &&
+        else if ((parts = lastSlice.match(Optimize.tagName)) &&
           (token = parts[parts.length - 1]) && NATIVE_GEBTN) {
           elements = byTag(token, from);
           if (selector == token) done = true;

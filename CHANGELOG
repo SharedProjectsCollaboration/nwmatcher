@@ -1,3 +1,5 @@
+* Make the `Optimize` object properties names more consistent with the rest of NWMatcher's coding style. [jddalton]
+
 * Simplify feature tests by recycling the div test element and temp vars. [jddalton]
 
 * Use native String#trim if available. [jddalton]
