@@ -1388,7 +1388,7 @@ NW.Dom = (function(global) {
 
         return (
           Results[original] =
-          Results[selector] = data;
+          Results[selector] = data);
       }
 
       return data;

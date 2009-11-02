@@ -90,7 +90,7 @@ var jquery_PseudoSelectors = function(match, source) {
       source = 'if(/h[1-6]/i.test(e.nodeName)){' + source + '}';
       break;
     case 'hidden':
-      source = 'if(e.offsetWidth==0&&e.offsetHeight==0){' + source + '}';
+      source = 'if(!e.offsetWidth&&!e.offsetHeight){' + source + '}';
       break;
     case 'visible':
       source = 'if(e.offsetWidth!=0||e.offsetHeight!=0){' + source + '}';
