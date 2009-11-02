@@ -70,7 +70,7 @@ NW.Dom = (function(global) {
   reDescendants  = /[^> \w]/,
   reIdSelector   = /^\#[-\w]+$/,
   reSiblings     = /[^+~\w]/,
-  reUnNormalized = /(?:[\t\n\r\f]|\x20{2,})/,
+  reUnNormalized = /(?:[\t\n\r\f]|\x20{2,})|(?:\x20+([\]\)=>+~,^$|!]|\*=))|(?:([\[\(=>+~,^$|!]|\*=)\x20+)/,
 
   // matches simple id, tagname & classname selectors
   reSimpleSelector = /^[.#]?[-\w]+$/,
@@ -508,7 +508,7 @@ NW.Dom = (function(global) {
   concatList =
     function(listout, listin) {
       var element, i = -1, pad = listout.length;
-      if (!pad && Array.slice) return Array.slice(listin);
+      // if (!pad && Array.slice) return Array.slice(listin);
       while (element = listin[++i]) listout[pad + i] = element;
       return listout;
     },
