@@ -1044,11 +1044,9 @@ NW.Dom = (function(global) {
   client_api =
     function client_api(selector, from, data, callback) {
 
-      var done, now, className, hasChanged, isSingle,
-        element, elements, parts, token, isCacheable,
-        concat = callback ? concatCall : concatList;
-
-      elements = [ ];
+      var done, now, className, element, elements,
+       hasChanged, isCacheable, isSingle, parts, token,
+       concat = callback ? concatCall : concatList;
 
       // storage setup
       data || (data = [ ]);
@@ -1179,7 +1177,7 @@ NW.Dom = (function(global) {
 
       }
 
-      if (elements.length === 0) {
+      if (!elements || !elements.length) {
 
         if (isSingle && (parts = selector.match(/\#((?:[-\w]|[^\x00-\xa0]|\\.)+)(.*)/))) {
           if ((element = byId(parts[1]))) {
@@ -1215,7 +1213,8 @@ NW.Dom = (function(global) {
           } else if (selector.indexOf(':not') < 0) return data;
         }
 
-        if (elements.length === 0) elements = from.getElementsByTagName('*');
+        if (!elements || !elements.length)
+          elements = from.getElementsByTagName('*');
       }
       // end of prefiltering pass
 
