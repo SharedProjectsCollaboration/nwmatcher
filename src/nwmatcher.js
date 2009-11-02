@@ -30,6 +30,11 @@ NW.Dom = (function(global) {
   // temporary vars
   isSupported, isBuggy, div = context.createElement('div'),
 
+  // used in the RE_BUGGY_XXXXX regexp testers
+  testFalse = { 'test': function() { return false; } },
+
+  testTrue  = { 'test': function() { return true;  } },
+
   // document type node (+DTD)
   docType = context.doctype,
 
@@ -238,26 +243,69 @@ NW.Dom = (function(global) {
       return !!isSupported;
     })(),
 
+  RE_BUGGY_MUTATION = testTrue,
+
   // check for Mutation Events, DOMAttrModified should be
   // enough to ensure DOMNodeInserted/DOMNodeRemoved exist
   NATIVE_MUTATION_EVENTS = root.addEventListener ?
     (function() {
-      var id = root.id,
-      handler = function() {
-        root.removeEventListener('DOMAttrModified', handler, false);
-        isSupported = true;
-      };
+      function testSupport(attr, value) {
+        // add listener and modify attribute
+        var result, handler = function() { result = true; };
+        input.addEventListener('DOMAttrModified', handler, false);
+        input[attr] = value;
+        // cleanup
+        input.removeEventListener('DOMAttrModified', handler, false);
+        handler = null;
+        return !!result;
+      }
 
-      // add listener and modify attribute
-      isSupported = false;
-      root.addEventListener('DOMAttrModified', handler, false);
-      root.id = 'nw';
-
-      root.id = id;
-      handler = null;
-      return !!isSupported;
+      var input = document.createElement('input');
+      if ((isSupported = testSupport('id', 'x'))) {
+        RE_BUGGY_MUTATION = testSupport('disabled', true) ? testFalse :
+          /\[(?:checked|disabled)/i;
+      }
+      return isSupported;
     })() :
     false,
+
+  // check Seletor API implementations
+  RE_BUGGY_QSAPI = NATIVE_QSAPI ?
+    (function() {
+      var pattern = [ '!=', ':contains', ':selected' ];
+
+      // WebKit treats case insensitivity correctly with classNames (when no DOCTYPE)
+      // obsolete bug https://bugs.webkit.org/show_bug.cgi?id=19047
+      // so the bug is in all other browsers code now :-)
+      // new specs http://www.whatwg.org/specs/web-apps/current-work/#selectors
+      div.innerHTML = '<b class="X"></b>';
+      if (compatMode == 'BackCompat' && div.querySelector('.x') === null) {
+        return testTrue;
+      }
+
+      // :enabled :disabled bugs with hidden fields (Firefox 3.5 QSA bug)
+      // http://www.w3.org/TR/html5/interactive-elements.html#selector-enabled
+      // IE8 throws error with these pseudos
+      div.innerHTML = '<input type="hidden">';
+      try {
+        div.querySelectorAll(':enabled').length === 1 && pattern.push(':enabled', ':disabled');
+      } catch(e) { }
+
+      // :checked bugs whith checkbox fields (Opera 10beta3 bug)
+      div.innerHTML = '<input type="checkbox" checked>';
+      try {
+        div.querySelectorAll(':checked').length !== 1 && pattern.push(':checked');
+      } catch(e) { }
+
+      // :link bugs with hyperlinks matching (Firefox/Safari)
+      div.innerHTML = '<a href="x"></a>';
+      div.querySelectorAll(':link').length !== 1 && pattern.push(':link');
+
+      return pattern.length ?
+        new RegExp(pattern.join('|')) :
+        testFalse;
+    })() :
+    testTrue,
 
   // NOTE: BUGGY_XXXXX check both for existance and no known bugs.
 
@@ -296,43 +344,6 @@ NW.Dom = (function(global) {
       return isBuggy;
     })() :
     true,
-
-  // check Seletor API implementations
-  BUGGY_QSAPI = NATIVE_QSAPI ? (function() {
-    var pattern = [ '!=', ':contains', ':selected' ];
-
-    // WebKit treats case insensitivity correctly with classNames (when no DOCTYPE)
-    // obsolete bug https://bugs.webkit.org/show_bug.cgi?id=19047
-    // so the bug is in all other browsers code now :-)
-    // new specs http://www.whatwg.org/specs/web-apps/current-work/#selectors
-    div.innerHTML = '<b class="X"></b>';
-    if (compatMode == 'BackCompat' && div.querySelector('.x') === null) {
-      return { 'test': function() { return true; } };
-    }
-
-    // :enabled :disabled bugs with hidden fields (Firefox 3.5 QSA bug)
-    // http://www.w3.org/TR/html5/interactive-elements.html#selector-enabled
-    // IE8 throws error with these pseudos
-    div.innerHTML = '<input type="hidden">';
-    try {
-      div.querySelectorAll(':enabled').length === 1 && pattern.push(':enabled', ':disabled');
-    } catch(e) { }
-
-    // :checked bugs whith checkbox fields (Opera 10beta3 bug)
-    div.innerHTML = '<input type="checkbox" checked>';
-    try {
-      div.querySelectorAll(':checked').length !== 1 && pattern.push(':checked');
-    } catch(e) { }
-
-    // :link bugs with hyperlinks matching (Firefox/Safari)
-    div.innerHTML = '<a href="x"></a>';
-    div.querySelectorAll(':link').length !== 1 && pattern.push(':link');
-
-    return pattern.length ?
-      new RegExp(pattern.join('|')) :
-      { 'test': function() { return false; } };
-  })() :
-  true,
 
   /*----------------------------- LOOKUP OBJECTS -----------------------------*/
 
@@ -1101,7 +1112,7 @@ NW.Dom = (function(global) {
 
       if (!compiledSelectors[selector] &&
           !reSimpleSelector.test(selector) &&
-          !BUGGY_QSAPI.test(selector) &&
+          !RE_BUGGY_QSAPI.test(selector) &&
           (!from || QSA_NODE_TYPES[from.nodeType])) {
         try {
           elements = (from || context).querySelectorAll(selector);
@@ -1158,6 +1169,7 @@ NW.Dom = (function(global) {
       }
 
       isCacheable = isCachingEnabled && !isCachingPaused &&
+        !RE_BUGGY_MUTATION.test(selector) &&
         !(from != base && isDisconnected(from, root));
 
       // avoid caching disconnected nodes
@@ -1386,7 +1398,7 @@ NW.Dom = (function(global) {
 
   CSS_INDEX = 'sourceIndex' in root ? 'sourceIndex' : 'CSS_ID',
 
-  isCachingEnabled = false, // NATIVE_MUTATION_EVENTS
+  isCachingEnabled = NATIVE_MUTATION_EVENTS,
 
   isCachingPaused = false,
 

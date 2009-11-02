@@ -1,3 +1,5 @@
+* Enable dom result caching by fixing how mutation event bugs are handled and rename `BUGGY_QSAPI` to `RE_BUGGY_QSAPI`. [jddalton]
+
 * Optimize client_api() cached performance when passing a callback. [jddalton]
 
 * Optimize client_api() compiled/dom caching. [jddalton]
