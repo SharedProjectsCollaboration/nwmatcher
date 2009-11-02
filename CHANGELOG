@@ -1,3 +1,5 @@
+* Make INSENSITIVE_TABLE defined by feature test instead of docType sniff because many pages are sent with the wrong mime type causing XHTML to be processed as invalid HTML. [jddalton]
+
 * Make client_api() cache empty results. [jddalton]
 
 * Enable dom result caching by fixing how mutation event bugs are handled and rename `BUGGY_QSAPI` to `RE_BUGGY_QSAPI`. [jddalton]

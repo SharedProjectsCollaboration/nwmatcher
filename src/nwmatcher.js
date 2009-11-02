@@ -27,17 +27,6 @@ NW.Dom = (function(global) {
   // script loading context
   context = base,
 
-  // temporary vars
-  isSupported, isBuggy, div = context.createElement('div'),
-
-  // used in the RE_BUGGY_XXXXX regexp testers
-  testFalse = { 'test': function() { return false; } },
-
-  testTrue  = { 'test': function() { return true;  } },
-
-  // document type node (+DTD)
-  docType = context.doctype,
-
   // context root element (HTML)
   root = context.documentElement,
 
@@ -45,8 +34,16 @@ NW.Dom = (function(global) {
   // detect Safari 2.0.x [object AbstractView]
   view = base.defaultView || base.parentWindow,
 
+  // temporary vars
+  isSupported, isBuggy, div = context.createElement('DiV'),
+
   // private storage vars
   lastSelector, lastContext, lastCalled, lastSlice,
+
+  // used in the RE_BUGGY_XXXXX regexp testers
+  testFalse = { 'test': function() { return false; } },
+
+  testTrue  = { 'test': function() { return true;  } },
 
   // http://www.w3.org/TR/css3-syntax/#characters
   // unicode/ISO 10646 characters 161 and higher
@@ -383,7 +380,7 @@ NW.Dom = (function(global) {
     'rev': 1, 'target': 1, 'text': 1, 'type': 1, 'vlink': 1
   },
 
-  INSENSITIVE_TABLE = docType && docType.systemId && docType.systemId.indexOf('xhtml') > -1 ?
+  INSENSITIVE_TABLE = div.nodeName === 'DiV' ?
     XHTML_TABLE : HTML_TABLE,
 
   // shortcut for the frequently checked case sensitivity of the class attribute
@@ -763,7 +760,7 @@ NW.Dom = (function(global) {
   compileSelector =
     function(selector, source) {
 
-      var i, a, b, n, expr, match, result, status, test, type,
+      var i, a, b, n, expr, isLowered, match, result, status, test, type,
        pseudoStructural = CSS3PseudoClasses.Structural,
        pseudoOthers = CSS3PseudoClasses.Others,
        ptnAdjacent  = Patterns.adjacent,
