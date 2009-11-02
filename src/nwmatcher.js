@@ -1420,7 +1420,7 @@ NW.Dom = (function(global) {
   // ordinal position by nodeType or nodeName
   indexesByNodeType = { },
 
-  indexesByNodeName = { }, 
+  indexesByNodeName = { },
 
   // compiled select functions returning collections
   compiledSelectors = { },
