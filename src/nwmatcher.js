@@ -1116,7 +1116,7 @@ NW.Dom = (function(global) {
   // version using new Selector API
   // @return array
   select_qsa =
-    function (selector, from, data, callback) {
+    function (selector, from, callback) {
       var element, elements;
 
       if (!compiledSelectors[selector] &&
@@ -1130,41 +1130,37 @@ NW.Dom = (function(global) {
         if (elements) {
           switch (elements.length) {
             case 0:
-              return data || [ ];
+              return [ ];
 
             case 1:
               element = elements[0];
               callback && callback(element);
-              (data || (data = [ ]))[data.length] = element;
-              return data;
+              return [ element ];
 
             default:
               if (callback)
-                return concatCall(data || [ ], elements, callback);
+                return concatCall([ ], elements, callback);
               return NATIVE_SLICE_PROTO ?
-                (data && data.slice || slice).call(elements, 0) :
-                concatList(data || [ ], elements);
+                slice.call(elements, 0) :
+                concatList([ ], elements);
           }
         }
       }
 
       // fall back to NWMatcher select
-      return client_api(selector, from, data, callback);
+      return client_api(selector, from, callback);
     },
 
   // select elements matching selector
   // version using cross-browser client API
   // @return array
   client_api =
-    function client_api(selector, from, data, callback) {
+    function client_api(selector, from, callback) {
 
-      var Contexts, Results, className, compiled, element, elements,
-       hasChanged, isCacheable, isSingle, now, parts, token,
+      var Contexts, Results, className, compiled, data, element,
+       elements, hasChanged, isCacheable, isSingle, now, parts, token,
        concat = callback ? concatCall : concatList,
        original = selector;
-
-      // storage setup
-      data || (data = [ ]);
 
       // ensure context is set
       from || (from = context);
@@ -1215,17 +1211,20 @@ NW.Dom = (function(global) {
         switch (selector.charAt(0)) {
           case '#':
             if ((element = byId(selector.slice(1), from))) {
-              data[data.length] = element;
+              data = [ element ];
               callback && callback(element);
+            } else {
+              data = [ ];
             }
             break;
 
           case '.':
-            concat(data, byClass(selector.slice(1), from), callback);
+            data = byClass(selector.slice(1), from);
+            callback && forEachCall(data, callback);
             break;
 
           default:
-            concat(data, byTag(selector, from), callback);
+            data = concat([ ], byTag(selector, from), callback);
             break;
         }
 
@@ -1249,7 +1248,7 @@ NW.Dom = (function(global) {
         }
         else {
           emit('DOMException: "' + selector + '" is not a valid CSS selector.');
-          return data;
+          return [ ];
         }
       }
 
@@ -1281,11 +1280,12 @@ NW.Dom = (function(global) {
 
           if ((element = byId(token, context))) {
             if (match(element, selector)) {
-              data[data.length] = element;
+              data = [ element ];
               callback && callback(element);
             }
           }
 
+          data || (data = [ ]);
           if (isCacheable) {
             Contexts[original] =
             Contexts[selector] = from;
@@ -1300,14 +1300,14 @@ NW.Dom = (function(global) {
             (token = parts[parts.length - 1])) {
           elements = byClass(token, from);
           if (selector == '.' + token) {
-            concat(data, elements, callback);
+            callback && forEachCall(elements, callback);
             if (isCacheable) {
               Contexts[original] =
               Contexts[selector] = from;
               Results[original]  =
-              Results[selector]  = data;
+              Results[selector]  = elements;
             }
-            return data;
+            return elements;
           }
         }
 
@@ -1316,7 +1316,7 @@ NW.Dom = (function(global) {
             (token = parts[parts.length - 1]) && NATIVE_GEBTN) {
           elements = byTag(token, from);
           if (selector == token) {
-            concat(data, elements, callback);
+            data = concat([ ], elements, callback);
             if (isCacheable) {
               Contexts[original] =
               Contexts[selector] = from;
@@ -1360,6 +1360,7 @@ NW.Dom = (function(global) {
                 break;
             }
           } else if (selector.indexOf(':not') < 0) {
+            data = [ ];
             if (isCacheable) {
               Contexts[original] =
               Contexts[selector] = from;
@@ -1384,7 +1385,7 @@ NW.Dom = (function(global) {
         compiledSelectors[selector] = compileGroup(selector, '', true);
       }
 
-      data = compiledSelectors[selector](elements, snap, data, base, root, from, callback);
+      data = compiledSelectors[selector](elements, snap, [ ], base, root, from, callback);
 
       if (isCacheable) {
         // a cached result set for the requested selector

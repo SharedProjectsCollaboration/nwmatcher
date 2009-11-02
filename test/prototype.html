@@ -105,7 +105,7 @@
 
       function $$() {
         var selector = slice.call(arguments, 0).join(', '), results = [ ];
-        NW.Dom.select(selector, document, null,
+        NW.Dom.select(selector, document,
           function(element) { results.push(Element.extend(element)); });
         return results;
       }

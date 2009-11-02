@@ -1,3 +1,5 @@
+* Remove the `data` argument from NW.Dom.select() because the same functionality can be achieved by the `callback` argument. [jddalton]
+
 * Tweak the `reUnnormalized` regexp and make `RE_BUGGY_MUTATION` match `:disabled` and `:checked`. [jddalton]
 
 * Make match() only process elements that have a `ownerDocument` property to avoid the document object. [jddalton]
