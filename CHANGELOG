@@ -1,3 +1,5 @@
+* Make the cache pause timeout equal to the `minCacheRest`. [jddalton]
+
 * Optimize client_api() by avoiding unnecessary property lookups and assignments. [jddalton]
 
 * Optimize compileSelector() by reducing property lookups in the while loop. [jddalton]

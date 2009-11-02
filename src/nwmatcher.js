@@ -1084,7 +1084,7 @@ NW.Dom = (function(global) {
           if ((now - lastCalled) < minCacheRest) {
             isCachingPaused =
               (base.snapshot = new Snapshot).isExpired = true;
-            setTimeout(function() { isCachingPaused = false; }, 10);
+            setTimeout(function() { isCachingPaused = false; }, minCacheRest);
           } else setCache(true, base);
           snap = base.snapshot;
           lastCalled = now;
