@@ -1091,12 +1091,12 @@ NW.Dom = (function(global) {
   // @return array
   select_qsa =
     function (selector, from, data, callback) {
+      var element, elements;
 
-      var elements;
-
-      if (!reSimpleSelector.test(selector) &&
-          (!from || QSA_NODE_TYPES[from.nodeType]) &&
-          !BUGGY_QSAPI.test(selector)) {
+      if (!compiledSelectors[selector] &&
+          !reSimpleSelector.test(selector) &&
+          !BUGGY_QSAPI.test(selector) &&
+          (!from || QSA_NODE_TYPES[from.nodeType])) {
         try {
           elements = (from || context).querySelectorAll(selector);
           if (elements.length == 1) {
