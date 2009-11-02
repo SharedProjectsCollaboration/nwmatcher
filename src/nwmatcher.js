@@ -66,11 +66,11 @@ NW.Dom = (function(global) {
 
   strMultiSpace = '\\x20{2,}',
 
-  reClassValue  = /([-\w]+)/,
-  reDescendants = /[^> \w]/,
-  reIdSelector  = /^\#[-\w]+$/,
-  reSiblings    = /[^+~\w]/,
-  reWhitespace  = /[\x20\t\n\r\f]/,
+  reClassValue   = /([-\w]+)/,
+  reDescendants  = /[^> \w]/,
+  reIdSelector   = /^\#[-\w]+$/,
+  reSiblings     = /[^+~\w]/,
+  reUnNormalized = /(?:[\t\n\r\f]|\x20{2,})/,
 
   // matches simple id, tagname & classname selectors
   reSimpleSelector = /^[.#]?[-\w]+$/,
@@ -1086,7 +1086,7 @@ NW.Dom = (function(global) {
       if (!(compiled = compiledMatchers[original])) {
         if (reValidator.test(selector)) {
           // remove extraneous whitespace
-          if (reWhitespace.test(selector))
+          if (reUnNormalized.test(selector))
             selector = normalize(selector);
 
           // save compiled matchers
@@ -1238,7 +1238,7 @@ NW.Dom = (function(global) {
           lastSelector = selector;
 
           // remove extraneous whitespace
-          if (reWhitespace.test(selector))
+          if (reUnNormalized.test(selector))
             selector = normalize(selector);
         }
         else {

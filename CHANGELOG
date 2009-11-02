@@ -1,3 +1,5 @@
+* Only normalize selectors that contain edge case whitespace like \t, \n , \r, \f and consecutive spaces. [jddalton]
+
 * Reorganize the definition order of some of the feature test flags. [jddalton]
 
 * Make compileSelector() handle attribute case sensitivity properly. [jddalton]
