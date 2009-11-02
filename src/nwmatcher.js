@@ -805,7 +805,8 @@ NW.Dom = (function(global) {
         }
 
         // *** Class selector
-        // .Foo Class (case sensitive)
+        // .Foo Class
+        // case sensitivity is treated differently depending on the document type (see map)
         else if ((match = selector.match(ptnClassName))) {
           // W3C CSS3 specs: element whose "class" attribute has been assigned a
           // list of whitespace-separated values, see section 6.4 Class selectors
@@ -821,20 +822,22 @@ NW.Dom = (function(global) {
         // [attr] [attr=value] [attr="value"] [attr='value'] and !=, *=, ~=, |=, ^=, $=
         // case sensitivity is treated differently depending on the document type (see map)
         else if ((match = selector.match(ptnAttribute))) {
-          // xml namespaced attribute ?
-          expr = match[1].split(':');
-          expr = expr.length == 2 ? expr[1] : expr[0] + '';
-
           // check case treatment from INSENSITIVE_TABLE
-          if (match[4] && INSENSITIVE_TABLE[expr.toLowerCase()]) {
-            match[4] = match[4].toLowerCase();
-          }
+          if (match[2]) {
+            // xml namespaced attribute ?
+            expr = match[1].split(':');
+            expr = expr.length == 2 ? expr[1] : expr[0] + '';
+            isLowered = INSENSITIVE_TABLE[expr.toLowerCase()];
 
-          source = (match[2] ? 'n=s.getAttribute(e,"' + match[1] + '");' : '') +
-            'if(' + (match[2] ? Operators[match[2]].replace(/\%p/g, 'n' +
-              (expr ? '' : '.toLowerCase()')).replace(/\%m/g, match[4]) :
-              's.hasAttribute(e,"' + match[1] + '")') +
-            '){' + source + '}';
+            source = 'n=s.getAttribute(e,"' + match[1] + '");' +
+              'if(' + Operators[match[2]].replace(/\%p/g, 'n' +
+                (isLowered ? '.toLowerCase()' : ''))
+                .replace(/\%m/g, isLowered ? match[4].toLowerCase() : match[4]) +
+              '){' + source + '}';
+          }
+          else {
+            source = 'if(s.hasAttribute(e,"' + match[1] + '")){' + source + '}';
+          }
         }
 
         // *** Adjacent sibling combinator
