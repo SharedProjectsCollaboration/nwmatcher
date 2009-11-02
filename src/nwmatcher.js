@@ -209,62 +209,13 @@ NW.Dom = (function(global) {
   // NOTE: NATIVE_XXXXX check for existance of method only
   // so through the code read it as "supported", maybe BUGGY
 
-  // supports the new traversal API
-  NATIVE_TRAVERSAL_API =
-    'nextElementSibling' in root &&
-    'previousElementSibling' in root,
-
-  // detect native getAttribute/hasAttribute methods,
-  // frameworks extend these to elements, but it seems
-  // this does not work for XML namespaced attributes,
-  // used to check both getAttribute/hasAttribute in IE
-  NATIVE_HAS_ATTRIBUTE = isNative(root, 'hasAttribute'),
-
   // detect if DOM methods are native in browsers
-  NATIVE_QSAPI = isNative(context, 'querySelector'),
   NATIVE_GEBID = isNative(context, 'getElementById'),
-  NATIVE_GEBTN = isNative(root,    'getElementsByTagName'),
   NATIVE_GEBCN = isNative(root,    'getElementsByClassName'),
-
-  // nodeList can be converted by native .slice()
-  // Opera 9.27 and an id="length" will fold this
-  NATIVE_SLICE_PROTO =
-    (function() {
-      try {
-        div.innerHTML = '<div id="length"></div>';
-        root.insertBefore(div, root.firstChild);
-        isSupported = !!slice.call(div.childNodes, 0)[0];
-      } catch(e) { }
-
-      root.removeChild(div);
-      return !!isSupported;
-    })(),
+  NATIVE_GEBTN = isNative(root,    'getElementsByTagName'),
+  NATIVE_QSAPI = isNative(context, 'querySelector'),
 
   RE_BUGGY_MUTATION = testTrue,
-
-  // check for Mutation Events, DOMAttrModified should be
-  // enough to ensure DOMNodeInserted/DOMNodeRemoved exist
-  NATIVE_MUTATION_EVENTS = root.addEventListener ?
-    (function() {
-      function testSupport(attr, value) {
-        // add listener and modify attribute
-        var result, handler = function() { result = true; };
-        input.addEventListener('DOMAttrModified', handler, false);
-        input[attr] = value;
-        // cleanup
-        input.removeEventListener('DOMAttrModified', handler, false);
-        handler = null;
-        return !!result;
-      }
-
-      var input = document.createElement('input');
-      if ((isSupported = testSupport('id', 'x'))) {
-        RE_BUGGY_MUTATION = testSupport('disabled', true) ? testFalse :
-          /\[(?:checked|disabled)/i;
-      }
-      return isSupported;
-    })() :
-    false,
 
   // check Seletor API implementations
   RE_BUGGY_QSAPI = NATIVE_QSAPI ?
@@ -303,6 +254,58 @@ NW.Dom = (function(global) {
         testFalse;
     })() :
     testTrue,
+
+
+  // detect native getAttribute/hasAttribute methods,
+  // frameworks extend these to elements, but it seems
+  // this does not work for XML namespaced attributes,
+  // used to check both getAttribute/hasAttribute in IE
+  NATIVE_HAS_ATTRIBUTE = isNative(root, 'hasAttribute'),
+
+  // check for Mutation Events, DOMAttrModified should be
+  // enough to ensure DOMNodeInserted/DOMNodeRemoved exist
+  NATIVE_MUTATION_EVENTS = root.addEventListener ?
+    (function() {
+      function testSupport(attr, value) {
+        // add listener and modify attribute
+        var result, handler = function() { result = true; };
+        input.addEventListener('DOMAttrModified', handler, false);
+        input[attr] = value;
+        // cleanup
+        input.removeEventListener('DOMAttrModified', handler, false);
+        handler = null;
+        return !!result;
+      }
+
+      var input = document.createElement('input');
+      if ((isSupported = testSupport('id', 'x'))) {
+        RE_BUGGY_MUTATION = testSupport('disabled', true) ? testFalse :
+          /\[(?:checked|disabled)/i;
+      }
+      return isSupported;
+    })() :
+    false,
+
+  // nodeList can be converted by native .slice()
+  // Opera 9.27 and an id="length" will fold this
+  NATIVE_SLICE_PROTO =
+    (function() {
+      try {
+        div.innerHTML = '<div id="length"></div>';
+        root.insertBefore(div, root.firstChild);
+        isSupported = !!slice.call(div.childNodes, 0)[0];
+      } catch(e) { }
+
+      root.removeChild(div);
+
+      return !!isSupported;
+    })(),
+
+  // supports the new traversal API
+  NATIVE_TRAVERSAL_API =
+    'nextElementSibling' in root &&
+    'previousElementSibling' in root,
+
 
   // NOTE: BUGGY_XXXXX check both for existance and no known bugs.
 

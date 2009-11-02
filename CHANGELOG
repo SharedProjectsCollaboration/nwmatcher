@@ -1,3 +1,5 @@
+* Reorganize the definition order of some of the feature test flags. [jddalton]
+
 * Make compileSelector() handle attribute case sensitivity properly. [jddalton]
 
 * Make INSENSITIVE_TABLE defined by feature test instead of docType sniff because many pages are sent with the wrong mime type causing XHTML to be processed as invalid HTML. [jddalton]
