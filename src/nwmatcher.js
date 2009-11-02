@@ -220,7 +220,7 @@ NW.Dom = (function(global) {
   // check Seletor API implementations
   RE_BUGGY_QSAPI = NATIVE_QSAPI ?
     (function() {
-      var pattern = [ '!=', ':contains', ':selected' ];
+      var pattern = [ ];
 
       // WebKit treats case insensitivity correctly with classNames (when no DOCTYPE)
       // obsolete bug https://bugs.webkit.org/show_bug.cgi?id=19047
@@ -513,7 +513,7 @@ NW.Dom = (function(global) {
   concatList =
     function(listout, listin) {
       var element, i = -1, pad = listout.length;
-      // if (!pad && Array.slice) return Array.slice(listin);
+      if (!pad && Array.slice) return Array.slice(listin);
       while (element = listin[++i]) listout[pad + i] = element;
       return listout;
     },

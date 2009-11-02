@@ -1,3 +1,5 @@
+* Simplify the `RE_BUGGY_QSAPI` regexp and allow FF to use Array.slice() in concatList(). [jddalton]
+
 * Rename `reSimpleSelector` to `RE_SIMPLE_SELECTOR` and fork to optimize the regexp for IE. [jddalton]
 
 * Remove the `data` argument from NW.Dom.select() because the same functionality can be achieved by the `callback` argument. [jddalton]
