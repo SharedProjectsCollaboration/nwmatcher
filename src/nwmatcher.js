@@ -30,15 +30,11 @@ NW.Dom = (function(global) {
   // context root element (HTML)
   root = context.documentElement,
 
-  // current DOM viewport/window, also used to
-  // detect Safari 2.0.x [object AbstractView]
-  view = base.defaultView || base.parentWindow,
-
   // temporary vars
   isSupported, isBuggy, div = context.createElement('DiV'),
 
   // private storage vars
-  lastSelector, lastContext, lastCalled, lastSlice,
+  lastCalled, lastSelector, lastSlice, lastContext = context,
 
   // used in the RE_BUGGY_XXXXX regexp testers
   testFalse = { 'test': function() { return false; } },
@@ -795,7 +791,6 @@ NW.Dom = (function(global) {
        k = 0;
 
       while (selector) {
-
         // *** Universal selector
         // * match all (empty block, do not remove)
         if ((match = selector.match(ptnUniversal))) {
