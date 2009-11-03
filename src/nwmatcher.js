@@ -667,7 +667,7 @@ NW.Dom = (function(global) {
       while ((element = elements[++i])) {
         if ((cn = element.className).length &&
             (' ' + (isClassNameLowered ? cn.toLowerCase() : cn) + ' ')
-            .replace(/[\t\n\r\f]/g, ' ').indexOf(className) > -1) {
+            .replace(reEdgeSpaces, ' ').indexOf(className) > -1) {
           results[++j] = element;
         }
       }
