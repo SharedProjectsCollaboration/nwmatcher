@@ -1123,6 +1123,34 @@ NW.Dom = (function(global) {
       return compiled(element, snap, base, root, from || base, callback);
     },
 
+  native_api =
+    function(selector, from, callback) {
+      var data, element;
+      switch (selector.charAt(0)) {
+        case '#':
+          if ((element = byId(selector.slice(1), from || context))) {
+          // if ((element = (from || context).getElementById(selector.slice(1)))) {
+            data = [ element ];
+            callback && callback(element);
+          } else {
+            data = [ ];
+          }
+          break;
+
+        case '.':
+          data = byClass(selector.slice(1), from || context);
+          callback && forEachCall(data, callback);
+          break;
+
+        default:
+          data = callback
+            ? concatCall([ ], byTag(selector, from || context), callback)
+            : concatList([ ], byTag(selector, from || context));
+          break;
+      }
+      return data;
+    },
+
   // select elements matching selector
   // version using new Selector API
   // @return array
@@ -1130,8 +1158,10 @@ NW.Dom = (function(global) {
     function (selector, from, callback) {
       var element, elements;
 
-      if (!RE_SIMPLE_SELECTOR.test(selector) &&
-          !compiledSelectors[selector] &&
+      if (RE_SIMPLE_SELECTOR.test(selector)) {
+        return native_api(selector, from, callback);
+      }
+      if (!compiledSelectors[selector] &&
           !RE_BUGGY_QSAPI.test(selector) &&
           (!from || QSA_NODE_TYPES[from.nodeType])) {
         try {
@@ -1167,15 +1197,15 @@ NW.Dom = (function(global) {
   // @return array
   client_api =
     function client_api(selector, from, callback) {
-
       var Contexts, Results, className, compiled, data, element,
-       elements, hasChanged, isCacheable, isSingle, now, parts, token,
-       original = selector;
+       elements, hasChanged, isCacheable, isSingle, now, parts, token;
 
-      // ensure context is set
-      from || (from = context);
+      if (RE_SIMPLE_SELECTOR.test(selector)) {
+        return native_api(selector, from, callback);
+      }
 
       // extract context if changed
+      from || (from = context);
       if (lastContext != from) {
         // save passed context
         lastContext = from;
@@ -1183,11 +1213,11 @@ NW.Dom = (function(global) {
         root = (base = from.ownerDocument || from).documentElement;
       }
 
+      // avoid caching disconnected nodes
       isCacheable = isCachingEnabled && !isCachingPaused &&
         !RE_BUGGY_MUTATION.test(selector) &&
         !(from != base && isDisconnected(from, root));
 
-      // avoid caching disconnected nodes
       if (isCacheable) {
         snap = base.snapshot;
         // valid base context storage
@@ -1214,40 +1244,8 @@ NW.Dom = (function(global) {
         Results  = snap.Results;
       }
 
-      // use optimized fork for simple selector
-      if (RE_SIMPLE_SELECTOR.test(selector)) {
-        switch (selector.charAt(0)) {
-          case '#':
-            if ((element = byId(selector.slice(1), from))) {
-            // if ((element = (from || context).getElementById(selector.slice(1)))) {
-              data = [ element ];
-              callback && callback(element);
-            } else {
-              data = [ ];
-            }
-            break;
-
-          case '.':
-            data = byClass(selector.slice(1), from);
-            callback && forEachCall(data, callback);
-            break;
-
-          default:
-            data = callback
-              ? concatCall([ ], byTag(selector, from), callback)
-              : concatList([ ], byTag(selector, from));
-            break;
-        }
-
-        if (isCacheable) {
-          Contexts[selector] = from;
-          Results[selector]  = data;
-        }
-        return data;
-      }
-
-      // pre-filtering pass allow to scale proportionally with big DOM trees
-
+      // normalize and validate selector
+      original = selector;
       if ((hasChanged = lastSelector != selector)) {
         // process valid selector strings
         if (reValidator.test(selector)) {
@@ -1268,6 +1266,9 @@ NW.Dom = (function(global) {
       // re-initialize indexes
       childIndexes = { };
       childIndexesByTag = { };
+      
+
+      /* pre-filtering pass allow to scale proportionally with big DOM trees */
 
       // commas separators are treated sequentially to maintain order
       if ((isSingle = selector.match(reSplitGroup).length < 2)) {
@@ -1390,7 +1391,7 @@ NW.Dom = (function(global) {
         if (!elements || !elements.length)
           elements = from.getElementsByTagName('*');
       }
-      // end of prefiltering pass
+      /* end of prefiltering pass */
 
       // save compiled selectors
       if ((compiled = compiledSelectors[selector])) {
