@@ -1,3 +1,5 @@
+* Remove the `r` argument from the compiled selectors and make match() support a callback argument. [jddalton]
+
 * Make getChildIndexes() and getChildIndexesByTag() use do-while loops. [jddalton]
 
 * Rename getChildrenIndex() and getChildrenIndexByTag() to getChildIndexes() and getChildIndexesByTag(). [jddalton]

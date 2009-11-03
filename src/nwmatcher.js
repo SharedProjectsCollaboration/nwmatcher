@@ -717,9 +717,6 @@ NW.Dom = (function(global) {
 
   // conditionals optimizers for the compiler
 
-  // do not change this, it is searched & replaced
-  ACCEPT_NODE = 'f&&f(N);r[r.length]=N;continue main;',
-
   // checks if nodeName comparisons need to be upperCased
   NODE_NAME_TO_UPPER_CASE =
     typeof context.createElementNS == 'function' ? '.toUpperCase()' : '',
@@ -752,19 +749,27 @@ NW.Dom = (function(global) {
         // for each selector in the group
         while ((token = parts[++i])) {
           // avoid repeating the same token in comma separated group (p, p)
-          if (!seen[token]) source += 'e=N;' + compileSelector(token, mode ? ACCEPT_NODE : 'return true;');
-          seen[token] = true;
+          if (!seen[token]) {
+            seen[token] = true;
+            source += 'e=N;' + compileSelector(token, mode
+              ? 'f&&f(N);r[r.length]=N;continue main;'
+              : 'f&&f(N);return true;');
+          }
         }
       }
+
+      // for select method
       if (mode) {
-        // for select method
-        return new Function('c,s,r,d,h,g,f',
-          'var n,N,x=0,k=0,e;main:while(N=e=c[k++]){' +
+        // (c-ollection, s-napshot, d-ocument, h-root, g-from, f-callback) 
+        return new Function('c,s,d,h,g,f',
+          'var e,n,N,r=[],x=0,k=0;main:while(N=e=c[k++]){' +
           SKIP_COMMENTS + source + '}return r;');
-      } else {
-        // for match method
-        return new Function('e,s,r,d,h,g,f',
-          'var n,N,x=0;N=e;' + source + 'return false;');
+      }
+      // for match method
+      else {
+        // (e-element, s-napshot, d-ocument, h-root, g-from, f-callback) 
+        return new Function('e,s,d,h,g,f',
+          'var n,N=e,x=0;' + source + 'return false;');
       }
     },
 
@@ -1087,7 +1092,7 @@ NW.Dom = (function(global) {
   // match element with selector
   // @return boolean
   match =
-    function(element, selector, from) {
+    function(element, selector, from, callback) {
       // make sure an element node was passed
       var compiled, original = selector;
       base = element.ownerDocument;
@@ -1115,7 +1120,7 @@ NW.Dom = (function(global) {
           return false;
         }
       }
-      return compiled(element, snap, base, root, from || base);
+      return compiled(element, snap, base, root, from || base, callback);
     },
 
   // select elements matching selector
@@ -1396,7 +1401,7 @@ NW.Dom = (function(global) {
         compiledSelectors[selector] = compileGroup(selector, '', true);
       }
 
-      data = compiledSelectors[selector](elements, snap, [ ], base, root, from, callback);
+      data = compiledSelectors[selector](elements, snap, base, root, from, callback);
 
       if (isCacheable) {
         // a cached result set for the requested selector
@@ -1604,7 +1609,7 @@ NW.Dom = (function(global) {
 
     'compile':
       function(selector, mode) {
-        return String(compileGroup(normalize(selector), '', mode || false));
+        return String(compileGroup(normalize(selector), '', mode));
       }
   };
 })(this);
