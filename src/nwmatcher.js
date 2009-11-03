@@ -648,10 +648,11 @@ NW.Dom = (function(global) {
     },
 
   // elements by class
-  // @return array
+  // @return nodeList (native GEBCN)
+  // @return array (non native GEBCN)
   byClass = !BUGGY_GEBCN ?
     function(className, from) {
-      return slice.call(from.getElementsByClassName(className.replace(/\\/g, '')), 0);
+      return from.getElementsByClassName(className.replace(/\\/g, ''));
     } :
     function(className, from) {
       // context is handled in byTag for non native gEBCN
@@ -1134,7 +1135,11 @@ NW.Dom = (function(global) {
 
         case '.':
           data = byClass(selector.slice(1), from || context);
-          callback && forEachCall(data, callback);
+          if (BUGGY_GEBCN) {
+            data = callback ? concatCall([ ], data, callback) : concatList([ ], data);
+          } else {
+            callback && forEachCall(data, callback);
+          }
           break;
 
         default:
@@ -1309,7 +1314,12 @@ NW.Dom = (function(global) {
             (token = parts[parts.length - 1])) {
           elements = byClass(token, from);
           if (selector == '.' + token) {
-            callback && forEachCall(elements, callback);
+            if (BUGGY_GEBCN) {
+              elements = callback ? concatCall([ ], elements, callback) : concatList([ ], elements);
+            } else {
+              callback && forEachCall(elements, callback);
+            }
+
             if (isCacheable) {
               Contexts[original] =
               Contexts[selector] = from;
@@ -1560,7 +1570,16 @@ NW.Dom = (function(global) {
     'byName': byName,
 
     // retrieve elements by class name
-    'byClass': byClass,
+    'byClass': BUGGY_GEBCN ? byClass :
+      function(className, from) {
+        return slice.call(byClass(className, from), 0);
+      },
+
+    // for testing purposes only
+    'compile':
+      function(selector, mode) {
+        return String(compileGroup(normalize(selector), '', mode));
+      },
 
     // forced expire of DOM tree cache
     'expireCache': expireCache,
@@ -1575,6 +1594,9 @@ NW.Dom = (function(global) {
 
     // element match selector, return boolean true/false
     'match': match,
+
+    // for testing purposes only
+    'normalize': normalize,
 
     // add selector patterns for user defined callbacks
     'registerSelector':
@@ -1598,14 +1620,6 @@ NW.Dom = (function(global) {
     'select': select,
 
     // enable/disable cache
-    'setCache': setCache,
-
-    // for testing purposes only
-    'normalize': normalize,
-
-    'compile':
-      function(selector, mode) {
-        return String(compileGroup(normalize(selector), '', mode));
-      }
+    'setCache': setCache
   };
 })(this);

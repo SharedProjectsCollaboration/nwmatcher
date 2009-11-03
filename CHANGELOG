@@ -1,3 +1,5 @@
+* Avoid unnecessarily converting the output of byClass() to an array. [jddalton]
+
 * Remove the unused `view` variable and assign `lastContext` a default value of `context`. [jddalton]
 
 * Add the native_api() method to handle simple selectors. [Diego Perini, jddalton]
