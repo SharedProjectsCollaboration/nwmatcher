@@ -46,8 +46,6 @@
 
 * Avoid using querySelectorAll() if a compiled selector exists. [jddalton]
 
-* Remove the unnecessary `from` argument from the match() method. [jddalton]
-
 * Make the match() method utilize the compiled cache better. [jddalton]
 
 * Ensure the match() method validates the selector. [jddalton]
