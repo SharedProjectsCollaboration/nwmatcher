@@ -1,3 +1,9 @@
+* Make getChildIndexes() and getChildIndexesByTag() use do-while loops. [jddalton]
+
+* Rename getChildrenIndex() and getChildrenIndexByTag() to getChildIndexes() and getChildIndexesByTag(). [jddalton]
+
+* Rename caching vars `indexesByNodeType` and `indexesByNodeName` to `childIndexes` and `childIndexesByTag`. [jddalton]
+
 * Simplify the `RE_BUGGY_QSAPI` regexp and allow FF to use Array.slice() in concatList(). [jddalton]
 
 * Rename `reSimpleSelector` to `RE_SIMPLE_SELECTOR` and fork to optimize the regexp for IE. [jddalton]

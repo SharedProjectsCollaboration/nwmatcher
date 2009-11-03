@@ -547,44 +547,48 @@ NW.Dom = (function(global) {
 
   // children position by nodeType
   // @return number
-  getChildrenIndex =
+  getChildIndexes =
     function(element) {
-      var i = 0, indexes, node,
+      var indexes, node, i = 0,
         id = element[CSS_INDEX] || (element[CSS_INDEX] = ++CSS_ID);
-      if (!indexesByNodeType[id]) {
-        indexes = { };
-        node = element.firstChild;
-        while (node) {
-          if (node.nodeType == 1) {
-            indexes[node[CSS_INDEX] || (node[CSS_INDEX] = ++CSS_ID)] = ++i;
-          }
-          node = node.nextSibling;
+
+      if (!(indexes = childIndexes[id])) {
+        indexes =
+        childIndexes[id] = { };
+
+        if ((node = element.firstChild)) {
+          do {
+            if (node.nodeType == 1) {
+              indexes[node[CSS_INDEX] || (node[CSS_INDEX] = ++CSS_ID)] = ++i;
+            }
+          } while ((node = node.nextSibling));
         }
         indexes.length = i;
-        indexesByNodeType[id] = indexes;
       }
-      return indexesByNodeType[id];
+      return indexes;
     },
 
   // children position by nodeName
   // @return number
-  getChildrenIndexByTag =
+  getChildIndexesByTag =
     function(element, name) {
-      var i = 0, indexes, node,
+      var indexes, node, i = 0,
         id = element[CSS_INDEX] || (element[CSS_INDEX] = ++CSS_ID);
-      if (!indexesByNodeName[id]) {
-        indexes = { };
-        node = element.firstChild;
-        while (node) {
-          if (node.nodeName.toLowerCase() == name) {
-            indexes[node[CSS_INDEX] || (node[CSS_INDEX] = ++CSS_ID)] = ++i;
-          }
-          node = node.nextSibling;
+
+      if (!(indexes = childIndexesByTag[id])) {
+        indexes =
+        indexesByTag = { };
+
+        if ((node = element.firstChild)) {
+          do {
+            if (node.nodeName.toLowerCase() == name) {
+              indexes[node[CSS_INDEX] || (node[CSS_INDEX] = ++CSS_ID)] = ++i;
+            }
+          } while ((node = node.nextSibling));
         }
         indexes.length = i;
-        indexesByNodeName[id] = indexes;
       }
-      return indexesByNodeName[id];
+      return indexes;
     },
 
   getNextSibling = NATIVE_TRAVERSAL_API ?
@@ -945,7 +949,7 @@ NW.Dom = (function(global) {
                     '';
 
                 // 4 cases: 1 (nth) x 4 (child, of-type, last-child, last-of-type)
-                source = 'n=s.getChildrenIndex' + (match[4] ? 'ByTag' : '') +
+                source = 'n=s.getChildIndexes' + (match[4] ? 'ByTag' : '') +
                   '(e.parentNode' + (match[4] ? ',e.nodeName.toLowerCase()' : '') + ');' +
                   'if(n[e.' + CSS_INDEX + ']' + test + '){' + source + '}';
 
@@ -1257,8 +1261,8 @@ NW.Dom = (function(global) {
       }
 
       // re-initialize indexes
-      indexesByNodeType = { };
-      indexesByNodeName = { };
+      childIndexes = { };
+      childIndexesByTag = { };
 
       // commas separators are treated sequentially to maintain order
       if ((isSingle = selector.match(reSplitGroup).length < 2)) {
@@ -1431,9 +1435,9 @@ NW.Dom = (function(global) {
   minCacheRest = 15, //ms
 
   // ordinal position by nodeType or nodeName
-  indexesByNodeType = { },
+  childIndexes = { },
 
-  indexesByNodeName = { },
+  childIndexesByTag = { },
 
   // compiled select functions returning collections
   compiledSelectors = { },
@@ -1467,8 +1471,8 @@ NW.Dom = (function(global) {
       'hasAttribute': hasAttribute,
 
       // element indexing methods
-      'getChildrenIndex':      getChildrenIndex,
-      'getChildrenIndexByTag': getChildrenIndexByTag,
+      'getChildIndexes':      getChildIndexes,
+      'getChildIndexesByTag': getChildIndexesByTag,
 
       // selection/matching
       'select': select,
