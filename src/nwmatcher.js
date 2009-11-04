@@ -576,8 +576,9 @@ NW.Dom = (function(global) {
         indexesByTag = { };
 
         if ((node = element.firstChild)) {
+          name = name.toUpperCase();
           do {
-            if (node.nodeName.toLowerCase() == name) {
+            if (node.nodeName.toUpperCase() == name) {
               indexes[node[CSS_INDEX] || (node[CSS_INDEX] = ++CSS_ID)] = ++i;
             }
           } while ((node = node.nextSibling));
@@ -951,7 +952,7 @@ NW.Dom = (function(global) {
 
                 // 4 cases: 1 (nth) x 4 (child, of-type, last-child, last-of-type)
                 source = 'n=s.getChildIndexes' + (match[4] ? 'ByTag' : '') +
-                  '(e.parentNode' + (match[4] ? ',e.nodeName.toLowerCase()' : '') + ');' +
+                  '(e.parentNode' + (match[4] ? ',e.nodeName' : '') + ');' +
                   'if(n[e.' + CSS_INDEX + ']' + test + '){' + source + '}';
 
               } else {
