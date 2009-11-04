@@ -1126,29 +1126,26 @@ NW.Dom = (function(global) {
         case '#':
           if ((element = byId(selector.slice(1), from || context))) {
           // if ((element = (from || context).getElementById(selector.slice(1)))) {
-            data = [ element ];
             callback && callback(element);
+            return [ element ];
           } else {
-            data = [ ];
+            return [ ];
           }
-          break;
 
         case '.':
           data = byClass(selector.slice(1), from || context);
           if (BUGGY_GEBCN) {
-            data = callback ? concatCall([ ], data, callback) : concatList([ ], data);
+            return callback ? concatCall([ ], data, callback) : concatList([ ], data);
           } else {
             callback && forEachCall(data, callback);
+            return data;
           }
-          break;
 
         default:
-          data = callback
+          return callback
             ? concatCall([ ], byTag(selector, from || context), callback)
             : concatList([ ], byTag(selector, from || context));
-          break;
       }
-      return data;
     },
 
   // select elements matching selector
@@ -1313,40 +1310,12 @@ NW.Dom = (function(global) {
         else if ((parts = lastSlice.match(Optimize.className)) &&
             (token = parts[parts.length - 1])) {
           elements = byClass(token, from);
-          if (selector == '.' + token) {
-            if (BUGGY_GEBCN) {
-              elements = callback ? concatCall([ ], elements, callback) : concatList([ ], elements);
-            } else {
-              callback && forEachCall(elements, callback);
-            }
-
-            if (isCacheable) {
-              Contexts[original] =
-              Contexts[selector] = from;
-              Results[original]  =
-              Results[selector]  = elements;
-            }
-            return elements;
-          }
         }
 
         // TAG optimization RTL
         else if ((parts = lastSlice.match(Optimize.tagName)) &&
             (token = parts[parts.length - 1]) && NATIVE_GEBTN) {
           elements = byTag(token, from);
-          if (selector == token) {
-            data = callback
-              ? concatCall([ ], elements, callback)
-              : concatList([ ], elements, callback);
-
-            if (isCacheable) {
-              Contexts[original] =
-              Contexts[selector] = from;
-              Results[original]  =
-              Results[selector]  = data;
-            }
-            return data;
-          }
         }
       }
 
@@ -1377,9 +1346,6 @@ NW.Dom = (function(global) {
               case '+':
                 element = getNextSibling(element);
                 elements = element ? [ element ] : [ ];
-                break;
-              default:
-                break;
             }
           } else if (selector.indexOf(':not') < 0) {
             data = [ ];
@@ -1407,7 +1373,7 @@ NW.Dom = (function(global) {
         compiledSelectors[selector] = compileGroup(selector, '', true);
       }
 
-      data = compiledSelectors[selector](elements, snap, base, root, from, callback);
+      data = compiled(elements, snap, base, root, from, callback);
 
       if (isCacheable) {
         // a cached result set for the requested selector
