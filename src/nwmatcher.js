@@ -1285,32 +1285,31 @@ NW.Dom = (function(global) {
               token == getAttribute(element, 'id')) {
             from = element.parentNode;
           }
-        }
 
-        // ID optimization RTL
-        if ((parts = lastSlice.match(Optimize.id)) &&
-            (token = parts[parts.length - 1])) {
+          // ID optimization RTL
+          if ((parts = lastSlice.match(Optimize.id)) &&
+              (token = parts[parts.length - 1])) {
 
-          if ((element = byId(token, context))) {
-            if (match(element, selector)) {
-              data = [ element ];
-              callback && callback(element);
+            if ((element = byId(token, context))) {
+              if (match(element, selector)) {
+                data = [ element ];
+                callback && callback(element);
+              }
             }
+  
+            if (isCacheable) {
+              Contexts[original] =
+              Contexts[selector] = from;
+              return (
+                Results[original]  =
+                Results[selector]  = data || [ ]);
+            }
+            return data || [ ];
           }
-
-          if (isCacheable) {
-            Contexts[original] =
-            Contexts[selector] = from;
-
-            return (
-              Results[original]  =
-              Results[selector]  = data || [ ]);
-          }
-          return data || [ ];
         }
 
         // CLASS optimization RTL
-        else if ((parts = lastSlice.match(Optimize.className)) &&
+        if ((parts = lastSlice.match(Optimize.className)) &&
             (token = parts[parts.length - 1])) {
           elements = byClass(token, from);
         }
@@ -1351,14 +1350,14 @@ NW.Dom = (function(global) {
                 elements = element ? [ element ] : [ ];
             }
           } else if (selector.indexOf(':not') < 0) {
-            data = [ ];
             if (isCacheable) {
               Contexts[original] =
               Contexts[selector] = from;
-              Results[original]  =
-              Results[selector]  = data;
+              return (
+                Results[original]  =
+                Results[selector]  = [ ]);
             }
-            return data;
+            return [ ];
           }
         }
 
@@ -1382,7 +1381,6 @@ NW.Dom = (function(global) {
         // a cached result set for the requested selector
         Contexts[original] =
         Contexts[selector] = from;
-
         return (
           Results[original] =
           Results[selector] = data);
