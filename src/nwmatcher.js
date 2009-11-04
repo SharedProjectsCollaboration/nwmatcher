@@ -606,7 +606,7 @@ NW.Dom = (function(global) {
     } :
     function(element, attribute) {
       // specific URI attributes (parameter 2 to fix IE bug)
-      if (ATTRIBUTES_URI[attribute.toLowerCase()]) {
+      if (ATTRIBUTES_URI[attribute]) {
         return element.getAttribute(attribute, 2) + '';
       }
       var node = element.getAttributeNode(attribute);

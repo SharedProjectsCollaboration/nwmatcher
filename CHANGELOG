@@ -1,3 +1,5 @@
+* Remove toLowerCase() call in getAttribute(). [jddalton]
+
 * Cleanup `switch` statements, reduce variable assignments in native_api(), and remove unused parts of ID/TAG optimizations in client_api(). [jddalton]
 
 * Avoid unnecessarily converting the output of byClass() to an array. [jddalton]
