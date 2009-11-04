@@ -1,3 +1,5 @@
+* Ensure the element returned by gEBID actually has the id in the `reduce selection context` block of client_api(). [jddalton]
+
 * Avoid name.toUpperCase() in getChildIndexesByTag() if possible. [jddalton]
 
 * Remove toLowerCase() call in getAttribute(). [jddalton]

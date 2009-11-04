@@ -1281,14 +1281,15 @@ NW.Dom = (function(global) {
 
         // reduce selection context
         if ((parts = selector.match(Optimize.id))) {
-          if ((element = context.getElementById(parts[1]))) {
+          if ((element = context.getElementById((token = parts[1]))) &&
+              token == getAttribute(element, 'id')) {
             from = element.parentNode;
           }
         }
 
         // ID optimization RTL
         if ((parts = lastSlice.match(Optimize.id)) &&
-            (token = parts[parts.length - 1]) && NATIVE_GEBID) {
+            (token = parts[parts.length - 1])) {
 
           if ((element = byId(token, context))) {
             if (match(element, selector)) {
@@ -1297,14 +1298,15 @@ NW.Dom = (function(global) {
             }
           }
 
-          data || (data = [ ]);
           if (isCacheable) {
             Contexts[original] =
             Contexts[selector] = from;
-            Results[original]  =
-            Results[selector]  = data;
+
+            return (
+              Results[original]  =
+              Results[selector]  = data || [ ]);
           }
-          return data;
+          return data || [ ];
         }
 
         // CLASS optimization RTL
