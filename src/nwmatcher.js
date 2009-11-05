@@ -453,7 +453,7 @@ NW.Dom = (function(global) {
   Optimize = {
     'id':        new RegExp("#"   + strEncoding + "|" + strSkipGroup),
     'className': new RegExp("\\." + strEncoding + "|" + strSkipGroup),
-    'tagName':   new RegExp("(?:^|\\x20)" + strEncoding + "|" + strSkipGroup)
+    'tagName':   new RegExp("(?:^|[>+~\\x20])" + strEncoding + "|" + strSkipGroup)
   },
 
   // precompiled Regular Expressions

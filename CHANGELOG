@@ -1,3 +1,5 @@
+* Refine `Optimize.tagName` to match more tagName selectors. [jddalton]
+
 * Ensure native_api() returns an array of results for className selectors instead of nodeLists. [jddalton]
 
 * Remove unnecessary grouping from `strSkipQuotes` and remove the `*` from the end of the `Optimize` regexps. [jddalton] 
