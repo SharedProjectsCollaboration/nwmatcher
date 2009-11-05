@@ -52,7 +52,7 @@ NW.Dom = (function(global) {
   strSkipGroup = '(?:\\[.*\\]|\\(.*\\))',
 
   // used to skip "..." or '...' quoted attribute values
-  strSkipQuotes = '(?:(?:"(?:(?=\\\\?)\\\\?(?:\\n|\\r|.))*?")|(?:\'(?:(?=\\\\?)\\\\?(?:\\n|\\r|.))*?\'))',
+  strSkipQuotes = '(?:"(?:(?=\\\\?)\\\\?(?:\\n|\\r|.))*?"|\'(?:(?=\\\\?)\\\\?(?:\\n|\\r|.))*?\')',
 
   strLeadingSpace = '\\x20+([\\]\\)=>+~,^$|!]|\\*=)',
 
@@ -451,9 +451,9 @@ NW.Dom = (function(global) {
 
   // optimization expressions
   Optimize = {
-    'id':        new RegExp("#"   + strEncoding + "|" + strSkipGroup + "*"),
-    'className': new RegExp("\\." + strEncoding + "|" + strSkipGroup + "*"),
-    'tagName':   new RegExp(strEncoding + "|" + strSkipGroup + "*")
+    'id':        new RegExp("#"   + strEncoding + "|" + strSkipGroup),
+    'className': new RegExp("\\." + strEncoding + "|" + strSkipGroup),
+    'tagName':   new RegExp("(?:^|\\x20)" + strEncoding + "|" + strSkipGroup)
   },
 
   // precompiled Regular Expressions

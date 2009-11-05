@@ -1,3 +1,5 @@
+* Remove unnecessary grouping from `strSkipQuotes` and remove the `*` from the end of the `Optimize` regexps. [jddalton] 
+
 * Avoid prefiltering in client_api() if the selector contains `:not` and move the `ID optimization LTR` block under the `ID optimization RTL` block. [jddalton]
 
 * Move the client_api() `ID optimization RTL` block into the `reduce selection context` block to reduce tests if Optimize.id isn't matched in the selector. [jddalton]
