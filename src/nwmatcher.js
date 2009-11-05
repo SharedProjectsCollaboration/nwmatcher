@@ -1269,8 +1269,7 @@ NW.Dom = (function(global) {
       /* pre-filtering pass allow to scale proportionally with big DOM trees */
 
       // commas separators are treated sequentially to maintain order
-      if (selector.indexOf(':not') < 0 &&
-          (isSingle = selector.match(reSplitGroup).length < 2)) {
+      if ((isSingle = selector.match(reSplitGroup).length < 2)) {
 
         if (hasChanged) {
           // get right most selector token
@@ -1281,16 +1280,14 @@ NW.Dom = (function(global) {
         }
 
         // reduce selection context
-        if ((parts = selector.match(Optimize.id))) {
-          if ((element = context.getElementById((token = parts[1]))) &&
+        if ((parts = selector.match(Optimize.id)) && (token = parts[1])) {
+          if ((element = context.getElementById(token)) &&
               token == getAttribute(element, 'id')) {
             from = element.parentNode;
           }
 
           // ID optimization RTL
-          if ((parts = lastSlice.match(Optimize.id)) &&
-              (token = parts[parts.length - 1])) {
-
+          if ((parts = lastSlice.match(Optimize.id)) && (token = parts[1])) {
             if ((element = byId(token, context))) {
               if (match(element, selector)) {
                 data = [ element ];
@@ -1336,7 +1333,7 @@ NW.Dom = (function(global) {
                   element = getNextSibling(element);
                   elements = element ? [ element ] : [ ];
               }
-            } else {
+            } else if (selector.indexOf(':not') < 0){
               if (isCacheable) {
                 Contexts[original] =
                 Contexts[selector] = from;
@@ -1348,15 +1345,12 @@ NW.Dom = (function(global) {
             }
           }
         }
-
         // CLASS optimization RTL
-        else if ((parts = lastSlice.match(Optimize.className)) &&
-            (token = parts[parts.length - 1])) {
+        else if ((parts = lastSlice.match(Optimize.className)) && (token = parts[1])) {
           elements = byClass(token, from);
         }
         // TAG optimization RTL
-        else if ((parts = lastSlice.match(Optimize.tagName)) &&
-            (token = parts[parts.length - 1])) {
+        else if ((parts = lastSlice.match(Optimize.tagName)) && (token = parts[1])) {
           elements = byTag(token, from);
         }
       }
