@@ -758,14 +758,14 @@ NW.Dom = (function(global) {
 
       // for select method
       if (mode) {
-        // (c-ollection, s-napshot, d-ocument, h-root, g-from, f-callback) 
+        // (c-ollection, s-napshot, d-ocument, h-root, g-from, f-callback)
         return new Function('c,s,d,h,g,f',
           'var e,n,N,r=[],x=0,k=0;main:while(N=e=c[k++]){' +
           SKIP_COMMENTS + source + '}return r;');
       }
       // for match method
       else {
-        // (e-element, s-napshot, d-ocument, h-root, g-from, f-callback) 
+        // (e-element, s-napshot, d-ocument, h-root, g-from, f-callback)
         return new Function('e,s,d,h,g,f',
           'var n,N=e,x=0;' + source + 'return false;');
       }
@@ -1136,10 +1136,10 @@ NW.Dom = (function(global) {
         case '.':
           data = byClass(selector.slice(1), from || context);
           if (BUGGY_GEBCN) {
-            return callback ? concatCall([ ], data, callback) : concatList([ ], data);
-          } else {
             callback && forEachCall(data, callback);
             return data;
+          } else {
+            return callback ? concatCall([ ], data, callback) : concatList([ ], data);
           }
 
         default:
@@ -1264,7 +1264,7 @@ NW.Dom = (function(global) {
       // re-initialize indexes
       childIndexes = { };
       childIndexesByTag = { };
-      
+
 
       /* pre-filtering pass allow to scale proportionally with big DOM trees */
 
@@ -1297,13 +1297,13 @@ NW.Dom = (function(global) {
                 callback && callback(element);
               }
             }
-  
+
             if (isCacheable) {
               Contexts[original] =
               Contexts[selector] = from;
               return (
-                Results[original]  =
-                Results[selector]  = data || [ ]);
+                Results[original] =
+                Results[selector] = data || [ ]);
             }
             return data || [ ];
           }
@@ -1341,8 +1341,8 @@ NW.Dom = (function(global) {
                 Contexts[original] =
                 Contexts[selector] = from;
                 return (
-                  Results[original]  =
-                  Results[selector]  = [ ]);
+                  Results[original] =
+                  Results[selector] = [ ]);
               }
               return [ ];
             }
