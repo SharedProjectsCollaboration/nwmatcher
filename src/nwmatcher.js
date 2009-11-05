@@ -959,7 +959,7 @@ NW.Dom = (function(global) {
                 // 6 cases: 3 (first, last, only) x 1 (child) x 2 (-of-type)
                 // too much overhead calling functions out of the main loop ?
                 a = match[2] == 'first' ? 'previous' : 'next';
-                n = match[2] == 'only' ? 'previous' : 'next';
+                n = match[2] == 'only'  ? 'previous' : 'next';
                 b = match[2] == 'first' || match[2] == 'last';
 
                 source = NATIVE_TRAVERSAL_API ?
@@ -1269,7 +1269,8 @@ NW.Dom = (function(global) {
       /* pre-filtering pass allow to scale proportionally with big DOM trees */
 
       // commas separators are treated sequentially to maintain order
-      if ((isSingle = selector.match(reSplitGroup).length < 2)) {
+      if (selector.indexOf(':not') < 0 &&
+          (isSingle = selector.match(reSplitGroup).length < 2)) {
 
         if (hasChanged) {
           // get right most selector token
@@ -1306,64 +1307,63 @@ NW.Dom = (function(global) {
             }
             return data || [ ];
           }
+
+          // ID optimization LTR
+          if ((parts = selector.match(/\#((?:[-\w]|[^\x00-\xa0]|\\.)+)(.*)/))) {
+            if ((element = byId(parts[1]))) {
+              switch ((token = parts[2]).charAt(0)) {
+                case '.':
+                  elements = byClass(token.slice(1), element);
+                  break;
+                case ':':
+                  if (token.match(/[ >+~]/)) {
+                    elements = element.getElementsByTagName('*');
+                  } else elements = [ element ];
+                  break;
+                case ' ':
+                  elements = element.getElementsByTagName('*');
+                  break;
+                case '~':
+                  elements = getChildren(element.parentNode);
+                  break;
+                case '>':
+                  elements = getChildren(element);
+                  break;
+                case  '':
+                  elements = [ element ];
+                  break;
+                case '+':
+                  element = getNextSibling(element);
+                  elements = element ? [ element ] : [ ];
+              }
+            } else {
+              if (isCacheable) {
+                Contexts[original] =
+                Contexts[selector] = from;
+                return (
+                  Results[original]  =
+                  Results[selector]  = [ ]);
+              }
+              return [ ];
+            }
+          }
         }
 
         // CLASS optimization RTL
-        if ((parts = lastSlice.match(Optimize.className)) &&
+        else if ((parts = lastSlice.match(Optimize.className)) &&
             (token = parts[parts.length - 1])) {
           elements = byClass(token, from);
         }
-
         // TAG optimization RTL
         else if ((parts = lastSlice.match(Optimize.tagName)) &&
-            (token = parts[parts.length - 1]) && NATIVE_GEBTN) {
+            (token = parts[parts.length - 1])) {
           elements = byTag(token, from);
         }
       }
 
-      if (!elements || !elements.length) {
-        if (isSingle && (parts = selector.match(/\#((?:[-\w]|[^\x00-\xa0]|\\.)+)(.*)/))) {
-          if ((element = byId(parts[1]))) {
-            switch ((token = parts[2]).charAt(0)) {
-              case '.':
-                elements = byClass(token.slice(1), element);
-                break;
-              case ':':
-                if (token.match(/[ >+~]/)) {
-                  elements = element.getElementsByTagName('*');
-                } else elements = [ element ];
-                break;
-              case ' ':
-                elements = element.getElementsByTagName('*');
-                break;
-              case '~':
-                elements = getChildren(element.parentNode);
-                break;
-              case '>':
-                elements = getChildren(element);
-                break;
-              case  '':
-                elements = [ element ];
-                break;
-              case '+':
-                element = getNextSibling(element);
-                elements = element ? [ element ] : [ ];
-            }
-          } else if (selector.indexOf(':not') < 0) {
-            if (isCacheable) {
-              Contexts[original] =
-              Contexts[selector] = from;
-              return (
-                Results[original]  =
-                Results[selector]  = [ ]);
-            }
-            return [ ];
-          }
-        }
+      if (!elements || !elements.length)
+        elements = from.getElementsByTagName('*');
 
-        if (!elements || !elements.length)
-          elements = from.getElementsByTagName('*');
-      }
       /* end of prefiltering pass */
 
       // save compiled selectors
