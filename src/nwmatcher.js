@@ -208,6 +208,7 @@ NW.Dom = (function(global) {
   // detect if DOM methods are native in browsers
   NATIVE_GEBID = isNative(context, 'getElementById'),
   NATIVE_GEBCN = isNative(root,    'getElementsByClassName'),
+  NATIVE_GEBN  = isNative(root,    'getElementsByName'),
   NATIVE_GEBTN = isNative(root,    'getElementsByTagName'),
   NATIVE_QSAPI = isNative(context, 'querySelector'),
 
@@ -305,12 +306,16 @@ NW.Dom = (function(global) {
 
   // NOTE: BUGGY_XXXXX check both for existance and no known bugs.
 
+  BUGGY_GEBN = true,
+
   BUGGY_GEBID = NATIVE_GEBID ?
     (function() {
       div.innerHTML = '<a name="Z"></a>';
       root.insertBefore(div, root.firstChild);
       isBuggy = !!div.ownerDocument.getElementById('Z');
       root.removeChild(div).innerHTML = '';
+
+      if (NATIVE_GEBN) BUGGY_GEBN = isBuggy;
       return isBuggy;
     })() :
     true,
@@ -651,14 +656,16 @@ NW.Dom = (function(global) {
   // elements by class
   // @return nodeList (native GEBCN)
   // @return array (non native GEBCN)
-  byClass = !BUGGY_GEBCN ?
+  byClass =
     function(className, from) {
-      return from.getElementsByClassName(className.replace(/\\/g, ''));
-    } :
-    function(className, from) {
+      // use GEBCN if available
+      if (from.getElementsByClassName && !BUGGY_GEBCN) {
+        return from.getElementsByClassName(className.replace(/\\/g, ''));
+      }
+
       // context is handled in byTag for non native gEBCN
       var element, i = -1, j = i, results = [ ],
-       elements = from.getElementsByTagName('*'),
+       elements = byTag('*', from),
        cn = isClassNameLowered ? className.toLowerCase() : className;
       className = ' ' + cn.replace(/\\/g, '') + ' ';
 
@@ -676,39 +683,74 @@ NW.Dom = (function(global) {
   // @return element reference or null
   byId =
     function(id, from) {
-      var i = 0, element, names, node, result;
+      var element, names, node, i = 0;
       from || (from = context);
       id = id.replace(/\\/g, '');
+
       if (from.getElementById) {
-        result = from.getElementById(id);
-        if (result && id != getAttribute(result, 'id') && from.getElementsByName) {
+        if ((element = from.getElementById(id)) &&
+            id != getAttribute(element, 'id') && from.getElementsByName) {
           names = from.getElementsByName(id);
-          result = null;
           while ((element = names[i++])) {
-            if ((node = element.getAttributeNode('id')) && node.value == id) {
-              result = element;
-              break;
+            if (element.getAttribute('id') == id) {
+              return element;
             }
           }
+          return null;
         }
-      } else {
-        result = select('[id="' + id + '"]', from)[0] || null;
+        return element;
       }
-      return result;
+
+      return select('[id="' + id + '"]', from)[0] || null;
     },
 
   // elements by name
   // @return array
   byName =
     function(name, from) {
-      return select('[name="' + name.replace(/\\/g, '') + '"]', from || context);
+      var element, elements, names, i = 0;
+      from || (from = context);
+      name = name.replace(/\\/g, '');
+
+			if (from.getElementsByName) {
+			  if (BUGGY_GEBN) {
+  			  elements = [ ];
+  			  names = from.getElementsByName(name);
+  				while ((element = names[i++])) {
+  					if (element.getAttribute('name') == name) {
+  						elements.push(name);
+  					}
+  				}
+  				return elements;
+			  }
+			  return from.getElementsByName(name);
+			}
+
+      return select('[name="' + name + '"]', from);
     },
 
   // elements by tag
   // @return nodeList (live)
   byTag =
     function(tag, from) {
-      return (from || context).getElementsByTagName(tag);
+      from || (from = context);
+      if (from.getElementsByTagName) {
+        return from.getElementsByTagName(tag);
+      }
+
+      // TODO: Check GEBTN case-sensitivity
+      var results = [ ], child = context.firstChild;
+      if (child) {
+        tag = tag.toUpperCase();
+        do {
+          if (child.nodeName.toUpperCase() === tag) {
+            results.push(child);
+          } else if (child.getElementsByTagName) {
+            concatList(results, child.getElementsByTagName(tag));
+          }
+        } while ((child = child.nextSibling));
+      }
+      return results;
     },
 
   /*---------------------------- COMPILER METHODS ----------------------------*/
@@ -1126,7 +1168,6 @@ NW.Dom = (function(global) {
       switch (selector.charAt(0)) {
         case '#':
           if ((element = byId(selector.slice(1), from || context))) {
-          // if ((element = (from || context).getElementById(selector.slice(1)))) {
             callback && callback(element);
             return [ element ];
           } else {
@@ -1135,18 +1176,17 @@ NW.Dom = (function(global) {
 
         case '.':
           data = byClass(selector.slice(1), from || context);
-          if (BUGGY_GEBCN) {
-            callback && forEachCall(data, callback);
-            return data;
-          } else {
-            return callback ? concatCall([ ], data, callback) : concatList([ ], data);
-          }
+          break;
 
         default:
-          return callback
-            ? concatCall([ ], byTag(selector, from || context), callback)
-            : concatList([ ], byTag(selector, from || context));
+          data = byTag(selector, from || context);
       }
+
+      if ('item' in data) {
+        return callback ? concatCall([ ], data, callback) : concatList([ ], data);
+      }
+      callback && forEachCall(data, callback);
+      return data;
     },
 
   // select elements matching selector
@@ -1281,7 +1321,8 @@ NW.Dom = (function(global) {
 
         // reduce selection context
         if ((parts = selector.match(Optimize.id)) && (token = parts[1])) {
-          if ((element = context.getElementById(token)) &&
+          if (context.getElementById &&
+              (element = context.getElementById(token)) &&
               token == getAttribute(element, 'id')) {
             from = element.parentNode;
           }
@@ -1314,11 +1355,11 @@ NW.Dom = (function(global) {
                   break;
                 case ':':
                   if (token.match(/[ >+~]/)) {
-                    elements = element.getElementsByTagName('*');
+                    elements = byTag('*', element);
                   } else elements = [ element ];
                   break;
                 case ' ':
-                  elements = element.getElementsByTagName('*');
+                  elements = byTag('*', element);
                   break;
                 case '~':
                   elements = getChildren(element.parentNode);
@@ -1356,7 +1397,7 @@ NW.Dom = (function(global) {
       }
 
       if (!elements || !elements.length)
-        elements = from.getElementsByTagName('*');
+        elements = byTag('*', from);
 
       /* end of prefiltering pass */
 

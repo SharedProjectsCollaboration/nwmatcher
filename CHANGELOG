@@ -1,3 +1,5 @@
+* Ensure getElementsByClassName(), getElementById(), getElementsByName(), and getElementsByTagName() exist on elements before calling them. [jddalton]
+
 * Optimize prefiltering in client_api() avoding extra processing if `parts[1]` matches are undefined and allow filtering of selectors containing `:not` again. [jddalton]
 
 * Refine `Optimize.tagName` to match more tagName selectors. [jddalton]
