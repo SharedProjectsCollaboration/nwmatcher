@@ -1,3 +1,5 @@
+* unit test: Add Slick unit tests. [jddalton]
+
 * Add NW.Dom.setQSA(enabled) to allow testing NW.Dom.select() with and without using querySelectorAll(). [jddalton]
 
 * Ensure element.style and element.className exist before attempting to access properties on them. [jddalton]
