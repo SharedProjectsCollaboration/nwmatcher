@@ -1623,6 +1623,14 @@ NW.Dom = (function(global) {
     'select': select,
 
     // enable/disable cache
-    'setCache': setCache
+    'setCache': setCache,
+
+    // for testing purposes only
+    'setQSA':
+      function(enable) {
+        this.select = enable && NATIVE_QSAPI
+          ? select_qsa
+          : client_api;
+      }
   };
 })(this);
