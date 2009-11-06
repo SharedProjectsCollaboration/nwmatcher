@@ -223,7 +223,7 @@ NW.Dom = (function(global) {
       // obsolete bug https://bugs.webkit.org/show_bug.cgi?id=19047
       // so the bug is in all other browsers code now :-)
       // new specs http://www.whatwg.org/specs/web-apps/current-work/#selectors
-      div.innerHTML = '<b class="X"></b>';
+      div.innerHTML = '<p class="X"></p>';
       if (compatMode == 'BackCompat' && div.querySelector('.x') === null) {
         return testTrue;
       }
@@ -288,7 +288,7 @@ NW.Dom = (function(global) {
   NATIVE_SLICE_PROTO =
     (function() {
       try {
-        div.innerHTML = '<div id="length"></div>';
+        div.innerHTML = '<p id="length"></p>';
         root.insertBefore(div, root.firstChild);
         isSupported = !!slice.call(div.childNodes, 0)[0];
       } catch(e) { }
@@ -310,9 +310,9 @@ NW.Dom = (function(global) {
 
   BUGGY_GEBID = NATIVE_GEBID ?
     (function() {
-      div.innerHTML = '<a name="Z"></a>';
+      div.innerHTML = '<p name="x"></p>';
       root.insertBefore(div, root.firstChild);
-      isBuggy = !!div.ownerDocument.getElementById('Z');
+      isBuggy = !!div.ownerDocument.getElementById('x');
       root.removeChild(div).innerHTML = '';
 
       if (NATIVE_GEBN) BUGGY_GEBN = isBuggy;
@@ -336,7 +336,7 @@ NW.Dom = (function(global) {
     (function() {
       // Opera tests
       var method = 'getElementsByClassName', test = /\u53f0\u5317/;
-      div.innerHTML = '<span class="' + test + 'abc ' + test + '"></span><span class="x"></span>';
+      div.innerHTML = '<p class="' + test + 'abc ' + test + '"></p><p class="x"></p>';
       isBuggy = !div[method](test)[0];
 
       // Safari test
