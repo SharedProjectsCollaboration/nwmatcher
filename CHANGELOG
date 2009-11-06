@@ -1,3 +1,5 @@
+* Ensure element.style and element.className exist before attempting to access properties on them. [jddalton]
+
 * Cleanup feature tests making them more consistent. [jddalton]
 
 * Ensure getElementsByClassName(), getElementById(), getElementsByName(), and getElementsByTagName() exist on elements before calling them. [jddalton]

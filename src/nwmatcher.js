@@ -189,8 +189,9 @@ NW.Dom = (function(global) {
   // makes it harder to detect Quirks vs. Strict
   compatMode = context.compatMode ||
     (function() {
-      var el; (el = document.createElement('div')).style.width = 1;
-      return el.style.width == '1px' ? 'BackCompat' : 'CSS1Compat';
+      var el = document.createElement('div');
+      return el.style && (el.style.width = 1) &&
+        el.style.width == '1px' ? 'BackCompat' : 'CSS1Compat';
     })(),
 
   // detect native methods
@@ -670,7 +671,7 @@ NW.Dom = (function(global) {
       className = ' ' + cn.replace(/\\/g, '') + ' ';
 
       while ((element = elements[++i])) {
-        if ((cn = element.className).length &&
+        if ((cn = element.className) && cn.length &&
             (' ' + (isClassNameLowered ? cn.toLowerCase() : cn) + ' ')
             .replace(reEdgeSpaces, ' ').indexOf(className) > -1) {
           results[++j] = element;
