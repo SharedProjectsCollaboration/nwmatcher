@@ -325,8 +325,7 @@ NW.Dom = (function(global) {
   BUGGY_GEBTN = NATIVE_GEBTN ?
     (function() {
       div.appendChild(context.createComment(''));
-      isBuggy = div.getElementsByTagName('*')[0];
-      return isBuggy;
+      return !!div.getElementsByTagName('*')[0];
     })() :
     true,
 
@@ -336,7 +335,7 @@ NW.Dom = (function(global) {
   BUGGY_GEBCN = NATIVE_GEBCN ?
     (function() {
       // Opera tests
-      var method = 'getElementsByClassName', test = /\u53f0\u5317/;
+      var method = 'getElementsByClassName', test = '\u53f0\u5317';
       div.innerHTML = '<p class="' + test + 'abc ' + test + '"></p><p class="x"></p>';
       isBuggy = !div[method](test)[0];
 
