@@ -1421,6 +1421,7 @@ JSSpec.util = {
 			var attrs = o.attributes;
 			for(var i = 0; i < attrs.length; i++) {
 				if(
+				  attrs[i] &&
 					attrs[i].nodeValue &&
 					attrs[i].nodeName != 'contentEditable' &&
 					attrs[i].nodeName != 'style' &&

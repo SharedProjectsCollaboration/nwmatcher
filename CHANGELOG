@@ -1,3 +1,5 @@
+* unit test: Add Slick XML unit test and fix a bug with JSSpec in Opera 9.64. [jddalton]
+
 * Ensure feature test results return boolean values and make BUGGY_GEBCN test against a string and not a regexp. [jddalton]
 
 * unit test: Add Slick unit tests. [jddalton]
