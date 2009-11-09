@@ -36,7 +36,7 @@ function specsMockTemplate(specs,context){
 	it_should_find(1, 'html');
 	it_should_find(1, 'body');
 	
-	it_should_find(1825, '*:not([href^=tel:])');
+	it_should_find(1822, '*:not([href^=tel:])');
 	it_should_find(1814, 'body *:not([href^=tel:])');
 	
 	it_should_find(1, 'html');
@@ -101,10 +101,11 @@ function specsMockTemplate(specs,context){
 	};
 */
 
-	it_should_find(6, '.a1 !  *');
-	it_should_find(4, '.a1 !> *');
-	it_should_find(2, '.a4 !+ *');
-	it_should_find(4, '.a4 !~ *');
+  // Remove invalid selectors (jddalton)
+	// it_should_find(6, '.a1 !  *');
+	// it_should_find(4, '.a1 !> *');
+	// it_should_find(2, '.a4 !+ *');
+	// it_should_find(4, '.a4 !~ *');
 	
 	it_should_find(4, '.a4');
 	it_should_find(2, '.a4   .a4');
@@ -252,8 +253,10 @@ function specsMockTemplate(specs,context){
 	it_should_find(134 , 'div > p');
 	it_should_find(22  , 'div + p');
 	it_should_find(183 , 'div ~ p');
-	it_should_find(0   , 'div & p');
-	;
+	
+	// Remove invalid selector (jddalton)
+	// it_should_find(0   , 'div & p');
+  
 	it_should_find(43  , 'div[class^=exa][class$=mple]');
 	it_should_find(12  , 'div p a:not([href^=tel:])');
 	it_should_find(683 , 'div,p,a:not([href^=tel:])');
