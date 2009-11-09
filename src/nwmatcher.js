@@ -915,7 +915,7 @@ NW.Dom = (function(global) {
           if (NATIVE_TRAVERSAL_API) {
             // previousSibling particularly slow on Gecko based browsers prior to FF3.1
             source =
-              'var N' + k + '=e;e=e.parentNode.firstElementChild;' +
+              'var N' + k + '=e;e=e==h?h:e.parentNode.firstElementChild;' +
               'while(e!=N' + k +'){if(e){' + source + '}e=e.nextElementSibling;}';
           } else {
             source =
