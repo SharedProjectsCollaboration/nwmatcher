@@ -1,3 +1,5 @@
+* Make `RE_BUGGY_QSAPI` filter out selectors that cause IE to throw errors. [jddalton]
+
 * Fix a bug in the compiler for a selector like `.a1 ~ *` throwing an error when the W3C element traversal api is supported. [jddalton]
 
 * unit test: Add Slick XML unit test and fix a bug with JSSpec in Opera 9.64. [jddalton]

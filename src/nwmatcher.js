@@ -232,16 +232,23 @@ NW.Dom = (function(global) {
       // :enabled :disabled bugs with hidden fields (Firefox 3.5 QSA bug)
       // http://www.w3.org/TR/html5/interactive-elements.html#selector-enabled
       // IE8 throws error with these pseudos
+      isBuggy = true;
       div.innerHTML = '<input type="hidden">';
+
       try {
-        div.querySelectorAll(':enabled').length === 1 && pattern.push(':enabled', ':disabled');
+        isBuggy = div.querySelectorAll(':enabled').length === 1;
       } catch(e) { }
 
+      isBuggy && pattern.push(':enabled', ':disabled');
+
       // :checked bugs whith checkbox fields (Opera 10beta3 bug)
+      isBuggy = true;
       div.innerHTML = '<input type="checkbox" checked>';
       try {
-        div.querySelectorAll(':checked').length !== 1 && pattern.push(':checked');
+        isBuggy = div.querySelectorAll(':checked').length !== 1;
       } catch(e) { }
+
+      isBuggy && pattern.push(':checked');
 
       // :link bugs with hyperlinks matching (Firefox/Safari)
       div.innerHTML = '<a href="x"></a>';
