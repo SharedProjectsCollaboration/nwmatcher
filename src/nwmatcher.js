@@ -907,12 +907,9 @@ NW.Dom = (function(global) {
         // *** Adjacent sibling combinator
         // E + F (F adiacent sibling of E)
         else if ((match = selector.match(ptnAdjacent))) {
-          if (NATIVE_TRAVERSAL_API) {
-            source = 'if((e=e.previousElementSibling)){' + source + '}';
-          } else {
-            source = 'while((e=e.previousSibling)){if(e.nodeType==1){' +
-              source + 'break;}}';
-          }
+          source = NATIVE_TRAVERSAL_API ?
+            'if((e=e.previousElementSibling)){' + source + '}' :
+            'while((e=e.previousSibling)){if(e.nodeType==1){' + source + 'break;}}';
         }
 
         // *** General sibling combinator
