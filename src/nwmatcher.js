@@ -78,8 +78,9 @@ NW.Dom = (function(global) {
   // split last, right most, selector group token
   reSplitToken = /([^ >+~,\\()[\]]+|\([^()]+\)|\(.*\)|\[[^[\]]+\]|\[.*\]|\\.)+/g,
 
-  // discard invalid chars found in passed selector
-  reValidator = /([.:#*\w]|[^\x00-\xa0])/,
+  // simple check to ensure the first character of a selector is valid
+  // http://www.w3.org/TR/2009/CR-CSS2-20090423/syndata.html#characters
+  reValidator = /^(?:[*a-zA-Z]|\[[\x20\t\n\r\fa-zA-Z]|[.:#*_]?(?!-?\d)(?:[-a-zA-Z]|[^\x00-\xa0]))/,
 
   // for use with the normilize method
   reEdgeSpaces     = new RegExp(strEdgeSpace, 'g'),

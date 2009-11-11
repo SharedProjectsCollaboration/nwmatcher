@@ -1,3 +1,5 @@
+* Refine the `reValidator` regexp. [jddalton, Diego Perini]
+
 * Remove unused methods getChildren() and getNextSibling(). [Diego Perini]
 
 * Rewrite client_api() to avoid extra optimizations that are handled better by the selector compiler. [Diego Perini, jddalton]
