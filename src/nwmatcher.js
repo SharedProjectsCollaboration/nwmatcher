@@ -1223,7 +1223,7 @@ NW.Dom = (function(global) {
   // version using cross-browser client API
   // @return array
   client_api =
-    function client_api(selector, from, callback) {
+    function (selector, from, callback) {
       var Contexts, Results, className, compiled, data, element,
        elements, hasChanged, isCacheable, isSingle, now, origFrom,
        origSelector, parts, token;

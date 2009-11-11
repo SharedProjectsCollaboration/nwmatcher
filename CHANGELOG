@@ -1,3 +1,5 @@
+* Removed the client_api() named expression for Safari 2 support. [Diego Perini]
+
 * Refine the `reValidator` regexp. [jddalton, Diego Perini]
 
 * Remove unused methods getChildren() and getNextSibling(). [Diego Perini]
