@@ -34,7 +34,7 @@ NW.Dom = (function(global) {
   isSupported, isBuggy, div = context.createElement('DiV'),
 
   // private storage vars
-  lastCalled, lastSelector, lastSlice, lastContext = context,
+  lastCalled, lastIndex, lastSelector, lastSlice, lastContext = context,
 
   // used in the RE_BUGGY_XXXXX regexp testers
   testFalse = { 'test': function() { return false; } },
@@ -98,11 +98,11 @@ NW.Dom = (function(global) {
   // http://www.w3.org/TR/css3-selectors/#selector-syntax
   normalize =
     function(selector) {
-      var index, match, original, token,
+      var index, match, origSelector, token,
        cached = normalizedSelectors[selector];
       if (cached) return cached;
 
-      original = selector;
+      origSelector = selector;
       if (reUseSafeNormalize.test(selector)) {
         while (match = reEdgeSpacesWithQuotes.exec(selector)) {
           if ((token = match[1])) {
@@ -144,7 +144,7 @@ NW.Dom = (function(global) {
       }
 
       return (
-        normalizedSelectors[original] =
+        normalizedSelectors[origSelector] =
         normalizedSelectors[selector] = selector);
     },
 
@@ -757,6 +757,9 @@ NW.Dom = (function(global) {
 
   /*---------------------------- COMPILER METHODS ----------------------------*/
 
+  // a common chunk of code used a couple times in compiled functions
+  ACCEPT_NODE = 'f&&f(N);r[r.length]=N;continue main;',
+
   // conditionals optimizers for the compiler
 
   // checks if nodeName comparisons need to be upperCased
@@ -781,7 +784,7 @@ NW.Dom = (function(global) {
         's.stripTags(e.innerHTML)';
     })(),
 
-  // compile a comma separated group of selector
+  // compile a comma separated selector
   // @mode boolean true for select, false for match
   // @return function (compiled)
   compileGroup =
@@ -794,7 +797,7 @@ NW.Dom = (function(global) {
           if (!seen[token]) {
             seen[token] = true;
             source += 'e=N;' + compileSelector(token, mode
-              ? 'f&&f(N);r[r.length]=N;continue main;'
+              ? ACCEPT_NODE
               : 'f&&f(N);return true;');
           }
         }
@@ -815,7 +818,17 @@ NW.Dom = (function(global) {
       }
     },
 
-  // Compile a CSS3 string selector into ad-hoc javascript matching function.
+  // compile a single selector for use with select()
+  // @return function (compiled)
+  compileSingle =
+    function(selector) {
+      return new Function('c,s,d,h,g,f',
+        'var e,n,N,r=[],x=0,k=0;main:while(N=e=c[k++]){' +
+        SKIP_COMMENTS + compileSelector(selector, ACCEPT_NODE) +
+        '}return r;');
+    },
+
+  // compile a CSS3 string selector into ad-hoc javascript matching function
   // @return string (to be compiled)
   compileSelector =
     function(selector, source) {
@@ -1132,13 +1145,13 @@ NW.Dom = (function(global) {
   match =
     function(element, selector, from, callback) {
       // make sure an element node was passed
-      var compiled, original = selector;
+      var compiled, origSelector = selector;
       base = element.ownerDocument;
 
       if (!base) return false;
       root = base.documentElement;
 
-      if (!(compiled = compiledMatchers[original])) {
+      if (!(compiled = compiledMatchers[origSelector])) {
         if (reValidator.test(selector)) {
           // remove extraneous whitespace
           if (reUnnormalized.test(selector))
@@ -1147,10 +1160,10 @@ NW.Dom = (function(global) {
           // save compiled matchers
           if (!(compiled = compiledMatchers[selector])) {
             compiled =
-            compiledMatchers[original] =
-            compiledMatchers[selector] = compileGroup(selector, '', false);
+            compiledMatchers[selector] =
+            compiledMatchers[origSelector] = compileGroup(selector, '', false);
           } else {
-            compiledMatchers[original] = compiled;
+            compiledMatchers[origSelector] = compiled;
           }
         }
         else {
@@ -1235,7 +1248,8 @@ NW.Dom = (function(global) {
   client_api =
     function client_api(selector, from, callback) {
       var Contexts, Results, className, compiled, data, element,
-       elements, hasChanged, isCacheable, isSingle, now, parts, token;
+       elements, hasChanged, isCacheable, isSingle, now, origFrom,
+       origSelector, parts, token;
 
       if (RE_SIMPLE_SELECTOR.test(selector)) {
         return native_api(selector, from, callback);
@@ -1282,7 +1296,7 @@ NW.Dom = (function(global) {
       }
 
       // normalize and validate selector
-      original = selector;
+      origSelector = selector;
       if ((hasChanged = lastSelector != selector)) {
         // process valid selector strings
         if (reValidator.test(selector)) {
@@ -1300,10 +1314,6 @@ NW.Dom = (function(global) {
         }
       }
 
-      // re-initialize indexes
-      childIndexes = { };
-
-
       /* pre-filtering pass allow to scale proportionally with big DOM trees */
 
       // commas separators are treated sequentially to maintain order
@@ -1313,110 +1323,103 @@ NW.Dom = (function(global) {
           // get right most selector token
           parts = selector.match(reSplitToken);
 
+          token = parts[parts.length - 1];
+
+          // index where the last token was found
+          // (avoids non-standard/deprecated RegExp.leftContext)
+          lastIndex = selector.length - token.length;
+
           // only last slice before :not rules
-          lastSlice = parts[parts.length - 1].split(':not')[0];
+          lastSlice = token.split(':not')[0];
         }
 
-        // reduce selection context
-        if ((parts = selector.match(Optimize.id)) && (token = parts[1])) {
-          if (context.getElementById &&
-              (element = context.getElementById(token)) &&
-              token == getAttribute(element, 'id')) {
-            from = element.parentNode;
-          }
-
-          // ID optimization RTL
-          if ((parts = lastSlice.match(Optimize.id)) && (token = parts[1])) {
-            if ((element = byId(token, context))) {
-              if (match(element, selector)) {
-                data = [ element ];
-                callback && callback(element);
-              }
-            }
-
-            if (isCacheable) {
-              Contexts[original] =
-              Contexts[selector] = from;
-              return (
-                Results[original] =
-                Results[selector] = data || [ ]);
-            }
-            return data || [ ];
-          }
-
-          // ID optimization LTR
-          if ((parts = selector.match(/\#((?:[-\w]|[^\x00-\xa0]|\\.)+)(.*)/))) {
-            if ((element = byId(parts[1]))) {
-              switch ((token = parts[2]).charAt(0)) {
-                case '.':
-                  elements = byClass(token.slice(1), element);
-                  break;
-                case ':':
-                  if (token.match(/[ >+~]/)) {
-                    elements = byTag('*', element);
-                  } else elements = [ element ];
-                  break;
-                case ' ':
-                  elements = byTag('*', element);
-                  break;
-                case '~':
-                  elements = getChildren(element.parentNode);
-                  break;
-                case '>':
-                  elements = getChildren(element);
-                  break;
-                case  '':
-                  elements = [ element ];
-                  break;
-                case '+':
-                  element = getNextSibling(element);
-                  elements = element ? [ element ] : [ ];
-              }
-            } else if (selector.indexOf(':not') < 0){
-              if (isCacheable) {
-                Contexts[original] =
-                Contexts[selector] = from;
-                return (
-                  Results[original] =
-                  Results[selector] = [ ]);
-              }
-              return [ ];
+        // ID optimization RTL
+        if ((parts = lastSlice.match(Optimize.id)) && (token = parts[1])) {
+          if ((element = byId(token, context))) {
+            if (match(element, selector)) {
+              data = [ element ];
+              callback && callback(element);
             }
           }
+
+          if (isCacheable) {
+            Contexts[selector] =
+            Contexts[origSelector] = from;
+            return (
+              Results[selector] =
+              Results[origSelector] = data || [ ]);
+          }
+          return data || [ ];
         }
+
+        // ID optimization LTR by reducing the selection context
+        else if ((parts = selector.match(Optimize.id)) && (token = parts[1])) {
+          if ((element = byId(token, base))) {
+            origFrom = from;
+            if (!/[>+~]/.test(selector)) {
+              selector = selector.replace('#' + token, '*');
+              from = element;
+            } else from = element.parentNode;
+          }
+          else elements = 1;
+        }
+
         // CLASS optimization RTL
         else if ((parts = lastSlice.match(Optimize.className)) && (token = parts[1])) {
-          elements = byClass(token, from);
+          if ((elements = byClass(token, from)).length) {
+            selector = selector.slice(0, lastIndex) +
+              selector.slice(lastIndex).replace('.' + token, '*');
+          }
         }
+
         // TAG optimization RTL
         else if ((parts = lastSlice.match(Optimize.tagName)) && (token = parts[1])) {
-          elements = byTag(token, from);
+          if ((elements = byTag(token, from)).length) {
+            selector = selector.slice(0, lastIndex) +
+              selector.slice(lastIndex).replace(token, '*');
+          }
         }
       }
 
-      if (!elements || !elements.length)
+      if (!elements) {
         elements = byTag('*', from);
+      }
+      if (!elements.length) {
+        if (isCacheable) {
+          Contexts[selector] =
+          Contexts[origSelector] = origFrom || from;
+          return (
+            Results[selector] =
+            Results[origSelector] = [ ]);
+        }
+        return [ ];
+      }
 
       /* end of prefiltering pass */
 
+      // re-initialize indexes
+      childIndexes = { };
+
       // save compiled selectors
       if ((compiled = compiledSelectors[selector])) {
-        compiledSelectors[original] = compiled;
+        compiledSelectors[origSelector] = compiled;
       } else {
         compiled =
-        compiledSelectors[original] =
-        compiledSelectors[selector] = compileGroup(selector, '', true);
+        compiledSelectors[selector] =
+        compiledSelectors[origSelector] = isSingle
+          ? compileSingle(selector)
+          : compileGroup(selector, '', true);
       }
 
       data = compiled(elements, snap, base, root, from, callback);
 
       if (isCacheable) {
         // a cached result set for the requested selector
-        Contexts[original] =
-        Contexts[selector] = from;
+        Contexts[selector] =
+        Contexts[origSelector] = origFrom || from;
         return (
-          Results[original] =
-          Results[selector] = data);
+          Results[selector] =
+          Results[origSelector] = data);
       }
 
       return data;
