@@ -540,19 +540,6 @@ NW.Dom = (function(global) {
       while (element = listout[i++]) callback(element);
     },
 
-  getChildren =
-    function(from) {
-      var i = -1, element = from.firstChild, elements = [ ];
-      if (element) {
-        do {
-          if ((element.nodeType == 1)) {
-            elements[++i] = element;
-          }
-        } while ((element = element.nextSibling));
-      }
-      return elements;
-    },
-
   // children position by nodeType
   // @return number
   getChildIndexes =
@@ -591,17 +578,6 @@ NW.Dom = (function(global) {
       }
       indexes.length = i;
       return indexes;
-    },
-
-  getNextSibling = NATIVE_TRAVERSAL_API ?
-    function (element) {
-      return element.nextElementSibling;
-    } :
-    function (element) {
-      element = element.nextSibling;
-      while (element && element.nodeType !== 1)
-        element = element.nextSibling;
-      return element;
     },
 
   // attribute value

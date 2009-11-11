@@ -1,3 +1,5 @@
+* Remove unused methods getChildren() and getNextSibling(). [Diego Perini]
+
 * Rewrite client_api() to avoid extra optimizations that are handled better by the selector compiler. [Diego Perini, jddalton]
 
 * Add wildcard `*` tagName processing to the `RE_SIMPLE_SELECTOR` regexp for non-IE browsers. [Diego Perini]
