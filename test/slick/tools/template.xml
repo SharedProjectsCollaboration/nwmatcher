@@ -7,11 +7,8 @@
 	<meta http-equiv="Content-type" content="text/html; charset=utf-8" />
 
 	<title>template xhtml as xml</title>
-	<script src="../../slick.js" type="text/javascript" charset="utf-8"></script>
-	<script src="../../speed/frameworks/sizzle.js" type="text/javascript" charset="utf-8"></script>
-	<script src="../../speed/frameworks/sly.js" type="text/javascript" charset="utf-8"></script>
-	<script src="../../speed/frameworks/dojo-acme.js" type="text/javascript" charset="utf-8"></script>
-	<script src="../../speed/frameworks/nwmatcher.js" type="text/javascript" charset="utf-8"></script>
+	<script src="../../../src/nwmatcher.js" type="text/javascript" charset="utf-8"></script>
+  <script src="../nwmatcher-slick.js" type="text/javascript" charset="utf-8"></script>
 	<script src="template.js" type="text/javascript" charset="utf-8"></script>
 </head>
 

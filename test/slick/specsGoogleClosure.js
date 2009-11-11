@@ -93,19 +93,28 @@ function specsGoogleClosure(specs,context){
 	
 	Describe('testDescendantSelectors',function(specs){
 		var it_should_find = setup_it_should_find(specs);
-		it_should_find(3, '>', 'container');
+		
+		// Remove invalid selectors (jddalton)
+		// it_should_find(3, '>', 'container');
+		
 		it_should_find(3, '> *', 'container');
 		it_should_find(2, '> [qux]', 'container');
 		// assertEquals('child1', goog.dom.query('> [qux]', 'container')[0].id);
 		// assertEquals('child3', goog.dom.query('> [qux]', 'container')[1].id);
-		it_should_find(3, '>', 'container');
+		
+		// Remove invalid selectors (jddalton)
+		// it_should_find(3, '>', 'container');
+		
 		it_should_find(3, '> *', 'container');
 	});
 	
 	Describe('testSiblingSelectors',function(specs){
 		var it_should_find = setup_it_should_find(specs);
-		it_should_find(1, '+', 'container');
-		it_should_find(3, '~', 'container');
+		
+		// Remove invalid selectors (jddalton)
+		// it_should_find(1, '+', 'container');
+		// it_should_find(3, '~', 'container');
+		
 		it_should_find(1, '.foo + span');
 		it_should_find(4, '.foo ~ span');
 		it_should_find(1, '#foo ~ *');

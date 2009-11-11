@@ -2,11 +2,38 @@
 <html>
 <head>
 	<title>Slick Specs</title>
+	<style type="text/css">
+    .error {
+      background-color:#FFDDDD;
+      border-bottom-color:#FFBBBB;
+      border-style:solid none;
+      border-top-color:#CC0000;
+      border-width:3px medium 2px;
+      color:#770000;
+      font-family:"Helvetica Neue","Lucida Grande","Helvetica Neue",Arial,sans-serif;
+      font-size:12px;
+      font-size-adjust:none;
+      font-weight:bold;
+      margin: 0 0 10px 0;
+      padding:10px;
+    }
+  </style>
 </head>
 <body>
+<div id="firebug-error" class="error" style="display:none;">
+  Disable firebug for more accurate results, as scripts could throw warnings, slowing down the dom query process.
+</div>
+
+<div id="protocol-error" class="error" style="display:none;">
+  Tests must run from a web server or localhost.
+</div>
+
+<div>
 <p><em>
-Under firefox, disable firebug for more accurate results, as most frameworks could throw warnings, slowing down the dom query process.
+  Please ignore the <strong>`svg logo`</strong> test results if you recieve a download prompt for the <strong>MooTools_Logo.svg</strong> file.
 </em></p>
+</div>
+
 <div>
 	<p><a href="slick/spec_browser.html">Browser Specs (test bug verifying)</a></p>
 	<hr />
@@ -20,5 +47,14 @@ Under firefox, disable firebug for more accurate results, as most frameworks cou
 	<p><a href="slick/tools/template_test.html">template_test</a></p>
 	<p><a href="slick/tools/template.html">template</a></p>
 </div>
+
+<script type="text/javascript">
+  if (window.console && window.console.firebug) {
+    document.getElementById('firebug-error').style.display = 'block';
+  }
+  if (window.location.href.indexOf('file:') > -1) {
+    document.getElementById('protocol-error').style.display = 'block';
+  }
+</script>
 </body>
 </html>
