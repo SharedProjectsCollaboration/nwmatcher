@@ -580,23 +580,16 @@ NW.Dom = (function(global) {
   // @return number
   getChildIndexesByTag =
     function(element, name) {
-      var indexes, node, i = 0,
-        id = element[CSS_INDEX] || (element[CSS_INDEX] = ++CSS_ID);
-
-      if (!(indexes = childIndexesByTag[id])) {
-        indexes =
-        indexesByTag = { };
-
-        if ((node = element.firstChild)) {
-          name = name.toUpperCase();
-          do {
-            if (node.nodeName.toUpperCase() == name) {
-              indexes[node[CSS_INDEX] || (node[CSS_INDEX] = ++CSS_ID)] = ++i;
-            }
-          } while ((node = node.nextSibling));
-        }
-        indexes.length = i;
+      var i = 0, indexes = { }, node = element.firstChild;
+      if (node) {
+        name = name.toUpperCase();
+        do {
+          if (node.nodeName.toUpperCase() == name) {
+            indexes[node[CSS_INDEX] || (node[CSS_INDEX] = ++CSS_ID)] = ++i;
+          }
+        } while ((node = node.nextSibling));
       }
+      indexes.length = i;
       return indexes;
     },
 
@@ -1307,7 +1300,6 @@ NW.Dom = (function(global) {
 
       // re-initialize indexes
       childIndexes = { };
-      childIndexesByTag = { };
 
 
       /* pre-filtering pass allow to scale proportionally with big DOM trees */
@@ -1453,8 +1445,6 @@ NW.Dom = (function(global) {
 
   // ordinal position by nodeType or nodeName
   childIndexes = { },
-
-  childIndexesByTag = { },
 
   // compiled select functions returning collections
   compiledSelectors = { },
