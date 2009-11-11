@@ -46,7 +46,7 @@ Describe('Slick Match',function(){
 			{ operator:'$=', value:'you!', matchAgainst:'test you! ', shouldBeTrue:false },
 
 			{ operator:'!=', value:'test you!', matchAgainst:'test you?', shouldBeTrue:true },
-			{ operator:'!=', value:'test you!', matchAgainst:'test you!', shouldBeTrue:false },
+			{ operator:'!=', value:'test you!', matchAgainst:'test you!', shouldBeTrue:false }
 		];
 		function makeAttributeTest(operator, value, matchAgainst, shouldBeTrue) {
 			var code = [''];
