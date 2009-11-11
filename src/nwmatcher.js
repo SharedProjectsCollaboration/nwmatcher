@@ -658,6 +658,8 @@ NW.Dom = (function(global) {
   // @return array (non native GEBCN)
   byClass =
     function(className, from) {
+      from || (from = context);
+
       // use GEBCN if available
       if (from.getElementsByClassName && !BUGGY_GEBCN) {
         return from.getElementsByClassName(className.replace(/\\/g, ''));

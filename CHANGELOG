@@ -1,3 +1,5 @@
+* Add `context` fallback to byClass(). [Diego Perini]
+
 * Fix `of-type` selectors when no context is given by removing the `indexesByTag` cache. [Diego Perini]
 
 * Make `RE_BUGGY_QSAPI` filter out selectors that cause IE to throw errors. [jddalton]
