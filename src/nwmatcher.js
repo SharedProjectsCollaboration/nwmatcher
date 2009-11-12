@@ -79,8 +79,8 @@ NW.Dom = (function(global) {
   reSplitToken = /([^ >+~,\\()[\]]+|\([^()]+\)|\(.*\)|\[[^[\]]+\]|\[.*\]|\\.)+/g,
 
   // simple check to ensure the first character of a selector is valid
-  // http://www.w3.org/TR/2009/CR-CSS2-20090423/syndata.html#characters
-  reValidator = /^(?:[*a-zA-Z]|\[[\x20\t\n\r\fa-zA-Z]|[.:#*_]?(?!-?\d)(?:[-a-zA-Z]|[^\x00-\xa0]))/,
+  // http://www.w3.org/TR/css3-syntax/#characters
+  reValidator = /^(?:[*a-zA-Z]|\[[\x20\t\n\r\fa-zA-Z]|[.:#_]?(?!-?\d)(?:[-a-zA-Z]|[^\x00-\xa0]))/,
 
   // for use with the normilize method
   reEdgeSpaces     = new RegExp(strEdgeSpace, 'g'),
