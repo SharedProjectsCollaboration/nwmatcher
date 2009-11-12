@@ -1,3 +1,5 @@
+* Ensure ancestor/descendant resolvers don't end on the document node. [Diego Perini]
+
 * Removed the client_api() named expression for Safari 2 support. [Diego Perini]
 
 * Refine the `reValidator` regexp. [jddalton, Diego Perini]
