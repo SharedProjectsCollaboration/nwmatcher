@@ -370,6 +370,8 @@
       isBuggy = !!div.ownerDocument.getElementById('x');
 
       if (NATIVE_GEBN) BUGGY_GEBN = isBuggy;
+      root.removeChild(div);
+
       return isBuggy;
     })() :
     true,

@@ -2,7 +2,7 @@ function specsMockTemplate(specs,context){
 	
 	it['should append results to an existing array if passed in'] = function(){
 		var append = [];
-		value_of( context.Slick(document, '*', append) ).should_be( append );
+		value_of( context.Slick(context.document, '*', append) ).should_be( append );
 	};
 	
 	it['should append results to an existing array-like-thing if passed in'] = function(){
