@@ -15,9 +15,7 @@
  *  http://javascript.nwbox.com/NWMatcher/nwmatcher.js
  */
 
-window.NW || (window.NW = { });
-
-NW.Dom = (function(global) {
+(function(global) {
 
   var version = 'nwmatcher-1.2.0',
 
@@ -94,6 +92,30 @@ NW.Dom = (function(global) {
   reTrailingSpacesWithQuotes = new RegExp('(?:' + strTrailingSpace + ')|' + strSkipQuotes, 'g'),
 
   /*----------------------------- UTILITY METHODS ----------------------------*/
+
+  clearElement =
+    function(element) {
+      while (element.lastChild) {
+        element.removeChild(element.lastChild);
+      }
+      return element;
+    },
+
+  createElement =
+    function(tagName) {
+      return document.createElement(tagName);
+    },
+
+  createInput =
+    function(type) {
+      try {
+        return createElement('<input type="' + type + '">');
+      } catch(e) {
+        var input = createElement('input');
+        input.type = type;
+        return input;
+      }
+    },
 
   // normalize whitespace and remove consecutive spaces
   // http://www.w3.org/TR/css3-selectors/#selector-syntax
@@ -225,7 +247,12 @@ NW.Dom = (function(global) {
       // obsolete bug https://bugs.webkit.org/show_bug.cgi?id=19047
       // so the bug is in all other browsers code now :-)
       // new specs http://www.whatwg.org/specs/web-apps/current-work/#selectors
-      div.innerHTML = '<p class="X"></p>';
+
+      // <p class="X"></p>
+      clearElement(div)
+        .appendChild(createElement('p'))
+        .className = 'X';
+
       if (compatMode == 'BackCompat' && div.querySelector('.x') === null) {
         return testTrue;
       }
@@ -233,9 +260,12 @@ NW.Dom = (function(global) {
       // :enabled :disabled bugs with hidden fields (Firefox 3.5 QSA bug)
       // http://www.w3.org/TR/html5/interactive-elements.html#selector-enabled
       // IE8 throws error with these pseudos
-      isBuggy = true;
-      div.innerHTML = '<input type="hidden">';
 
+      // <input type="hidden">
+      clearElement(div)
+        .appendChild(createInput('hidden'));
+
+      isBuggy = true;
       try {
         isBuggy = div.querySelectorAll(':enabled').length === 1;
       } catch(e) { }
@@ -243,8 +273,12 @@ NW.Dom = (function(global) {
       isBuggy && pattern.push(':enabled', ':disabled');
 
       // :checked bugs whith checkbox fields (Opera 10beta3 bug)
+      // <input type="checkbox" checked>
+      clearElement(div)
+        .appendChild(createInput('checkbox'))
+        .checked = true;
+
       isBuggy = true;
-      div.innerHTML = '<input type="checkbox" checked>';
       try {
         isBuggy = div.querySelectorAll(':checked').length !== 1;
       } catch(e) { }
@@ -252,7 +286,11 @@ NW.Dom = (function(global) {
       isBuggy && pattern.push(':checked');
 
       // :link bugs with hyperlinks matching (Firefox/Safari)
-      div.innerHTML = '<a href="x"></a>';
+      // <a href="x"></a>
+      clearElement(div)
+        .appendChild(createElement('a'))
+        .href = 'x';
+
       div.querySelectorAll(':link').length !== 1 && pattern.push(':link');
 
       return pattern.length ?
@@ -297,7 +335,11 @@ NW.Dom = (function(global) {
   NATIVE_SLICE_PROTO =
     (function() {
       try {
-        div.innerHTML = '<p id="length"></p>';
+        // <p id="length"></p>
+        clearElement(div)
+          .appendChild(createElement('p'))
+          .id = 'length';
+
         root.insertBefore(div, root.firstChild);
         isSupported = !!slice.call(div.childNodes, 0)[0];
       } catch(e) { }
@@ -319,10 +361,13 @@ NW.Dom = (function(global) {
 
   BUGGY_GEBID = NATIVE_GEBID ?
     (function() {
-      div.innerHTML = '<p name="x"></p>';
+      // <p name="x"></p>
+      clearElement(div)
+        .appendChild(createElement('p'))
+        .name = 'x';
+
       root.insertBefore(div, root.firstChild);
       isBuggy = !!div.ownerDocument.getElementById('x');
-      root.removeChild(div).innerHTML = '';
 
       if (NATIVE_GEBN) BUGGY_GEBN = isBuggy;
       return isBuggy;
@@ -344,7 +389,14 @@ NW.Dom = (function(global) {
     (function() {
       // Opera tests
       var method = 'getElementsByClassName', test = '\u53f0\u5317';
-      div.innerHTML = '<p class="' + test + 'abc ' + test + '"></p><p class="x"></p>';
+      
+      // <p class="' + test + 'abc ' + test + '"></p><p class="x"></p>
+      clearElement(div)
+        .appendChild(createElement('p'))
+        .className = test + 'abc ' + test;
+
+      div.appendChild(createElement('p')).className = 'x';
+
       isBuggy = !div[method](test)[0];
 
       // Safari test
@@ -746,17 +798,21 @@ NW.Dom = (function(global) {
   // fix for IE gEBTN('*') returning collection with comment nodes
   SKIP_COMMENTS = BUGGY_GEBTN ? 'if(e.nodeType!=1){continue;}' : '',
 
-  // use the textContent or innerText property to check CSS3 :contains
+  // Use the textContent or innerText property to check CSS3 :contains
   // Safari 2 has a bug with innerText and hidden content, using an
-  // internal replace on the innerHTML property avoids trashing it
+  // internal replace on the innerHTML property avoids trashing it.
+  // ** This solution will not work in XML or XHTML documents **
   CONTAINS_TEXT =
     'textContent' in root ?
     'e.textContent' :
     (function() {
-      var t = context.createElement('div');
-      t.innerHTML = '<p>p</p>';
-      t.style.display = 'none';
-      return t.innerText ?
+      // <p>p</p>
+      clearElement(div)
+        .appendChild(createElement('p'))
+        .appendChild(document.createTextNode('p'));
+
+      div.style.display = 'none';
+      return div.innerText ?
         'e.innerText' :
         's.stripTags(e.innerHTML)';
     })(),
@@ -1537,7 +1593,9 @@ NW.Dom = (function(global) {
 
   /*------------------------------- PUBLIC API -------------------------------*/
 
-  return {
+  global.NW || (global.NW = { });
+
+  global.NW.Dom = {
     // retrieve element by id attr
     'byId': byId,
 
