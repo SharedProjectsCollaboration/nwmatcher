@@ -73,9 +73,7 @@ Describe('Slick Match',function(){
 	});
 	
 	
-	
 });
-
 
 Describe('Slick Deep Match',function(){
 	

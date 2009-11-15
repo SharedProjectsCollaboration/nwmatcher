@@ -5,6 +5,7 @@ var Moo = {
 	},
 	
 	type: function(obj){
+		if (obj == null) return false;
 		if (!Moo.defined(obj)) return false;
 		var type = typeof obj;
 		if (type == 'object' && obj.nodeName){
@@ -120,8 +121,10 @@ Moo.String = {
 Moo.Object = {
 
 	add: function(item, properties){
+		var i = 0;
 		for (var property in properties){
 			item[property] = properties[property];
+			if (i++ > 10) break;
 		}
 	}
 
@@ -140,8 +143,11 @@ Moo.Array.forEach(debug.methods, function(name){
 Moo.Debugger = {
 	
 	load: function(){
-				
+		
+		document.documentElement.className = document.documentElement.className + ' moobugger';
+		
 		debug.spacer = document.createElement('div');
+		debug.spacer.className = 'debug-spacer';
 		document.body.appendChild(debug.spacer);
 
 		debug.iFrame = document.createElement('iframe');
@@ -203,6 +209,7 @@ Moo.Debugger = {
 	
 	unload: function(){
 		debug.queue = [];
+		document.documentElement.className = document.documentElement.className.replace(/ ?moobugger ?/,' ');
 		Moo.Element.remove(debug.iFrame);
 		Moo.Element.remove(debug.spacer);
 		Moo.Element.remove(document.getElementById('debug-bookmarklet'));
@@ -210,10 +217,12 @@ Moo.Debugger = {
 	
 	evaluate: function(value){
 		try {
-			var evaluation = eval(value);
+			var evaluation = value;
+			if (typeof value == 'string')
+				evaluation = eval(value);
 			if (evaluation !== debug.frame.debug.$nil){
 				if (evaluation == window) evaluation = {'window': '[native code]'};
-				if (evaluation == document) evaluation = {'document': '[native code]'};
+				if (evaluation.nodeType === 9) evaluation = {'document': '[native code]'};
 				debug.frame.debug.$parse([evaluation]);
 			}
 		} catch(err){

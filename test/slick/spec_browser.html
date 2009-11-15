@@ -2,10 +2,13 @@
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="ko">
 <head>
 <meta http-equiv="Content-Type" content="text/html;charset=UTF-8" />
-<title>JSSpec results</title>
+<title>Browser Bugs (some should fail) :: SlickSpec</title>
+
+<!-- Debugger -->
+<script  type="text/javascript" src="assets/moobugger/debugger.js" charset="utf-8"></script>
 
 <!-- JSSpec -->
-<link rel="stylesheet" type="text/css" href="assets/JSSpec.css" />
+<link rel="stylesheet" type="text/css" href="assets/slickspec.css" />
 <script type="text/javascript" src="assets/diff_match_patch.js"></script>
 <script type="text/javascript" src="assets/JSSpec.js"></script>
 <script type="text/javascript" src="assets/JSSpecHelpers.js"></script>
@@ -31,6 +34,8 @@ new Mock(/\b(html|xhtml)\b/i, specsBrowserBugs);
 </head>
 <body>
 
+<h1 id="slickspec_logo"><a href="./">Slick<strong>Spec</strong></a></h1>
+
 
 <!-- mocks -->
 <iframe onload="Mock.register('template html standard',this.contentWindow)" src="tools/template-standard.html"></iframe>
@@ -38,8 +43,8 @@ new Mock(/\b(html|xhtml)\b/i, specsBrowserBugs);
 <iframe onload="Mock.register('template html quirks',this.contentWindow)" src="tools/template-quirks.html"></iframe>
 
 <!--[if gt IE 8]><!-->
-<!-- <iframe onload="Mock.register('template xhtml',this.contentWindow)" src="tools/template.xhtml"></iframe> -->
-<!-- <iframe onload="Mock.register('template xml',this.contentWindow)" src="tools/template.xml"></iframe> -->
+<iframe onload="Mock.register('template xhtml',this.contentWindow)" src="tools/template.xhtml"></iframe>
+<iframe onload="Mock.register('template xml',this.contentWindow)" src="tools/template.xml"></iframe>
 <iframe onload="Mock.register('svg logo',this.contentWindow)" src="tools/MooTools_Logo.svg"></iframe>
 <!-- <![endif]-->
 

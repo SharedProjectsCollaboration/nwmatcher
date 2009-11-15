@@ -100,7 +100,7 @@ function specsMockTemplate(specs,context){
 		// 
 	};
 */
-
+	
   // Remove invalid selectors (jddalton)
 	// it_should_find(6, '.a1 !  *');
 	// it_should_find(4, '.a1 !> *');

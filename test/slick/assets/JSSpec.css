@@ -17,10 +17,6 @@ body, #jsspec_container {
   background-color: white;
 }
 
-iframe {
-  display:none;
-}
-
 #title {
   padding: 0;
   margin: 0;
