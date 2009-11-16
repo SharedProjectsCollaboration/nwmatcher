@@ -1295,9 +1295,9 @@
   // @return array
   client_api =
     function (selector, from, callback) {
-      var Contexts, Results, className, compiled, data, element,
-       elements, hasChanged, isCacheable, isSingle, now, origFrom,
-       origSelector, parts, token;
+      var Contexts, Results, className, compiled, data,
+       element, elements, hasChanged, isCacheable, isSingle,
+       now, normSelector, origFrom, origSelector, parts, token;
 
       if (RE_SIMPLE_SELECTOR.test(selector)) {
         return native_api(selector, from, callback);
@@ -1344,7 +1344,7 @@
       }
 
       // normalize and validate selector
-      origSelector = selector;
+      normSelector = origSelector = selector;
       if ((hasChanged = lastSelector != selector)) {
         // process valid selector strings
         if (reValidator.test(selector)) {
@@ -1354,7 +1354,7 @@
 
           // remove extraneous whitespace
           if (reUnnormalized.test(selector))
-            selector = normalize(selector);
+            normSelector = selector = normalize(selector);
         }
         else {
           emit('DOMException: "' + selector + '" is not a valid CSS selector.');
@@ -1391,7 +1391,7 @@
           }
 
           if (isCacheable) {
-            Contexts[selector] =
+            Contexts[normSelector] =
             Contexts[origSelector] = from;
             return (
               Results[selector] =
@@ -1436,10 +1436,10 @@
       }
       if (!elements.length) {
         if (isCacheable) {
-          Contexts[selector] =
+          Contexts[normSelector] =
           Contexts[origSelector] = origFrom || from;
           return (
-            Results[selector] =
+            Results[normSelector] =
             Results[origSelector] = [ ]);
         }
         return [ ];
@@ -1451,11 +1451,11 @@
       childIndexes = { };
 
       // save compiled selectors
-      if ((compiled = compiledSelectors[selector])) {
+      if ((compiled = compiledSelectors[normSelector])) {
         compiledSelectors[origSelector] = compiled;
       } else {
         compiled =
-        compiledSelectors[selector] =
+        compiledSelectors[normSelector] =
         compiledSelectors[origSelector] = isSingle
           ? compileSingle(selector)
           : compileGroup(selector, '', true);
@@ -1465,10 +1465,10 @@
 
       if (isCacheable) {
         // a cached result set for the requested selector
-        Contexts[selector] =
+        Contexts[normSelector] =
         Contexts[origSelector] = origFrom || from;
         return (
-          Results[selector] =
+          Results[normSelector] =
           Results[origSelector] = data);
       }
 

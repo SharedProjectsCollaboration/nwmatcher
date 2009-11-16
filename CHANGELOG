@@ -1,3 +1,5 @@
+* Ensure client_api() doesn't use an optimized selector for the compiled/dom cache. [jddalton]
+
 * Ensure selectors like `.foo > *` and `.foo >` return the same results. [jddalton]
 
 * Assume `context` on selectors like `> h3` which don't specify one. [jddalton]
