@@ -529,7 +529,7 @@
     'attribute': /^\[([-\w]*:?(?:[-\w])+)(?:([~*^$|!]?=)(["']*)([^'"()]*?)\3)?\](.*)/,
 
     // structural pseudo-classes
-    'spseudos': /^\:(root|empty|nth)?-?(first|last|only)?-?(child)?-?(of-type)?(\((?:even|odd|[^\)]*)\))?(.*)/,
+    'spseudos': /^\:(root|empty|nth)?-?(first|last|only)?-?(child)?-?(of-type)?(?:\((even|odd|[^\)]*)\))?(.*)/,
 
     // uistates + dynamic + negation pseudo-classes
     'dpseudos': /^\:([\w]+|[^\x00-\xa0]+)(?:\((["']*)(.*?(\(.*\))?[^'"()]*?)\2\))?(.*)/,
@@ -1022,8 +1022,6 @@
                 (match[4] ? 'n.nodeName==e.nodeName' : 'n.nodeType==1');
 
               if (match[1] && match[5]) {
-                // remove the ( ) grabbed above
-                match[5] = match[5].replace(/\(|\)/g, '');
                 if (match[5] == 'even') {
                   a = 2;
                   b = 0;

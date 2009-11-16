@@ -1,3 +1,5 @@
+* Avoid extracting parenthesis around pseudos parameters and having to remove them later [Diego Perini]
+
 * Ensure client_api() doesn't use an optimized selector for the compiled/dom cache. [jddalton]
 
 * Ensure selectors like `.foo > *` and `.foo >` return the same results. [jddalton]
