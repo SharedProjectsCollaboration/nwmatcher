@@ -44,7 +44,7 @@
   // NOTE: Safari 2.0.x crashes with escaped (\\)
   // Unicode ranges in regular expressions so we
   // use a negated character range class instead
-  strEncoding = '((?:[-\\w]|[^\\x00-\\xa0]|\\\\.)+)',
+  strEncoding = '(?:[-\\w]|[^\\x00-\\xa0]|\\\\.)+',
 
   // used to skip [ ] or ( ) groups in token tails
   strSkipGroup = '(?:\\[.*\\]|\\(.*\\))',
@@ -61,9 +61,8 @@
   strMultiSpace = '\\x20{2,}',
 
   reClassValue  = /([-\w]+)/,
-  reDescendants = /[^> \w]/,
-  reIdSelector  = /^\#[-\w]+$/,
-  reSiblings    = /[^+~\w]/,
+
+  reSiblings    = new RegExp("^(?:[.#]?" + strEncoding + ")?[+~]"),
 
   reUseSafeNormalize = /[[\(]/,
 
@@ -518,9 +517,9 @@
 
   // optimization expressions
   Optimize = {
-    'id':        new RegExp("#"   + strEncoding + "|" + strSkipGroup),
-    'className': new RegExp("\\." + strEncoding + "|" + strSkipGroup),
-    'tagName':   new RegExp("(?:^|[>+~\\x20])" + strEncoding + "|" + strSkipGroup)
+    'id':        new RegExp("#("   + strEncoding + ")|" + strSkipGroup),
+    'className': new RegExp("\\.(" + strEncoding + ")|" + strSkipGroup),
+    'tagName':   new RegExp("(?:^|[>+~\\x20])(" + strEncoding + ")|" + strSkipGroup)
   },
 
   // precompiled Regular Expressions
@@ -550,13 +549,13 @@
     'universal': /^\*(.*)/,
 
     // id
-    'id': new RegExp("^#" + strEncoding + "(.*)"),
+    'id': new RegExp("^#(" + strEncoding + ")(.*)"),
 
     // tag
-    'tagName': new RegExp("^" + strEncoding + "(.*)"),
+    'tagName': new RegExp("^(" + strEncoding + ")(.*)"),
 
     // class
-    'className': new RegExp("^\\." + strEncoding + "(.*)")
+    'className': new RegExp("^\\.(" + strEncoding + ")(.*)")
   },
 
   // place to add exotic functionalities
@@ -1428,10 +1427,13 @@
         }
       }
 
-      // grab elements from parentNode to cover sibling and adjacent selectors
       if (!elements) {
-        elements = byTag('*', from.parentNode || from);
+        // grab elements from parentNode to cover sibling and adjacent selectors
+        elements = byTag('*', reSiblings.test(selector)
+          ? from.parentNode || from
+          : from);
       }
+
       if (!elements.length) {
         if (isCacheable) {
           Contexts[normSelector] =
