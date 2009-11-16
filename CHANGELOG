@@ -1,3 +1,5 @@
+* Avoid escaping characters that don't need it in regexps and simplify `reSplitGroup` and `reSplitToken`. [jddalton]
+
 * Ensure the div test element is removed from the document. [jddalton]
 
 * Make NWMatcher work when embedded in XHTML or XML documents. [jddalton]

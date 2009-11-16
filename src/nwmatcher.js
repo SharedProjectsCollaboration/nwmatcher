@@ -52,9 +52,9 @@
   // used to skip "..." or '...' quoted attribute values
   strSkipQuotes = '(?:"(?:(?=\\\\?)\\\\?(?:\\n|\\r|.))*?"|\'(?:(?=\\\\?)\\\\?(?:\\n|\\r|.))*?\')',
 
-  strLeadingSpace = '\\x20+([\\]\\)=>+~,^$|!]|\\*=)',
+  strLeadingSpace = '\\x20+([\\])=>+~,^$|!]|\\*=)',
 
-  strTrailingSpace = '([\\[\\(=>+~,^$|!]|\\*=)\\x20+',
+  strTrailingSpace = '([[(=>+~,^$|!]|\\*=)\\x20+',
 
   strEdgeSpace = '[\\t\\n\\r\\f]',
 
@@ -65,16 +65,16 @@
   reIdSelector  = /^\#[-\w]+$/,
   reSiblings    = /[^+~\w]/,
 
-  reUseSafeNormalize = /[\[\(]/,
+  reUseSafeNormalize = /[[\(]/,
 
   reUnnormalized = /[\t\n\r\f]|\x20{2,}|(?:\x20(?:[\]\)=>+~,^$|!]|\*=))|(?:(?:[\[\(=>+~,^$|!]|\*=)\x20)/,
 
   // split comma separated selector groups, exclude commas inside '' "" () []
   // example: (#div a, ul > li a) group 1 is (#div a) group 2 is (ul > li a)
-  reSplitGroup = /([^,()[\]]+|\([^()]+\)|\(.*\)|\[(?:\[[^[\]]*\]|["'][^'"]*["']|[^'"[\]]+)+\]|\[.*\]|\\.)+/g,
+  reSplitGroup = /([^,()[\]]+|\(.*\)|\[(?:\[[^[\]]*\]|["'][^'"]*["']|[^'"[\]]+)+\]|\[.*\]|\\.)+/g,
 
   // split last, right most, selector group token
-  reSplitToken = /([^ >+~,\\()[\]]+|\([^()]+\)|\(.*\)|\[[^[\]]+\]|\[.*\]|\\.)+/g,
+  reSplitToken = /(?:[^ >+~,\\()[\]]+|\(.*\)|\[.*\]|\\.)+/g,
 
   // simple check to ensure the first character of a selector is valid
   // http://www.w3.org/TR/css3-syntax/#characters
