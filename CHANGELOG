@@ -1,3 +1,7 @@
+* Ensure selectors like `.foo > *` and `.foo >` return the same results. [jddalton]
+
+* Assume `context` on selectors like `> h3` which don't specify one. [jddalton]
+
 * Avoid escaping characters that don't need it in regexps and simplify `reSplitGroup` and `reSplitToken`. [jddalton]
 
 * Ensure the div test element is removed from the document. [jddalton]

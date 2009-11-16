@@ -74,11 +74,11 @@
   reSplitGroup = /([^,()[\]]+|\(.*\)|\[(?:\[[^[\]]*\]|["'][^'"]*["']|[^'"[\]]+)+\]|\[.*\]|\\.)+/g,
 
   // split last, right most, selector group token
-  reSplitToken = /(?:[^ >+~,\\()[\]]+|\(.*\)|\[.*\]|\\.)+/g,
+  reSplitToken = /(?:[^ >+~,\\()[\]]+|\(.*\)|\[.*\]|\\.)+|[>+~]$/g,
 
   // simple check to ensure the first character of a selector is valid
   // http://www.w3.org/TR/css3-syntax/#characters
-  reValidator = /^(?:[*a-zA-Z]|\[[\x20\t\n\r\fa-zA-Z]|[.:#_]?(?!-?\d)(?:[-a-zA-Z]|[^\x00-\xa0]))/,
+  reValidator = /^(?:[*>+~a-zA-Z]|\[[\x20\t\n\r\fa-zA-Z]|[.:#_]?(?!-?\d)(?:[-a-zA-Z]|[^\x00-\xa0]))/,
 
   // for use with the normilize method
   reEdgeSpaces     = new RegExp(strEdgeSpace, 'g'),
@@ -869,6 +869,7 @@
     function(selector, source) {
 
       var i, a, b, n, expr, isLowered, match, result, status, test, type,
+       origSelector = selector,
        pseudoStructural = CSS3PseudoClasses.Structural,
        pseudoOthers = CSS3PseudoClasses.Others,
        ptnAdjacent  = Patterns.adjacent,
@@ -950,6 +951,10 @@
         // *** Adjacent sibling combinator
         // E + F (F adiacent sibling of E)
         else if ((match = selector.match(ptnAdjacent))) {
+          // assume matching context if E is not provided
+          if (match[0] == origSelector) {
+            source = 'if(e==g){' + source + '}';
+          }
           source = NATIVE_TRAVERSAL_API ?
             'if((e=e.previousElementSibling)){' + source + '}' :
             'while((e=e.previousSibling)){if(e.nodeType==1){' + source + 'break;}}';
@@ -959,8 +964,12 @@
         // E ~ F (F relative sibling of E)
         else if ((match = selector.match(ptnRelative))) {
           k++;
+          // assume matching context if E is not provided
+          if (match[0] == origSelector) {
+            source = 'if(e==g){' + source + '}';
+          }
+          // previousSibling particularly slow on Gecko based browsers prior to FF3.1
           if (NATIVE_TRAVERSAL_API) {
-            // previousSibling particularly slow on Gecko based browsers prior to FF3.1
             source =
               'var N' + k + '=e;e=e==h?h:e.parentNode.firstElementChild;' +
               'while(e!=N' + k +'){if(e){' + source + '}e=e.nextElementSibling;}';
@@ -974,6 +983,10 @@
         // *** Child combinator
         // E > F (F children of E)
         else if ((match = selector.match(ptnChildren))) {
+          // assume matching context if E is not provided
+          if (match[0] == origSelector) {
+            source = 'if(e==g){' + source + '}';
+          }
           source = 'if(e!==g&&(e=e.parentNode)&&e.nodeType==1){' + source + '}';
         }
 
@@ -1395,6 +1408,7 @@
               selector = selector.replace('#' + token, '*');
               from = element;
             } else from = element.parentNode;
+            elements = byTag('*', from);
           }
           else elements = 1;
         }
@@ -1416,8 +1430,9 @@
         }
       }
 
+      // grab elements from parentNode to cover sibling and adjacent selectors
       if (!elements) {
-        elements = byTag('*', from);
+        elements = byTag('*', from.parentNode || from);
       }
       if (!elements.length) {
         if (isCacheable) {
