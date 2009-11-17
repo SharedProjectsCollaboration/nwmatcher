@@ -599,7 +599,7 @@
   getChildIndexes =
     function(element) {
       var indexes, node, i = 0,
-        id = element[CSS_INDEX] || (element[CSS_INDEX] = ++CSS_ID);
+       id = element[CSS_INDEX] || (element[CSS_INDEX] = ++CSS_ID);
 
       if (!(indexes = childIndexes[id])) {
         indexes =
@@ -621,14 +621,19 @@
   // @return number
   getChildIndexesByTag =
     function(element, name) {
-      var i = 0, indexes = { }, node = element.firstChild;
-      if (node) {
-        name = name.toUpperCase();
-        do {
-          if (node.nodeName.toUpperCase() == name) {
-            indexes[node[CSS_INDEX] || (node[CSS_INDEX] = ++CSS_ID)] = ++i;
-          }
-        } while ((node = node.nextSibling));
+      var indexes, node, i = 0,
+       id = element[CSS_INDEX] || (element[CSS_INDEX] = ++CSS_ID),
+       cache = childIndexesByTag[id] || (childIndexesByTag[id] = { });
+
+      if ((indexes = cache[name])) {
+        indexes = cache[name] = { };
+        if ((node = element.firstChild)) {
+          do {
+            if (node.nodeName.toUpperCase() == name) {
+              indexes[node[CSS_INDEX] || (node[CSS_INDEX] = ++CSS_ID)] = ++i;
+            }
+          } while ((node = node.nextSibling));
+        }
       }
       indexes.length = i;
       return indexes;
@@ -1016,11 +1021,6 @@
               break;
 
             default:
-              // used for nth-child/of-type
-              type = NATIVE_TRAVERSAL_API ?
-                (match[4] ? 'n.nodeName==e.nodeName' : 'true') :
-                (match[4] ? 'n.nodeName==e.nodeName' : 'e.nodeName.charAt(0) > "@"');
-
               if (match[1] && match[5]) {
                 if (match[5] == 'even') {
                   a = 2;
@@ -1035,8 +1035,11 @@
                   b = 0 || ((n = match[5].match(/(-?\d{1,})$/)) ? parseInt(n[1], 10) : 0);
                 }
 
+                // shortcut check for of-type selectors
+                type = match[4] ? '[e.nodeName' + TO_UPPER_CASE + ']' : '';
+
                 // executed after the count is computed
-                expr = match[2] == 'last' ? 'n.length-' + (b - 1) : b;
+                expr = match[2] == 'last' ? 'n' + type + '.length-' + (b - 1) : b;
 
                 test =
                   b < 0 ?
@@ -1051,22 +1054,32 @@
                     '';
 
                 // 4 cases: 1 (nth) x 4 (child, of-type, last-child, last-of-type)
-                source = 'n=s.getChildIndexes' + (match[4] ? 'ByTag' : '') +
-                  '(e.parentNode' + (match[4] ? ',e.nodeName' : '') + ');' +
-                  'if(n[e.' + CSS_INDEX + ']' + test + '){' + source + '}';
+                source =
+                  'if(e!==h){' +
+                    'n=s.getChildIndexes' + (match[4] ? 'ByTag' : '') +
+                    '(e.parentNode' + (match[4] ? ',e.nodeName' + TO_UPPER_CASE : '') + ');' +
+                    'if(n' + type + '[e.' + CSS_INDEX + ']' + test + '){' + source + '}' +
+                  '}';
 
               } else {
                 // 6 cases: 3 (first, last, only) x 1 (child) x 2 (-of-type)
-                // too much overhead calling functions out of the main loop ?
                 a = match[2] == 'first' ? 'previous' : 'next';
                 n = match[2] == 'only'  ? 'previous' : 'next';
                 b = match[2] == 'first' || match[2] == 'last';
 
-                source = NATIVE_TRAVERSAL_API ?
-                  ( 'n=e.' + a + 'ElementSibling;if(!(n&&' + type + ')){' + (b ? source :
-                    'n=e.' + n + 'ElementSibling;if(!(n&&' + type + ')){' + source + '}') + '}' ) :
-                  ( 'n=e;while((n=n.' + a + 'Sibling)&&!(' + type + '));if(!n){' + (b ? source :
-                    'n=e;while((n=n.' + n + 'Sibling)&&!(' + type + '));if(!n){' + source + '}') + '}' );
+                type = match[4] ? '&&n.nodeName!=e.nodeName' : '&&e.nodeName.charAt(0) < "A"';
+
+                if (NATIVE_TRAVERSAL_API) {
+                  a += 'Element';
+                  n += 'Element';
+                  if (!match[4]) type = '';
+                }
+
+                source =
+                  'if(e!==h){' +
+                    ( 'n=e;while((n=n.' + a + 'Sibling)' + type + ');if(!n){' + (b ? source :
+                      'n=e;while((n=n.' + n + 'Sibling)' + type + ');if(!n){' + source + '}') + '}' ) +
+                  '}';
               }
               break;
           }
@@ -1452,6 +1465,7 @@
 
       // re-initialize indexes
       childIndexes = { };
+      childIndexesByTag = { };
 
       // save compiled selectors
       if ((compiled = compiledSelectors[normSelector])) {
@@ -1503,6 +1517,8 @@
 
   // ordinal position by nodeType or nodeName
   childIndexes = { },
+
+  childIndexesByTag = { },
 
   // compiled select functions returning collections
   compiledSelectors = { },
