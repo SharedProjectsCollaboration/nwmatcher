@@ -378,7 +378,7 @@
   // detect IE gEBTN comment nodes bug
   BUGGY_GEBTN = NATIVE_GEBTN ?
     (function() {
-      div.appendChild(context.createComment(''));
+      clearElement(div).appendChild(context.createComment(''));
       return !!div.getElementsByTagName('*')[0];
     })() :
     true,
@@ -1072,7 +1072,7 @@
                 if (NATIVE_TRAVERSAL_API) {
                   a += 'Element';
                   n += 'Element';
-                  if (!match[4]) type = '';
+                  if (!match[4]) type = '&&false';
                 }
 
                 source =
