@@ -1,3 +1,5 @@
+* Fix typos in compileSelector() and getChildIndexesByTag() and clear `childIndexes` cache in match(). [jddalton]
+
 * Remove variable `CSS_INDEX` because in IE the `sourceIndex` property can be 0 on disconnected nodes. [jddalton]
 
 * Add cache back to getChildIndexesByTag(). [Diego Perini, jddalton]

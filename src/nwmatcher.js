@@ -625,7 +625,7 @@
        id = element.CSS_ID || (element.CSS_ID = ++CSS_ID),
        cache = childIndexesByTag[id] || (childIndexesByTag[id] = { });
 
-      if ((indexes = cache[name])) {
+      if (!(indexes = cache[name])) {
         indexes = cache[name] = { };
         if ((node = element.firstChild)) {
           do {
@@ -634,9 +634,9 @@
             }
           } while ((node = node.nextSibling));
         }
+        indexes.length = i;
       }
-      indexes.length = i;
-      return indexes;
+      return cache;
     },
 
   // attribute value
@@ -1067,7 +1067,7 @@
                 n = match[2] == 'only'  ? 'previous' : 'next';
                 b = match[2] == 'first' || match[2] == 'last';
 
-                type = match[4] ? '&&n.nodeName!=e.nodeName' : '&&e.nodeName.charAt(0) < "A"';
+                type = match[4] ? '&&n.nodeName!=e.nodeName' : '&&n.nodeName.charAt(0) < "A"';
 
                 if (NATIVE_TRAVERSAL_API) {
                   a += 'Element';
@@ -1232,6 +1232,11 @@
           return false;
         }
       }
+
+      // re-initialize indexes
+      childIndexes = { };
+      childIndexesByTag = { };
+
       return compiled(element, snap, base, root, from || base, callback);
     },
 
