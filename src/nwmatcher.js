@@ -719,9 +719,10 @@
       from || (from = context);
       id = id.replace(/\\/g, '');
 
-      if (from.getElementById) {
+      if ('getElementById' in from) {
         if ((element = from.getElementById(id)) &&
-            id != getAttribute(element, 'id') && from.getElementsByName) {
+            id != getAttribute(element, 'id') &&
+            'getElementsByName' in from) {
           names = from.getElementsByName(id);
           while ((element = names[i++])) {
             if (element.getAttribute('id') == id) {
@@ -744,7 +745,7 @@
       from || (from = context);
       name = name.replace(/\\/g, '');
 
-			if (from.getElementsByName) {
+			if ('getElementsByTagName' in from) {
 			  if (BUGGY_GEBN) {
   			  elements = [ ];
   			  names = from.getElementsByName(name);
@@ -766,7 +767,7 @@
   byTag =
     function(tag, from) {
       from || (from = context);
-      if (from.getElementsByTagName) {
+      if ('getElementsByTagName' in from) {
         return from.getElementsByTagName(tag);
       }
 
@@ -777,7 +778,7 @@
         do {
           if (child.nodeName.toUpperCase() === tag) {
             results.push(child);
-          } else if (child.getElementsByTagName) {
+          } else if ('getElementsByTagName' in child) {
             concatList(results, child.getElementsByTagName(tag));
           }
         } while ((child = child.nextSibling));
@@ -1134,9 +1135,11 @@
               break;
             case 'selected':
               // fix Safari selectedIndex property bug
-              n = base.getElementsByTagName('select');
-              for (i = 0; n[i]; i++) {
-                n[i].selectedIndex;
+              if ('getElementsByTagName' in base) {
+                n = base.getElementsByTagName('select');
+                for (i = 0; n[i]; i++) {
+                  n[i].selectedIndex;
+                }
               }
               source = 'if("form" in e&&e.selected===true){' + source + '}';
               break;
