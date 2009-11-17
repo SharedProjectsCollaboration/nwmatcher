@@ -1,3 +1,5 @@
+* Rename private variable `SKIP_COMMENTS` to `SKIP_NON_ELEMENTS` and filer out comments, document, and invalid elements. [Diego Perini, jddalton, Thomas Aylott]
+
 * Stop non-HTML documents throwing errors by changing checks like `if (from.getElementsByTagName)` to `if ('getElementsByTagName' in from)`. [jddalton]
 
 * Rename private variable `NODE_NAME_TO_UPPER_CASE` to `TO_UPPER_CASE`. [jddalton]

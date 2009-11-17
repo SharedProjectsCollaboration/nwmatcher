@@ -607,7 +607,7 @@
 
         if ((node = element.firstChild)) {
           do {
-            if (node.nodeType == 1) {
+            if (node.nodeName.charAt(0) > '@') {
               indexes[node[CSS_INDEX] || (node[CSS_INDEX] = ++CSS_ID)] = ++i;
             }
           } while ((node = node.nextSibling));
@@ -797,8 +797,8 @@
   TO_UPPER_CASE =
     typeof context.createElementNS == 'function' ? '.toUpperCase()' : '',
 
-  // fix for IE gEBTN('*') returning collection with comment nodes
-  SKIP_COMMENTS = BUGGY_GEBTN ? 'if(e.nodeType!=1){continue;}' : '',
+  // filter IE gEBTN('*') results containing non-elements like comments and `/video`
+  SKIP_NON_ELEMENTS = BUGGY_GEBTN ? 'if(e.nodeName.charAt(0) < "A"){continue;}' : '',
 
   // Use the textContent or innerText property to check CSS3 :contains
   // Safari 2 has a bug with innerText and hidden content, using an
@@ -843,7 +843,7 @@
         // (c-ollection, s-napshot, d-ocument, h-root, g-from, f-callback)
         return new Function('c,s,d,h,g,f',
           'var e,n,N,r=[],x=0,k=0;main:while(N=e=c[k++]){' +
-          SKIP_COMMENTS + source + '}return r;');
+          SKIP_NON_ELEMENTS + source + '}return r;');
       }
       // for match method
       else {
@@ -859,7 +859,7 @@
     function(selector) {
       return new Function('c,s,d,h,g,f',
         'var e,n,N,r=[],x=0,k=0;main:while(N=e=c[k++]){' +
-        SKIP_COMMENTS + compileSelector(selector, ACCEPT_NODE) +
+        SKIP_NON_ELEMENTS + compileSelector(selector, ACCEPT_NODE) +
         '}return r;');
     },
 
@@ -1019,7 +1019,7 @@
               // used for nth-child/of-type
               type = NATIVE_TRAVERSAL_API ?
                 (match[4] ? 'n.nodeName==e.nodeName' : 'true') :
-                (match[4] ? 'n.nodeName==e.nodeName' : 'n.nodeType==1');
+                (match[4] ? 'n.nodeName==e.nodeName' : 'e.nodeName.charAt(0) > "@"');
 
               if (match[1] && match[5]) {
                 if (match[5] == 'even') {
