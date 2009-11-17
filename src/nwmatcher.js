@@ -599,7 +599,7 @@
   getChildIndexes =
     function(element) {
       var indexes, node, i = 0,
-       id = element[CSS_INDEX] || (element[CSS_INDEX] = ++CSS_ID);
+       id = element.CSS_ID || (element.CSS_ID = ++CSS_ID);
 
       if (!(indexes = childIndexes[id])) {
         indexes =
@@ -608,7 +608,7 @@
         if ((node = element.firstChild)) {
           do {
             if (node.nodeName.charAt(0) > '@') {
-              indexes[node[CSS_INDEX] || (node[CSS_INDEX] = ++CSS_ID)] = ++i;
+              indexes[node.CSS_ID || (node.CSS_ID = ++CSS_ID)] = ++i;
             }
           } while ((node = node.nextSibling));
         }
@@ -622,7 +622,7 @@
   getChildIndexesByTag =
     function(element, name) {
       var indexes, node, i = 0,
-       id = element[CSS_INDEX] || (element[CSS_INDEX] = ++CSS_ID),
+       id = element.CSS_ID || (element.CSS_ID = ++CSS_ID),
        cache = childIndexesByTag[id] || (childIndexesByTag[id] = { });
 
       if ((indexes = cache[name])) {
@@ -630,7 +630,7 @@
         if ((node = element.firstChild)) {
           do {
             if (node.nodeName.toUpperCase() == name) {
-              indexes[node[CSS_INDEX] || (node[CSS_INDEX] = ++CSS_ID)] = ++i;
+              indexes[node.CSS_ID || (node.CSS_ID = ++CSS_ID)] = ++i;
             }
           } while ((node = node.nextSibling));
         }
@@ -1058,7 +1058,7 @@
                   'if(e!==h){' +
                     'n=s.getChildIndexes' + (match[4] ? 'ByTag' : '') +
                     '(e.parentNode' + (match[4] ? ',e.nodeName' + TO_UPPER_CASE : '') + ');' +
-                    'if(n' + type + '[e.' + CSS_INDEX + ']' + test + '){' + source + '}' +
+                    'if(n' + type + '[e.CSS_ID]' + test + '){' + source + '}' +
                   '}';
 
               } else {
@@ -1505,8 +1505,6 @@
   // used to keep child indexes
   // during a selection session
   CSS_ID = 1,
-
-  CSS_INDEX = 'sourceIndex' in root ? 'sourceIndex' : 'CSS_ID',
 
   isCachingEnabled = NATIVE_MUTATION_EVENTS,
 

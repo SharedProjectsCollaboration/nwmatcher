@@ -1,3 +1,5 @@
+* Remove variable `CSS_INDEX` because in IE the `sourceIndex` property can be 0 on disconnected nodes. [jddalton]
+
 * Add cache back to getChildIndexesByTag(). [Diego Perini, jddalton]
 
 * Rename private variable `SKIP_COMMENTS` to `SKIP_NON_ELEMENTS` and filer out comments, document, and invalid elements. [Diego Perini, jddalton, Thomas Aylott]
