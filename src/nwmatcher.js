@@ -793,7 +793,7 @@
   // conditionals optimizers for the compiler
 
   // checks if nodeName comparisons need to be upperCased
-  NODE_NAME_TO_UPPER_CASE =
+  TO_UPPER_CASE =
     typeof context.createElementNS == 'function' ? '.toUpperCase()' : '',
 
   // fix for IE gEBTN('*') returning collection with comment nodes
@@ -907,7 +907,7 @@
         else if ((match = selector.match(ptnTagName))) {
           // both tagName and nodeName properties may be upper or lower case
           // depending on their creation NAMESPACE in createElementNS()
-          source = 'if(e.nodeName' + NODE_NAME_TO_UPPER_CASE + '=="' +
+          source = 'if(e.nodeName' + TO_UPPER_CASE + '=="' +
             match[1].toUpperCase() + '"){' + source + '}';
         }
 

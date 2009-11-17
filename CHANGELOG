@@ -1,3 +1,5 @@
+* Rename private variable `NODE_NAME_TO_UPPER_CASE` to `TO_UPPER_CASE`. [jddalton]
+
 * Ensure selectors like `* > :first-child` and `> :first-child` return the same results. [jddalton]
 
 * Avoid extracting parenthesis around pseudos parameters and having to remove them later [Diego Perini]
