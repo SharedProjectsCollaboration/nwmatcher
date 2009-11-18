@@ -720,7 +720,7 @@
   // @return element reference or null
   byId =
     function(id, from) {
-      var element, names, node, i = 0;
+      var element, names, node, i = -1;
       from || (from = context);
       id = id.replace(/\\/g, '');
 
@@ -729,7 +729,7 @@
             id != getAttribute(element, 'id') &&
             'getElementsByName' in from) {
           names = from.getElementsByName(id);
-          while ((element = names[i++])) {
+          while ((element = names[++i])) {
             if (element.getAttribute('id') == id) {
               return element;
             }
@@ -746,7 +746,7 @@
   // @return array
   byName =
     function(name, from) {
-      var element, elements, names, i = 0;
+      var element, elements, names, i = -1;
       from || (from = context);
       name = name.replace(/\\/g, '');
 
@@ -754,7 +754,7 @@
 			  if (BUGGY_GEBN) {
   			  elements = [ ];
   			  names = from.getElementsByName(name);
-  				while ((element = names[i++])) {
+  				while ((element = names[++i])) {
   					if (element.getAttribute('name') == name) {
   						elements.push(name);
   					}
@@ -836,9 +836,9 @@
           // avoid repeating the same token in comma separated group (p, p)
           if (!seen[token]) {
             seen[token] = true;
-            source += 'e=N;' + compileSelector(token, mode
-              ? ACCEPT_NODE
-              : 'f&&f(N);return true;');
+            // reset `e` to begin another selector
+            source += 'e=N;' +
+              compileSelector(token, mode ? ACCEPT_NODE : 'f&&f(N);return true;');
           }
         }
       }
@@ -847,14 +847,14 @@
       if (mode) {
         // (c-ollection, s-napshot, d-ocument, h-root, g-from, f-callback)
         return new Function('c,s,d,h,g,f',
-          'var e,n,N,r=[],x=0,k=0;main:while(N=e=c[k++]){' +
+          'var e,n,N,t,r=[],x=0,k=0;main:while(N=e=c[k++]){' +
           SKIP_NON_ELEMENTS + source + '}return r;');
       }
       // for match method
       else {
         // (e-element, s-napshot, d-ocument, h-root, g-from, f-callback)
         return new Function('e,s,d,h,g,f',
-          'var n,N=e,x=0;' + source + 'return false;');
+          'var n,t,N=e,x=0;' + source + 'return false;');
       }
     },
 
@@ -863,7 +863,7 @@
   compileSingle =
     function(selector) {
       return new Function('c,s,d,h,g,f',
-        'var e,n,N,r=[],x=0,k=0;main:while(N=e=c[k++]){' +
+        'var e,n,N,t,r=[],x=0,k=0;main:while(N=e=c[k++]){' +
         SKIP_NON_ELEMENTS + compileSelector(selector, ACCEPT_NODE) +
         '}return r;');
     },
@@ -958,7 +958,7 @@
         else if ((match = selector.match(ptnAdjacent))) {
           // assume matching context if E is not provided
           if (match[0] == origSelector) {
-            source = 'if(e==g){' + source + '}';
+            source = 'if(e===g){' + source + '}';
           }
           source = NATIVE_TRAVERSAL_API ?
             'if((e=e.previousElementSibling)){' + source + '}' :
@@ -971,7 +971,7 @@
           k++;
           // assume matching context if E is not provided
           if (match[0] == origSelector) {
-            source = 'if(e==g){' + source + '}';
+            source = 'if(e===g){' + source + '}';
           }
           // previousSibling particularly slow on Gecko based browsers prior to FF3.1
           if (NATIVE_TRAVERSAL_API) {
@@ -990,7 +990,7 @@
         else if ((match = selector.match(ptnChildren))) {
           // assume matching context if E is not provided
           if (match[0] == origSelector) {
-            source = 'if(e==g){' + source + '}';
+            source = 'if(e===g){' + source + '}';
           }
           source = 'if(e!==g&&(e=e.parentNode)&&e.nodeType==1){' + source + '}';
         }
@@ -1036,7 +1036,7 @@
                 }
 
                 // shortcut check for of-type selectors
-                type = match[4] ? '[e.nodeName' + TO_UPPER_CASE + ']' : '';
+                type = match[4] ? '[t]' : '';
 
                 // executed after the count is computed
                 expr = match[2] == 'last' ? 'n' + type + '.length-' + (b - 1) : b;
@@ -1056,8 +1056,9 @@
                 // 4 cases: 1 (nth) x 4 (child, of-type, last-child, last-of-type)
                 source =
                   'if(e!==h){' +
-                    'n=s.getChildIndexes' + (match[4] ? 'ByTag' : '') +
-                    '(e.parentNode' + (match[4] ? ',e.nodeName' + TO_UPPER_CASE : '') + ');' +
+                    't=e.nodeName' + TO_UPPER_CASE +
+                    ';n=s.getChildIndexes' + (match[4] ? 'ByTag' : '') +
+                    '(e.parentNode' + (match[4] ? ',t' : '') + ');' +
                     'if(n' + type + '[e.CSS_ID]' + test + '){' + source + '}' +
                   '}';
 
@@ -1401,7 +1402,7 @@
 
         // ID optimization RTL
         if ((parts = lastSlice.match(Optimize.id)) && (token = parts[1])) {
-          if ((element = byId(token, context))) {
+          if ((element = byId(token, from))) {
             if (match(element, selector)) {
               data = [ element ];
               callback && callback(element);
@@ -1420,7 +1421,7 @@
 
         // ID optimization LTR by reducing the selection context
         else if ((parts = selector.match(Optimize.id)) && (token = parts[1])) {
-          if ((element = byId(token, base))) {
+          if ((element = byId(token, from))) {
             origFrom = from;
             if (!/[>+~]/.test(selector)) {
               selector = selector.replace('#' + token, '*');

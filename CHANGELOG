@@ -1,3 +1,5 @@
+* Reduce the number of times String#toUpperCase is used in compilers and switch to `++i` in byName() and byId(). [Diego Perini, jddalton]
+
 * Fix regression in `BUGGY_GEBTN` feature test. [jddalton]
 
 * Fix `NATIVE_TRAVERSAL_API` fork of the structural pseudo-class section of compileSelector(). [jddalton]
