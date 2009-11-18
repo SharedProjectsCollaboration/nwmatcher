@@ -1,3 +1,5 @@
+* Fix byId() performance regression. [jddalton]
+
 * Add feature test to `RE_BUGGY_QSAPI` for Safari 3.2 failing to find mixed cased classNames. [jddalton, Thomas Aylott]
 
 * Ensure `BUGGY_GEBID` uses unique id values in its feature test. [jddalton]

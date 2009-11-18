@@ -740,16 +740,18 @@
       from || (from = context);
       id = id.replace(/\\/g, '');
 
-      if (!notHTML && from.getElementById &&
-          (element = from.getElementById(id)) &&
-          BUGGY_GEBID && id != getAttribute(element, 'id')) {
-        names = from.getElementsByName(id);
-        while ((element = names[++i])) {
-          if (element.getAttribute('id') == id) {
-            return element;
+      if (!notHTML && from.getElementById) {
+        if ((element = from.getElementById(id)) && BUGGY_GEBID &&
+            id != getAttribute(element, 'id')) {
+          names = from.getElementsByName(id);
+          while ((element = names[++i])) {
+            if (element.getAttribute('id') == id) {
+              return element;
+            }
           }
+          return null;
         }
-        return null;
+        return element;
       }
 
       // fallback to manual
