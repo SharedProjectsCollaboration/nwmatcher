@@ -695,51 +695,57 @@
     function(className, from) {
       from || (from = context);
 
-      // use GEBCN if available
-      if (from.getElementsByClassName && !BUGGY_GEBCN) {
-        return from.getElementsByClassName(className.replace(/\\/g, ''));
+      if (notHTML) {
+        return select('[class~="' + className + '"]', from);
       }
+      if (BUGGY_GEBCN) {
+        // context is handled in byTag for non native gEBCN
+        var element, i = -1, j = i, results = [ ],
+         elements = byTag('*', from),
+         cn = isClassNameLowered ? className.toLowerCase() : className;
+        className = ' ' + cn.replace(/\\/g, '') + ' ';
 
-      // context is handled in byTag for non native gEBCN
-      var element, i = -1, j = i, results = [ ],
-       elements = byTag('*', from),
-       cn = isClassNameLowered ? className.toLowerCase() : className;
-      className = ' ' + cn.replace(/\\/g, '') + ' ';
-
-      while ((element = elements[++i])) {
-        if ((cn = element.className) && cn.length &&
-            (' ' + (isClassNameLowered ? cn.toLowerCase() : cn) + ' ')
-            .replace(reEdgeSpaces, ' ').indexOf(className) > -1) {
-          results[++j] = element;
+        while ((element = elements[++i])) {
+          if ((cn = element.className) && cn.length &&
+              (' ' + (isClassNameLowered ? cn.toLowerCase() : cn) + ' ')
+              .replace(reEdgeSpaces, ' ').indexOf(className) > -1) {
+            results[++j] = element;
+          }
         }
+        return results;
       }
-      return results;
+
+      return from.getElementsByClassName(className.replace(/\\/g, ''));
     },
 
   // element by id
   // @return element reference or null
   byId =
     function(id, from) {
-      var element, names, node, i = -1;
+      var element, elements, names, node, i = -1;
       from || (from = context);
       id = id.replace(/\\/g, '');
 
-      if ('getElementById' in from) {
-        if ((element = from.getElementById(id)) &&
-            id != getAttribute(element, 'id') &&
-            'getElementsByName' in from) {
-          names = from.getElementsByName(id);
-          while ((element = names[++i])) {
-            if (element.getAttribute('id') == id) {
-              return element;
-            }
+      if (!notHTML && from.getElementById &&
+          (element = from.getElementById(id)) &&
+          BUGGY_GEBID && id != getAttribute(element, 'id')) {
+        names = from.getElementsByName(id);
+        while ((element = names[++i])) {
+          if (element.getAttribute('id') == id) {
+            return element;
           }
-          return null;
         }
-        return element;
+        return null;
       }
 
-      return select('[id="' + id + '"]', from)[0] || null;
+      // fallback to manual
+      elements = byTag('*', from);
+      while ((element = elements[++i])) {
+        if (element.getAttribute('id') == id) {
+          return element;
+        }
+      }
+      return null;
     },
 
   // elements by name
@@ -750,45 +756,48 @@
       from || (from = context);
       name = name.replace(/\\/g, '');
 
-			if ('getElementsByTagName' in from) {
-			  if (BUGGY_GEBN) {
-  			  elements = [ ];
-  			  names = from.getElementsByName(name);
-  				while ((element = names[++i])) {
-  					if (element.getAttribute('name') == name) {
-  						elements.push(name);
-  					}
-  				}
-  				return elements;
-			  }
-			  return from.getElementsByName(name);
-			}
+      if (notHTML) {
+        return select('[name="' + name + '"]', from);
+      }
+		  if (BUGGY_GEBN) {
+			  elements = [ ];
+			  names = from.getElementsByName(name);
+				while ((element = names[++i])) {
+					if (element.getAttribute('name') == name) {
+						elements.push(name);
+					}
+				}
+				return elements;
+		  }
 
-      return select('[name="' + name + '"]', from);
+		  return from.getElementsByName(name);
     },
 
   // elements by tag
   // @return nodeList (live)
   byTag =
     function(tag, from) {
+      var child, isUniversal, upperCased, results;
       from || (from = context);
-      if ('getElementsByTagName' in from) {
-        return from.getElementsByTagName(tag);
-      }
 
-      // TODO: Check GEBTN case-sensitivity
-      var results = [ ], child = context.firstChild;
-      if (child) {
-        tag = tag.toUpperCase();
+      // support document fragments
+      if (typeof from.getElementsByTagName == 'undefined' &&
+          (child = from.firstChild)) {
+        results = [ ];
+        isUniversal = tag === '*';
+        upperCased = tag.toUpperCase();
         do {
-          if (child.nodeName.toUpperCase() === tag) {
+          if (isUniversal || child.nodeName.toUpperCase() === upperCased) {
             results.push(child);
-          } else if ('getElementsByTagName' in child) {
-            concatList(results, child.getElementsByTagName(tag));
+          }
+          if (child.getElementsByTagName) {
+            results = concatList(results, child.getElementsByTagName(tag));
           }
         } while ((child = child.nextSibling));
+        return results;
       }
-      return results;
+
+      return from.getElementsByTagName(tag);
     },
 
   /*---------------------------- COMPILER METHODS ----------------------------*/
