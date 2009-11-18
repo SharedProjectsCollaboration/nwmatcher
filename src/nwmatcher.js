@@ -251,12 +251,16 @@
       // so the bug is in all other browsers code now :-)
       // new specs http://www.whatwg.org/specs/web-apps/current-work/#selectors
 
+		  // Safari 3.2 QSA doesnt work with mixedcase on quirksmode
+
       // <p class="X"></p>
       clearElement(div)
         .appendChild(createElement('p'))
-        .className = 'X';
+        .className = 'xXx';
 
-      if (compatMode == 'BackCompat' && div.querySelector('.x') === null) {
+      if (compatMode == 'BackCompat' &&
+         (!div.querySelectorAll('.xXx').length ||
+          !div.querySelectorAll('.xxx').length)) {
         return testTrue;
       }
 
@@ -364,13 +368,19 @@
 
   BUGGY_GEBID = NATIVE_GEBID ?
     (function() {
-      // <p name="x"></p>
+      var doc,
+       uid = String(+new Date).slice(0, 10),
+       x = 'x' + uid, y = 'y' + uid;
+
+      // <p id="x"></p><p name="y"></p>
       clearElement(div)
-        .appendChild(createElement('p'))
-        .name = 'x';
+        .appendChild(createElement('p')).id = x;
+
+      div.appendChild(createElement('p')).name = y;
 
       root.insertBefore(div, root.firstChild);
-      isBuggy = !!div.ownerDocument.getElementById('x');
+      doc = div.ownerDocument;
+      isBuggy = !doc.getElementById(x) || !!doc.getElementById(y);
 
       if (NATIVE_GEBN) BUGGY_GEBN = isBuggy;
       root.removeChild(div);
