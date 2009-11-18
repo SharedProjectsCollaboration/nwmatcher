@@ -32,7 +32,11 @@
   isSupported, isBuggy, div = context.createElement('DiV'),
 
   // private storage vars
-  lastCalled, lastIndex, lastSelector, lastSlice, lastContext = context,
+  lastCalled, lastIndex, lastSelector, lastSlice,
+
+  lastContext = context,
+
+  notHTML = !('body' in base),
 
   // used in the RE_BUGGY_XXXXX regexp testers
   testFalse = { 'test': function() { return false; } },
@@ -854,16 +858,16 @@
 
       // for select method
       if (mode) {
-        // (c-ollection, s-napshot, d-ocument, h-root, g-from, f-callback)
-        return new Function('c,s,d,h,g,f',
-          'var e,n,N,t,r=[],x=0,k=0;main:while(N=e=c[k++]){' +
+        // (c-ollection, s-napshot, d-ocument, h-root, g-from, f-callback, x-notHTML)
+        return new Function('c,s,d,h,g,f,x',
+          'var e,n,N,t,r=[],k=0;main:while(N=e=c[k++]){' +
           SKIP_NON_ELEMENTS + source + '}return r;');
       }
       // for match method
       else {
-        // (e-element, s-napshot, d-ocument, h-root, g-from, f-callback)
-        return new Function('e,s,d,h,g,f',
-          'var n,t,N=e,x=0;' + source + 'return false;');
+        // (e-element, s-napshot, d-ocument, h-root, g-from, f-callback, x-notHTML)
+        return new Function('e,s,d,h,g,f,x',
+          'var n,t,N=e;' + source + 'return false;');
       }
     },
 
@@ -871,8 +875,8 @@
   // @return function (compiled)
   compileSingle =
     function(selector) {
-      return new Function('c,s,d,h,g,f',
-        'var e,n,N,t,r=[],x=0,k=0;main:while(N=e=c[k++]){' +
+      return new Function('c,s,d,h,g,f,x',
+        'var e,n,N,t,r=[],k=0;main:while(N=e=c[k++]){' +
         SKIP_NON_ELEMENTS + compileSelector(selector, ACCEPT_NODE) +
         '}return r;');
     },
@@ -933,7 +937,9 @@
           // W3C CSS3 specs: element whose "class" attribute has been assigned a
           // list of whitespace-separated values, see section 6.4 Class selectors
           // and notes at the bottom; explicitly non-normative in this specification.
-          source = 'if((" "+e.className+" ")' +
+          source =
+            't = x ? s.getAttribute(e,"class") : e.className;' +
+            'if(t && (" "+t+" ")' +
             (isClassNameLowered ? '.toLowerCase()' : '') +
             '.replace(/[\\t\\n\\r\\f]/g," ").indexOf(" ' +
             (isClassNameLowered ? match[1].toLowerCase() : match[1]) +
@@ -951,7 +957,8 @@
             expr = expr.length == 2 ? expr[1] : expr[0] + '';
             isLowered = INSENSITIVE_TABLE[expr.toLowerCase()];
 
-            source = 'n=s.getAttribute(e,"' + match[1] + '");' +
+            source =
+              'n=s.getAttribute(e,"' + match[1] + '");' +
               'if(' + Operators[match[2]].replace(/\%p/g, 'n' +
                 (isLowered ? '.toLowerCase()' : ''))
                 .replace(/\%m/g, isLowered ? match[4].toLowerCase() : match[4]) +
@@ -1218,9 +1225,17 @@
       // make sure an element node was passed
       var compiled, origSelector = selector;
       base = element.ownerDocument;
-
       if (!base) return false;
-      root = base.documentElement;
+
+      from || (from = base);
+      if (lastContext != from) {
+        // save passed context
+        lastContext = from;
+        // reference context ownerDocument and document root (HTML)
+        root = base.documentElement;
+        // check if context is not (X)HTML
+        notHTML = !('body' in base);
+      }
 
       if (!(compiled = compiledMatchers[origSelector])) {
         if (reValidator.test(selector)) {
@@ -1247,15 +1262,26 @@
       childIndexes = { };
       childIndexesByTag = { };
 
-      return compiled(element, snap, base, root, from || base, callback);
+      return compiled(element, snap, base, root, from, callback, notHTML);
     },
 
   native_api =
     function(selector, from, callback) {
       var data, element;
+
+      from || (from = context);
+      if (from && lastContext != from) {
+        // save passed context
+        lastContext = from;
+        // reference context ownerDocument and document root (HTML)
+        root = (base = from.ownerDocument || from).documentElement;
+        // check if context is not (X)HTML
+        notHTML = !('body' in base);
+      }
+
       switch (selector.charAt(0)) {
         case '#':
-          if ((element = byId(selector.slice(1), from || context))) {
+          if ((element = byId(selector.slice(1), from))) {
             callback && callback(element);
             return [ element ];
           } else {
@@ -1263,11 +1289,11 @@
           }
 
         case '.':
-          data = byClass(selector.slice(1), from || context);
+          data = byClass(selector.slice(1), from);
           break;
 
         default:
-          data = byTag(selector, from || context);
+          data = byTag(selector, from);
       }
 
       if ('item' in data) {
@@ -1338,6 +1364,8 @@
         lastContext = from;
         // reference context ownerDocument and document root (HTML)
         root = (base = from.ownerDocument || from).documentElement;
+        // check if context is not (X)HTML
+        notHTML = !('body' in base);
       }
 
       // avoid caching disconnected nodes
@@ -1493,7 +1521,7 @@
           : compileGroup(selector, '', true);
       }
 
-      data = compiled(elements, snap, base, root, from, callback);
+      data = compiled(elements, snap, base, root, from, callback, notHTML);
 
       if (isCacheable) {
         // a cached result set for the requested selector

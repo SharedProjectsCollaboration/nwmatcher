@@ -1,3 +1,5 @@
+* Add support for class, id, name, and tag selectors on non-html documents. [jddalton]
+
 * Prepare byClass(), byId(), byName(), and byTag() to work with the `notHTML` private flag. [jddalton]
 
 * Reduce the number of times String#toUpperCase is used in compilers and switch to `++i` in byName() and byId(). [Diego Perini, jddalton]
