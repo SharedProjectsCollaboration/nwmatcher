@@ -1,3 +1,5 @@
+* Cleanup jQuery adapters and ensure compiled variable `j` is the index of the current element being processed. [jddalton]
+
 * Ensure querySelectorAll() is skipped on non-html documents. [jddalton]
 
 * Fix byId() performance regression. [jddalton]

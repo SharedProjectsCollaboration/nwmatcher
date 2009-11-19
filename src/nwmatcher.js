@@ -869,9 +869,10 @@
       // for select method
       if (mode) {
         // (c-ollection, s-napshot, d-ocument, h-root, g-from, f-callback, x-notHTML)
-        return new Function('c,s,d,h,g,f,x',
-          'var e,n,N,t,r=[],k=0;main:while(N=e=c[k++]){' +
-          SKIP_NON_ELEMENTS + source + '}return r;');
+        return new Function('c,s,d,h,g,f,x', BUGGY_GEBTN ?
+          ('var e,n,N,t,i=-1,j=-1,r=[];main:while(N=e=c[++i]){' +
+           SKIP_NON_ELEMENTS + '++j;' + source + '}return r;') :
+          ('var e,n,N,t,j=-1,r=[];main:while(N=e=c[++j]){' + source + '}return r;'));
       }
       // for match method
       else {
@@ -885,10 +886,11 @@
   // @return function (compiled)
   compileSingle =
     function(selector) {
-      return new Function('c,s,d,h,g,f,x',
-        'var e,n,N,t,r=[],k=0;main:while(N=e=c[k++]){' +
-        SKIP_NON_ELEMENTS + compileSelector(selector, ACCEPT_NODE) +
-        '}return r;');
+      var source = compileSelector(selector, ACCEPT_NODE);
+      return new Function('c,s,d,h,g,f,x', BUGGY_GEBTN ?
+        ('var e,n,N,t,i=-1,j=-1,r=[];main:while(N=e=c[++i]){' +
+         SKIP_NON_ELEMENTS + '++j;' + source + '}return r;') :
+        ('var e,n,N,t,j=-1,r=[];main:while(N=e=c[++j]){' + source + '}return r;'));
     },
 
   // compile a CSS3 string selector into ad-hoc javascript matching function
@@ -1606,6 +1608,12 @@
       'getChildIndexes':      getChildIndexes,
       'getChildIndexesByTag': getChildIndexesByTag,
 
+       // retrieval methods
+      'byClass': byClass,
+      'byId':    byId,
+      'byName':  byName,
+      'byTag':   byTag,
+
       // selection/matching
       'select': select,
       'match':  match
@@ -1683,20 +1691,20 @@
   global.NW || (global.NW = { });
 
   global.NW.Dom = {
-    // retrieve element by id attr
-    'byId': byId,
-
-    // retrieve elements by tag name
-    'byTag': byTag,
-
-    // retrieve elements by name attr
-    'byName': byName,
-
     // retrieve elements by class name
     'byClass': BUGGY_GEBCN ? byClass :
       function(className, from) {
         return slice.call(byClass(className, from), 0);
       },
+
+    // retrieve element by id attr
+    'byId': byId,
+
+    // retrieve elements by name attr
+    'byName': byName,
+
+    // retrieve elements by tag name
+    'byTag': byTag,
 
     // for testing purposes only
     'compile':
