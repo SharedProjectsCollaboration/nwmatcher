@@ -1,3 +1,5 @@
+* Ensure querySelectorAll() is skipped on non-html documents. [jddalton]
+
 * Fix byId() performance regression. [jddalton]
 
 * Add feature test to `RE_BUGGY_QSAPI` for Safari 3.2 failing to find mixed cased classNames. [jddalton, Thomas Aylott]

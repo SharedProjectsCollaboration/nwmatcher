@@ -1279,16 +1279,6 @@
     function(selector, from, callback) {
       var data, element;
 
-      from || (from = context);
-      if (from && lastContext != from) {
-        // save passed context
-        lastContext = from;
-        // reference context ownerDocument and document root (HTML)
-        root = (base = from.ownerDocument || from).documentElement;
-        // check if context is not (X)HTML
-        notHTML = !('body' in base);
-      }
-
       switch (selector.charAt(0)) {
         case '#':
           if ((element = byId(selector.slice(1), from))) {
@@ -1322,11 +1312,21 @@
     function (selector, from, callback) {
       var element, elements;
 
+      from || (from = context);
+      if (lastContext != from) {
+        // save passed context
+        lastContext = from;
+        // reference context ownerDocument and document root (HTML)
+        root = (base = from.ownerDocument || from).documentElement;
+        // check if context is not (X)HTML
+        notHTML = !('body' in base);
+      }
+
       if (RE_SIMPLE_SELECTOR.test(selector)) {
         return native_api(selector, from, callback);
       }
       if (!compiledSelectors[selector] &&
-          !RE_BUGGY_QSAPI.test(selector) &&
+          !notHTML && !RE_BUGGY_QSAPI.test(selector) &&
           (!from || QSA_NODE_TYPES[from.nodeType])) {
         try {
           elements = (from || context).querySelectorAll(selector);
@@ -1365,10 +1365,6 @@
        element, elements, hasChanged, isCacheable, isSingle,
        now, normSelector, origFrom, origSelector, parts, token;
 
-      if (RE_SIMPLE_SELECTOR.test(selector)) {
-        return native_api(selector, from, callback);
-      }
-
       // extract context if changed
       from || (from = context);
       if (lastContext != from) {
@@ -1378,6 +1374,10 @@
         root = (base = from.ownerDocument || from).documentElement;
         // check if context is not (X)HTML
         notHTML = !('body' in base);
+      }
+
+      if (RE_SIMPLE_SELECTOR.test(selector)) {
+        return native_api(selector, from, callback);
       }
 
       // avoid caching disconnected nodes
