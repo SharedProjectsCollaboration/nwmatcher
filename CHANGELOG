@@ -1,3 +1,5 @@
+* Reduce code in normalize() and make forEachCall() use `++i` and replace repeated string in compileSelector() with `strEdgeSpace`. [jddalton]
+
 * Ensure escaped commas are not parsed and simplify the `reSplitGroup` and `reSplitToken` regexps. [jddalton]
 
 * Move Prototype unit test adapter into its own file. [jddalton]

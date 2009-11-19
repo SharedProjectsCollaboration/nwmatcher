@@ -64,9 +64,9 @@
 
   strMultiSpace = '\\x20{2,}',
 
-  reClassValue  = /([-\w]+)/,
+  reClassValue = /([-\w]+)/,
 
-  reSiblings    = new RegExp("^(?:[.#]?" + strEncoding + ")?[+~]"),
+  reSiblings = new RegExp("^(?:[.#]?" + strEncoding + ")?[+~]"),
 
   reUseSafeNormalize = /[[\(]/,
 
@@ -124,12 +124,13 @@
   // http://www.w3.org/TR/css3-selectors/#selector-syntax
   normalize =
     function(selector) {
-      var index, match, origSelector, token,
+      var index, match, origSelector, pattern, sequence, token, i = -1,
        cached = normalizedSelectors[selector];
       if (cached) return cached;
 
       origSelector = selector;
       if (reUseSafeNormalize.test(selector)) {
+        sequence = [reLeadingSpacesWithQuotes, reTrailingSpacesWithQuotes, reMultiSpacesWithQuotes];
         while (match = reEdgeSpacesWithQuotes.exec(selector)) {
           if ((token = match[1])) {
             selector = selector.replace(token, ' ');
@@ -137,32 +138,18 @@
         }
 
         selector = trim.call(selector);
-
-        while (match = reLeadingSpacesWithQuotes.exec(selector)) {
-          if ((token = match[1])) {
-            index = match.index;
-            selector = selector.slice(0, index) +
-              selector.slice(index).replace(match[0], token);
-            reLeadingSpacesWithQuotes.lastIndex = index + 1;
+        while (pattern = sequence[++i]) {
+          while (match = pattern.exec(selector)) {
+            if ((token = match[1])) {
+              index = match.index;
+              selector = selector.slice(0, index) +
+                selector.slice(index).replace(match[0], token);
+              pattern.lastIndex = index + 1;
+            }
           }
         }
-        while (match = reTrailingSpacesWithQuotes.exec(selector)) {
-          if ((token = match[1])) {
-            index = match.index;
-            selector = selector.slice(0, index) +
-              selector.slice(index).replace(match[0], token);
-            reTrailingSpacesWithQuotes.lastIndex = index + 1;
-          }
-        }
-        while (match = reMultiSpacesWithQuotes.exec(selector)) {
-          if ((token = match[1])) {
-            index = match.index;
-            selector = selector.slice(0, index) +
-              selector.slice(index + token.length - 1);
-            reMultiSpacesWithQuotes.lastIndex = index + 1;
-          }
-        }
-      } else {
+      }
+      else {
         // do the same thing, without worrying about attribute values
         selector = trim.call(selector.replace(reEdgeSpaces, ' '))
           .replace(reLeadingSpaces, '$1').replace(reTrailingSpaces, '$1')
@@ -602,8 +589,8 @@
 
   forEachCall =
     function(listout, callback) {
-      var element, i = 0;
-      while (element = listout[i++]) callback(element);
+      var element, i = -1;
+      while (element = listout[++i]) callback(element);
     },
 
   // children position by nodeType
@@ -714,8 +701,8 @@
         var element, i = -1, j = i, results = [ ],
          elements = byTag('*', from),
          cn = isClassNameLowered ? className.toLowerCase() : className;
-        className = ' ' + cn.replace(/\\/g, '') + ' ';
 
+        className = ' ' + cn.replace(/\\/g, '') + ' ';
         while ((element = elements[++i])) {
           if ((cn = element.className) && cn.length &&
               (' ' + (isClassNameLowered ? cn.toLowerCase() : cn) + ' ')
@@ -952,7 +939,7 @@
             't = x ? s.getAttribute(e,"class") : e.className;' +
             'if(t && (" "+t+" ")' +
             (isClassNameLowered ? '.toLowerCase()' : '') +
-            '.replace(/[\\t\\n\\r\\f]/g," ").indexOf(" ' +
+            '.replace(/' + strEdgeSpace + '/g," ").indexOf(" ' +
             (isClassNameLowered ? match[1].toLowerCase() : match[1]) +
             ' ")>-1){' + source + '}';
         }
