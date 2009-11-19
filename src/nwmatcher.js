@@ -596,7 +596,7 @@
     function(listout, listin, callback) {
       var element, i = -1, pad = listout.length;
       while (element = listin[++i])
-        callback(listout[listout.lengthpad + i] = element);
+        callback(listout[pad + i] = element);
       return listout;
     },
 

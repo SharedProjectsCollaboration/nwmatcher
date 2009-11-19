@@ -5,9 +5,10 @@
     <meta http-equiv="Content-type" content="text/html; charset=utf-8" />
     <title>NWMatcher Unit Test</title>
     <link rel="stylesheet" href="prototype/unittest.css" type="text/css" media="screen" charset="utf-8" />
-    <script src="../src/nwmatcher.js" type="text/javascript" charset="utf-8"></script>
     <script src="prototype/prototype.1.6.1.js" type="text/javascript" charset="utf-8"></script>
     <script src="prototype/unittest.js" type="text/javascript" charset="utf-8"></script>
+    <script src="../src/nwmatcher.js" type="text/javascript" charset="utf-8"></script>
+    <script src="prototype/nwmatcher-prototype.js" type="text/javascript" charset="utf-8"></script>
   </head>
   <body>
     <!-- Log output start -->
@@ -98,29 +99,11 @@
     </div>
 
     <script type="text/javascript" charset="utf-8">
-      /* Plug NW.Matcher on Prototype methods */
-
-      var slice = Array.prototype.slice,
-       $RunBenchmarks = false;
-
-      function $$() {
-        var selector = slice.call(arguments, 0).join(', '), results = [ ];
-        NW.Dom.select(selector, document,
-          function(element) { results.push(Element.extend(element)); });
-        return results;
-      }
+      var $RunBenchmarks = false;
 
       function reduce(arr) {
         return arr.length > 1 ? arr : arr[0];
       }
-
-      Element.addMethods({
-        match: function(element, selector) {
-          return !Object.isString(selector) && Object.isFunction(selector.match) ?
-            selector.match($(element)) :
-            NW.Dom.match(element, selector);
-        }
-      });
 
       new Test.Unit.Runner({
 
