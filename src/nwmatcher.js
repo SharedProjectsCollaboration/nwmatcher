@@ -251,7 +251,7 @@
       // so the bug is in all other browsers code now :-)
       // new specs http://www.whatwg.org/specs/web-apps/current-work/#selectors
 
-		  // Safari 3.2 QSA doesnt work with mixedcase on quirksmode
+      // Safari 3.2 QSA doesnt work with mixedcase on quirksmode
 
       // <p class="X"></p>
       clearElement(div)
@@ -368,8 +368,7 @@
 
   BUGGY_GEBID = NATIVE_GEBID ?
     (function() {
-      var doc,
-       uid = String(+new Date).slice(0, 10),
+      var uid = String(+new Date).slice(0, 10),
        x = 'x' + uid, y = 'y' + uid;
 
       // <p id="x"></p><p name="y"></p>
@@ -379,8 +378,7 @@
       div.appendChild(createElement('p')).name = y;
 
       root.insertBefore(div, root.firstChild);
-      doc = div.ownerDocument;
-      isBuggy = !doc.getElementById(x) || !!doc.getElementById(y);
+      isBuggy = !base.getElementById(x) || !!base.getElementById(y);
 
       if (NATIVE_GEBN) BUGGY_GEBN = isBuggy;
       root.removeChild(div);
@@ -404,7 +402,7 @@
     (function() {
       // Opera tests
       var method = 'getElementsByClassName', test = '\u53f0\u5317';
-      
+
       // <p class="' + test + 'abc ' + test + '"></p><p class="x"></p>
       clearElement(div)
         .appendChild(createElement('p'))
@@ -775,18 +773,18 @@
       if (notHTML) {
         return select('[name="' + name + '"]', from);
       }
-		  if (BUGGY_GEBN) {
-			  elements = [ ];
-			  names = from.getElementsByName(name);
-				while ((element = names[++i])) {
-					if (element.getAttribute('name') == name) {
-						elements.push(name);
-					}
-				}
-				return elements;
-		  }
+      if (BUGGY_GEBN) {
+        elements = [ ];
+        names = from.getElementsByName(name);
+        while ((element = names[++i])) {
+          if (element.getAttribute('name') == name) {
+            elements.push(name);
+          }
+        }
+        return elements;
+      }
 
-		  return from.getElementsByName(name);
+      return from.getElementsByName(name);
     },
 
   // elements by tag
@@ -1301,10 +1299,12 @@
           }
 
         case '.':
+          // only ran if non BUGGY_GEBCN
           data = byClass(selector.slice(1), from);
           break;
 
         default:
+          // only ran if non BUGGY_GEBTN
           data = byTag(selector, from);
       }
 
@@ -1500,9 +1500,7 @@
 
       if (!elements) {
         // grab elements from parentNode to cover sibling and adjacent selectors
-        elements = byTag('*', reSiblings.test(selector)
-          ? from.parentNode || from
-          : from);
+        elements = byTag('*', reSiblings.test(selector) && from.parentNode || from);
       }
 
       if (!elements.length) {
