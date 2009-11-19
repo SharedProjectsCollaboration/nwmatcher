@@ -606,7 +606,7 @@
 
         if ((node = element.firstChild)) {
           do {
-            if (node.nodeName.charAt(0) > '@') {
+            if (node.nodeName.charCodeAt(0) > 64) {
               indexes[node.CSS_ID || (node.CSS_ID = ++CSS_ID)] = ++i;
             }
           } while ((node = node.nextSibling));
@@ -812,7 +812,7 @@
     typeof context.createElementNS == 'function' ? '.toUpperCase()' : '',
 
   // filter IE gEBTN('*') results containing non-elements like comments and `/video`
-  SKIP_NON_ELEMENTS = BUGGY_GEBTN ? 'if(e.nodeName.charAt(0) < "A"){continue;}' : '',
+  SKIP_NON_ELEMENTS = BUGGY_GEBTN ? 'if(e.nodeName.charCodeAt(0)<65){continue;}' : '',
 
   // Use the textContent or innerText property to check CSS3 :contains
   // Safari 2 has a bug with innerText and hidden content, using an
@@ -1082,7 +1082,7 @@
                 n = match[2] == 'only'  ? 'previous' : 'next';
                 b = match[2] == 'first' || match[2] == 'last';
 
-                type = match[4] ? '&&n.nodeName!=e.nodeName' : '&&n.nodeName.charAt(0) < "A"';
+                type = match[4] ? '&&n.nodeName!=e.nodeName' : '&&n.nodeName.charCodeAt(0)<65';
 
                 if (NATIVE_TRAVERSAL_API) {
                   a += 'Element';

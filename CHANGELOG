@@ -1,3 +1,5 @@
+* Switch to `element.nodeName.charCodeAt(0)` instead of `element.nodeName.charAt(0)`. [jddalton]
+
 * Remove `in` operator checks on control elements and test hasFocus() method exists before using it. [Diego Perini, jddalton]
 
 * Avoid checking for strict booleans on control elements, they are actually strings if set in the source HTML as attribute values. [Diego Perini]
