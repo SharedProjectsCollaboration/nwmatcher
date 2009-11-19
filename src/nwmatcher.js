@@ -74,10 +74,10 @@
 
   // split comma separated selector groups, exclude commas inside '' "" () []
   // example: (#div a, ul > li a) group 1 is (#div a) group 2 is (ul > li a)
-  reSplitGroup = /([^,()[\]]+|\(.*\)|\[(?:\[[^[\]]*\]|["'][^'"]*["']|[^'"[\]]+)+\]|\[.*\]|\\.)+/g,
+  reSplitGroup = /(?:(?:(?![(),[\]])[^\\]|\\.)|\(.*\)|\[.*\])+/g,
 
   // split last, right most, selector group token
-  reSplitToken = /(?:[^ >+~,\\()[\]]+|\(.*\)|\[.*\]|\\.)+|[>+~]$/g,
+  reSplitToken = /(?:(?:(?![ >+~,()[\]])[^\\]|\\.)|\(.*\)|\[.*\])+|[>+~]$/g,
 
   // simple check to ensure the first character of a selector is valid
   // http://www.w3.org/TR/css3-syntax/#characters
@@ -706,7 +706,6 @@
   byClass =
     function(className, from) {
       from || (from = context);
-
       if (notHTML) {
         return select('[class~="' + className + '"]', from);
       }
@@ -768,11 +767,11 @@
     function(name, from) {
       var element, elements, names, i = -1;
       from || (from = context);
-      name = name.replace(/\\/g, '');
 
       if (notHTML) {
         return select('[name="' + name + '"]', from);
       }
+      name = name.replace(/\\/g, '');
       if (BUGGY_GEBN) {
         elements = [ ];
         names = from.getElementsByName(name);

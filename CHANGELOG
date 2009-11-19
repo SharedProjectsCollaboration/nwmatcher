@@ -1,3 +1,5 @@
+* Ensure escaped commas are not parsed and simplify the `reSplitGroup` and `reSplitToken` regexps. [jddalton]
+
 * Move Prototype unit test adapter into its own file. [jddalton]
 
 * Cleanup jQuery adapters and ensure compiled variable `j` is the index of the current element being processed. [jddalton]
