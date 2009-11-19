@@ -1119,21 +1119,21 @@
             // CSS3 UI element states
             case 'checked':
               // only radio buttons and check boxes
-              source = 'if("form" in e&&/radio|checkbox/i.test(e.type)&&e.checked){' + source + '}';
+              source = 'if(e.type&&/radio|checkbox/i.test(e.type)&&e.checked){' + source + '}';
               break;
             case 'enabled':
               // does not consider hidden input fields
-              source = 'if((("form" in e&&e.type!=="hidden")||s.isLink(e))&&!e.disabled){' + source + '}';
+              source = 'if(((e.type&&e.type!=="hidden")||s.isLink(e))&&!e.disabled){' + source + '}';
               break;
             case 'disabled':
               // does not consider hidden input fields
-              source = 'if((("form" in e&&e.type!=="hidden")||s.isLink(e))&&e.disabled){' + source + '}';
+              source = 'if(((e.type&&e.type!=="hidden")||s.isLink(e))&&e.disabled){' + source + '}';
               break;
 
             // CSS3 target pseudo-class
             case 'target':
               n = base.location.hash;
-              source = 'if(e.id!=""&&e.id=="' + n + '"&&"href" in e){' + source + '}';
+              source = 'if(e.id=="' + n + '"&&e.href!=void 0){' + source + '}';
               break;
 
             // CSS3 dynamic pseudo-classes
@@ -1147,13 +1147,15 @@
             // CSS3 user action pseudo-classes IE & FF3 have native support
             // these capabilities may be emulated by some event managers
             case 'active':
-              source = 'if("activeElement" in d&&e===d.activeElement){' + source + '}';
+              source = 'if(e===d.activeElement){' + source + '}';
               break;
             case 'hover':
-              source = 'if("hoverElement" in d&&e===d.hoverElement){' + source + '}';
+              source = 'if(e===d.hoverElement){' + source + '}';
               break;
             case 'focus':
-              source = 'if("form" in e&&e===d.activeElement&&typeof d.hasFocus=="function"&&d.hasFocus()){' + source + '}';
+              source = isNative(base, 'hasFocus') ?
+                'if(e.type&&e===d.activeElement&&d.hasFocus()){' + source + '}' :
+                'if(e.type&&e===d.activeElement){' + source + '}';
               break;
 
             // CSS2 :contains and :selected pseudo-classes
@@ -1169,7 +1171,7 @@
                   n[i].selectedIndex;
                 }
               }
-              source = 'if("form" in e&&e.selected){' + source + '}';
+              source = 'if(e.selected){' + source + '}';
               break;
 
             default:
