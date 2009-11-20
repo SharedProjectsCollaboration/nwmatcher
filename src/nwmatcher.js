@@ -222,12 +222,12 @@
   NATIVE_GEBN      = isNative(root, 'getElementsByName'),
   NATIVE_GEBTN     = isNative(root, 'getElementsByTagName'),
   NATIVE_HAS_FOCUS = isNative(base, 'hasFocus'),
-  NATIVE_QSAPI     = isNative(base, 'querySelector'),
+  NATIVE_QSA       = isNative(base, 'querySelectorAll'),
 
   RE_BUGGY_MUTATION = testTrue,
 
   // check Seletor API implementations
-  RE_BUGGY_QSAPI = NATIVE_QSAPI ?
+  RE_BUGGY_QSAPI = NATIVE_QSA ?
     (function() {
       var pattern = [ ];
 
@@ -1532,7 +1532,7 @@
   // use the new native Selector API if available,
   // if missing, use the cross-browser client api
   // @return array
-  select = NATIVE_QSAPI ?
+  select = NATIVE_QSA ?
     select_qsa :
     client_api,
 
@@ -1738,7 +1738,7 @@
     // for testing purposes only
     'setQSA':
       function(enable) {
-        this.select = enable && NATIVE_QSAPI
+        this.select = enable && NATIVE_QSA
           ? select_qsa
           : client_api;
       }
