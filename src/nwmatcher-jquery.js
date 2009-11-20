@@ -113,9 +113,9 @@ NW.Dom.registerSelector(
   // # cleaned
   var cnt = 0,
 
-  context = global.document,
+  base = global.document,
 
-  root = context.documentElement,
+  root = base.documentElement,
 
   // remove comment nodes and empty text nodes
   // unique child with empty text nodes are kept
@@ -142,7 +142,7 @@ NW.Dom.registerSelector(
 
   start = root.addEventListener ?
     function() {
-      context.removeEventListener('DOMContentLoaded', start, false);
+      base.removeEventListener('DOMContentLoaded', start, false);
       cleanDOM(root);
       NW.Dom.select('*:nth-child(n)');
       // XML parsing ?
@@ -150,8 +150,8 @@ NW.Dom.registerSelector(
       top.status += 'Removed ' + cnt + ' empty text nodes.';
     } :
     function() {
-      if (context.readyState == 'complete') {
-        context.detachEvent('onreadystatechange', start);
+      if (base.readyState == 'complete') {
+        base.detachEvent('onreadystatechange', start);
         cleanDOM(root);
         NW.Dom.select('*:nth-child(n)');
         // will crash IE6
@@ -160,10 +160,10 @@ NW.Dom.registerSelector(
       }
     };
 
-  if (context.addEventListener) {
-    context.addEventListener('DOMContentLoaded', start, false);
-  } else if (context.attachEvent) {
-    context.attachEvent('onreadystatechange', start);
+  if (base.addEventListener) {
+    base.addEventListener('DOMContentLoaded', start, false);
+  } else if (base.attachEvent) {
+    base.attachEvent('onreadystatechange', start);
   } else {
     global.onload = (function(__onload) {
       return function() {

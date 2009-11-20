@@ -1,3 +1,5 @@
+* Remove duplicate `context` variable and use `base` instead. [Diego Perini]
+
 * Add `NATIVE_HAS_FOCUS` variable. [Diego Perini]
 
 * Switch remaining `element.nodeType==1` to `element.nodeName.charCodeAt(0)>64`. [Diego Perini]

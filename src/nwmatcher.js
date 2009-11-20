@@ -22,19 +22,16 @@
   // processing context
   base = global.document,
 
-  // script loading context
-  context = base,
-
   // context root element (HTML)
-  root = context.documentElement,
+  root = base.documentElement,
 
   // temporary vars
-  isSupported, isBuggy, div = context.createElement('DiV'),
+  isSupported, isBuggy, div = base.createElement('DiV'),
 
   // persist last selector parsing data
   lastCalled, lastIndex, lastSelector, lastSlice,
 
-  lastContext = context,
+  lastContext = base,
 
   notHTML = !('body' in base),
 
@@ -200,7 +197,7 @@
 
   // Safari 2 missing document.compatMode property
   // makes it harder to detect Quirks vs. Strict
-  compatMode = context.compatMode ||
+  compatMode = base.compatMode ||
     (function() {
       var el = document.createElement('div');
       return el.style && (el.style.width = 1) &&
@@ -220,12 +217,12 @@
   // so through the code read it as "supported", maybe BUGGY
 
   // detect if DOM methods are native in browsers
-  NATIVE_GEBID     = isNative(context, 'getElementById'),
-  NATIVE_GEBCN     = isNative(root,    'getElementsByClassName'),
-  NATIVE_GEBN      = isNative(root,    'getElementsByName'),
-  NATIVE_GEBTN     = isNative(root,    'getElementsByTagName'),
-  NATIVE_HAS_FOCUS = isNative(context, 'hasFocus'),
-  NATIVE_QSAPI     = isNative(context, 'querySelector'),
+  NATIVE_GEBID     = isNative(base, 'getElementById'),
+  NATIVE_GEBCN     = isNative(root, 'getElementsByClassName'),
+  NATIVE_GEBN      = isNative(root, 'getElementsByName'),
+  NATIVE_GEBTN     = isNative(root, 'getElementsByTagName'),
+  NATIVE_HAS_FOCUS = isNative(base, 'hasFocus'),
+  NATIVE_QSAPI     = isNative(base, 'querySelector'),
 
   RE_BUGGY_MUTATION = testTrue,
 
@@ -378,7 +375,7 @@
   // detect IE gEBTN comment nodes bug
   BUGGY_GEBTN = NATIVE_GEBTN ?
     (function() {
-      clearElement(div).appendChild(context.createComment(''));
+      clearElement(div).appendChild(base.createComment(''));
       return !!div.getElementsByTagName('*')[0];
     })() :
     true,
@@ -693,12 +690,11 @@
   // @return array (non native GEBCN)
   byClass =
     function(className, from) {
-      from || (from = context);
+      from || (from = base);
       if (notHTML) {
         return select('[class~="' + className + '"]', from);
       }
       if (BUGGY_GEBCN) {
-        // context is handled in byTag for non native gEBCN
         var element, i = -1, j = i, results = [ ],
          elements = byTag('*', from),
          cn = isClassNameLowered ? className.toLowerCase() : className;
@@ -722,7 +718,7 @@
   byId =
     function(id, from) {
       var element, elements, names, node, i = -1;
-      from || (from = context);
+      from || (from = base);
       id = id.replace(/\\/g, '');
 
       if (!notHTML && from.getElementById) {
@@ -754,7 +750,7 @@
   byName =
     function(name, from) {
       var element, elements, names, i = -1;
-      from || (from = context);
+      from || (from = base);
 
       if (notHTML) {
         return select('[name="' + name + '"]', from);
@@ -779,7 +775,7 @@
   byTag =
     function(tag, from) {
       var child, isUniversal, upperCased, results;
-      from || (from = context);
+      from || (from = base);
 
       // support document fragments
       if (typeof from.getElementsByTagName == 'undefined' &&
@@ -810,7 +806,7 @@
 
   // checks if nodeName comparisons need to be upperCased
   TO_UPPER_CASE =
-    typeof context.createElementNS == 'function' ? '.toUpperCase()' : '',
+    typeof base.createElementNS == 'function' ? '.toUpperCase()' : '',
 
   // filter IE gEBTN('*') results containing non-elements like comments and `/video`
   SKIP_NON_ELEMENTS = BUGGY_GEBTN ? 'if(e.nodeName.charCodeAt(0)<65){continue;}' : '',
@@ -1133,7 +1129,7 @@
 
             // CSS3 target pseudo-class
             case 'target':
-              n = base.location.hash;
+              n = global.location.hash;
               source = 'if(e.id=="' + n + '"&&e.href!=void 0){' + source + '}';
               break;
 
@@ -1230,12 +1226,9 @@
 
       from || (from = base);
       if (lastContext != from) {
-        // save passed context
-        lastContext = from;
-        // reference context ownerDocument and document root (HTML)
         root = base.documentElement;
-        // check if context is not (X)HTML
         notHTML = !('body' in base);
+        lastContext = from;
       }
 
       if (!(compiled = compiledMatchers[origSelector])) {
@@ -1303,14 +1296,11 @@
     function (selector, from, callback) {
       var element, elements;
 
-      from || (from = context);
+      from || (from = base);
       if (lastContext != from) {
-        // save passed context
-        lastContext = from;
-        // reference context ownerDocument and document root (HTML)
         root = (base = from.ownerDocument || from).documentElement;
-        // check if context is not (X)HTML
         notHTML = !('body' in base);
+        lastContext = from;
       }
 
       if (RE_SIMPLE_SELECTOR.test(selector)) {
@@ -1320,7 +1310,7 @@
           !notHTML && !RE_BUGGY_QSAPI.test(selector) &&
           (!from || QSA_NODE_TYPES[from.nodeType])) {
         try {
-          elements = (from || context).querySelectorAll(selector);
+          elements = (from || base).querySelectorAll(selector);
         } catch(e) { }
 
         if (elements) {
@@ -1357,14 +1347,14 @@
        now, normSelector, origFrom, origSelector, parts, token;
 
       // extract context if changed
-      from || (from = context);
+      from || (from = base);
       if (lastContext != from) {
-        // save passed context
-        lastContext = from;
         // reference context ownerDocument and document root (HTML)
         root = (base = from.ownerDocument || from).documentElement;
         // check if context is not (X)HTML
         notHTML = !('body' in base);
+        // save passed context
+        lastContext = from;
       }
 
       if (RE_SIMPLE_SELECTOR.test(selector)) {
@@ -1616,7 +1606,7 @@
   // script loading context will be used as default context
   setCache =
     function(enable, d) {
-      d || (d = context);
+      d || (d = base);
       if (!!enable) {
         d.snapshot = new Snapshot;
         startMutation(d);
