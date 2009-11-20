@@ -1,3 +1,5 @@
+* Avoid resetting current element in the first iteration of compileGroup() and rename `native_api` to `select_simple`. [Diego Perini, jddalton]
+
 * Remove duplicate `context` variable and use `base` instead. [Diego Perini]
 
 * Add `NATIVE_HAS_FOCUS` variable. [Diego Perini]

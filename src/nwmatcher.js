@@ -843,7 +843,7 @@
           if (!seen[token]) {
             seen[token] = true;
             // reset `e` to begin another selector
-            source += 'e=N;' +
+            source += (i ? 'e=N;' : '') +
               compileSelector(token, mode ? ACCEPT_NODE : 'f&&f(N);return true;');
           }
         }
@@ -1259,7 +1259,10 @@
       return compiled(element, snap, base, root, from, callback, notHTML);
     },
 
-  native_api =
+  // select elements matching simple
+  // selectors using cross-browser client APIs
+  // @return array
+  select_simple =
     function(selector, from, callback) {
       var data, element;
 
@@ -1290,7 +1293,7 @@
     },
 
   // select elements matching selector
-  // version using new Selector API
+  // using the new Query Selector API
   // @return array
   select_qsa =
     function (selector, from, callback) {
@@ -1304,7 +1307,7 @@
       }
 
       if (RE_SIMPLE_SELECTOR.test(selector)) {
-        return native_api(selector, from, callback);
+        return select_simple(selector, from, callback);
       }
       if (!compiledSelectors[selector] &&
           !notHTML && !RE_BUGGY_QSAPI.test(selector) &&
@@ -1338,7 +1341,7 @@
     },
 
   // select elements matching selector
-  // version using cross-browser client API
+  // using cross-browser client APIs
   // @return array
   client_api =
     function (selector, from, callback) {
@@ -1358,7 +1361,7 @@
       }
 
       if (RE_SIMPLE_SELECTOR.test(selector)) {
-        return native_api(selector, from, callback);
+        return select_simple(selector, from, callback);
       }
 
       // avoid caching disconnected nodes
