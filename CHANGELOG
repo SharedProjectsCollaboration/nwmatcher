@@ -1,4 +1,6 @@
-* Switch remaining `element.nodeType===1` to `element.nodeName.charCodeAt(0)>64`. [Diego Perini]
+* Add `NATIVE_HAS_FOCUS` variable. [Diego Perini]
+
+* Switch remaining `element.nodeType==1` to `element.nodeName.charCodeAt(0)>64`. [Diego Perini]
 
 * Tweak regexp used in the CSS3 `:checked` pseudo, ensure the element.form exists and element.type checks in `:enabled`, `:disabled`, and `:checked` are case-insensitive, remove `isLink()` from the `:disabled` check, and remove element.type checks from `:focus`. [jddalton]
 

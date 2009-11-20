@@ -220,11 +220,12 @@
   // so through the code read it as "supported", maybe BUGGY
 
   // detect if DOM methods are native in browsers
-  NATIVE_GEBID = isNative(context, 'getElementById'),
-  NATIVE_GEBCN = isNative(root,    'getElementsByClassName'),
-  NATIVE_GEBN  = isNative(root,    'getElementsByName'),
-  NATIVE_GEBTN = isNative(root,    'getElementsByTagName'),
-  NATIVE_QSAPI = isNative(context, 'querySelector'),
+  NATIVE_GEBID     = isNative(context, 'getElementById'),
+  NATIVE_GEBCN     = isNative(root,    'getElementsByClassName'),
+  NATIVE_GEBN      = isNative(root,    'getElementsByName'),
+  NATIVE_GEBTN     = isNative(root,    'getElementsByTagName'),
+  NATIVE_HAS_FOCUS = isNative(context, 'hasFocus'),
+  NATIVE_QSAPI     = isNative(context, 'querySelector'),
 
   RE_BUGGY_MUTATION = testTrue,
 
@@ -1153,7 +1154,7 @@
               source = 'if(e===d.hoverElement){' + source + '}';
               break;
             case 'focus':
-              source = isNative(base, 'hasFocus') ?
+              source = NATIVE_HAS_FOCUS ?
                 'if(e===d.activeElement&&d.hasFocus()){' + source + '}' :
                 'if(e===d.activeElement){' + source + '}';
               break;
