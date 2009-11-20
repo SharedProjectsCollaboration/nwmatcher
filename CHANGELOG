@@ -1,3 +1,5 @@
+* Ensure element.type exists before calling toLowerCase() on it for `:enabled` and `:disabled` pseudos. [jddalton]
+
 * Rename `NATIVE_QSAPI` to `NATIVE_QSA` and test for querySelectorAll() instead of querySelector(). [jddalton]
 
 * Avoid resetting current element in the first iteration of compileGroup() and rename `native_api` to `select_simple`. [Diego Perini, jddalton]
