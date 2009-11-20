@@ -1,3 +1,5 @@
+* Rename prop `CSS_ID` to `UID` and use native element.unqiueID if available. [jddalton]
+
 * Rewrite structural pseudo class resolver in the compiler to better match QSA behavior and results. [Diego Perini]
 
 * Ensure element.type exists before calling toLowerCase() on it for `:enabled` and `:disabled` pseudos. [jddalton]

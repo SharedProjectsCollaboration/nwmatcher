@@ -596,7 +596,7 @@
   getChildIndexes =
     function(element) {
       var indexes, node, i = 0,
-       id = element.CSS_ID || (element.CSS_ID = ++CSS_ID);
+       id = element[UID] || (element[UID] = ++UID_COUNT);
 
       if (!(indexes = childIndexes[id])) {
         indexes =
@@ -605,7 +605,7 @@
         if ((node = element.firstChild)) {
           do {
             if (node.nodeName.charCodeAt(0) > 64) {
-              indexes[node.CSS_ID || (node.CSS_ID = ++CSS_ID)] = ++i;
+              indexes[node[UID] || (node[UID] = ++UID_COUNT)] = ++i;
             }
           } while ((node = node.nextSibling));
         }
@@ -619,7 +619,7 @@
   getChildIndexesByTag =
     function(element, name) {
       var indexes, node, i = 0,
-       id = element.CSS_ID || (element.CSS_ID = ++CSS_ID),
+       id = element[UID] || (element[UID] = ++UID_COUNT),
        cache = childIndexesByTag[id] || (childIndexesByTag[id] = { });
 
       if (!(indexes = cache[name])) {
@@ -627,7 +627,7 @@
         if ((node = element.firstChild)) {
           do {
             if (node.nodeName.toUpperCase() == name) {
-              indexes[node.CSS_ID || (node.CSS_ID = ++CSS_ID)] = ++i;
+              indexes[node[UID] || (node[UID] = ++UID_COUNT)] = ++i;
             }
           } while ((node = node.nextSibling));
         }
@@ -1051,7 +1051,7 @@
                 expr = match[2] == 'last' ? type + '.length-' + (b - 1) : b;
 
                 // shortcut check for of-type selectors
-                type += '[e.CSS_ID]';
+                type += '[e.' + UID + ']';
 
                 // build test expression out of structural pseudo (an+b) parameters
                 // see here: http://www.w3.org/TR/css3-selectors/#nth-child-pseudo 
@@ -1534,10 +1534,12 @@
 
   /*-------------------------------- CACHING ---------------------------------*/
 
-  // CSS_ID expando on elements,
+  // UID expando on elements,
   // used to keep child indexes
   // during a selection session
-  CSS_ID = 1,
+  UID_COUNT = 1,
+
+  UID = 'uniqueID' in root ? 'uniqueID' : 'UID',
 
   isCachingEnabled = NATIVE_MUTATION_EVENTS,
 
