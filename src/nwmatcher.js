@@ -31,7 +31,7 @@
   // temporary vars
   isSupported, isBuggy, div = context.createElement('DiV'),
 
-  // private storage vars
+  // persist last selector parsing data
   lastCalled, lastIndex, lastSelector, lastSlice,
 
   lastContext = context,
@@ -1119,15 +1119,15 @@
             // CSS3 UI element states
             case 'checked':
               // only radio buttons and check boxes
-              source = 'if(e.type&&/radio|checkbox/i.test(e.type)&&e.checked){' + source + '}';
+              source = 'if(e.form&&/^(?:radio|checkbox)$/i.test(e.type)&&e.checked){' + source + '}';
               break;
             case 'enabled':
               // does not consider hidden input fields
-              source = 'if(((e.type&&e.type!=="hidden")||s.isLink(e))&&!e.disabled){' + source + '}';
+              source = 'if(((e.form&&e.type.toLowerCase()!=="hidden")||s.isLink(e))&&!e.disabled){' + source + '}';
               break;
             case 'disabled':
               // does not consider hidden input fields
-              source = 'if(((e.type&&e.type!=="hidden")||s.isLink(e))&&e.disabled){' + source + '}';
+              source = 'if(e.form&&e.type.toLowerCase()!=="hidden"&&e.disabled){' + source + '}';
               break;
 
             // CSS3 target pseudo-class
@@ -1154,8 +1154,8 @@
               break;
             case 'focus':
               source = isNative(base, 'hasFocus') ?
-                'if(e.type&&e===d.activeElement&&d.hasFocus()){' + source + '}' :
-                'if(e.type&&e===d.activeElement){' + source + '}';
+                'if(e===d.activeElement&&d.hasFocus()){' + source + '}' :
+                'if(e===d.activeElement){' + source + '}';
               break;
 
             // CSS2 :contains and :selected pseudo-classes
@@ -1165,7 +1165,7 @@
               break;
             case 'selected':
               // fix Safari selectedIndex property bug
-              if ('getElementsByTagName' in base) {
+              if (typeof base.getElementsByTagName !== 'undefined') {
                 n = base.getElementsByTagName('select');
                 for (i = 0; n[i]; i++) {
                   n[i].selectedIndex;

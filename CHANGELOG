@@ -1,3 +1,5 @@
+* Tweak regexp used in the CSS3 `:checked` pseudo, ensure the element.form exists and element.type checks in `:enabled`, `:disabled`, and `:checked` are case-insensitive, remove `isLink()` from the `:disabled` check, and remove element.type checks from `:focus`. [jddalton]
+
 * Switch to `element.nodeName.charCodeAt(0)` instead of `element.nodeName.charAt(0)`. [jddalton]
 
 * Remove `in` operator checks on control elements and test hasFocus() method exists before using it. [Diego Perini, jddalton]
