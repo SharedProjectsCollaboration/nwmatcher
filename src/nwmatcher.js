@@ -976,7 +976,7 @@
           }
           source = NATIVE_TRAVERSAL_API ?
             'if((e=e.previousElementSibling)){' + source + '}' :
-            'while((e=e.previousSibling)){if(e.nodeType==1){' + source + 'break;}}';
+            'while((e=e.previousSibling)){if(e.nodeName.charCodeAt(0)>64){' + source + 'break;}}';
         }
 
         // *** General sibling combinator
@@ -995,7 +995,7 @@
           } else {
             source =
               'var N' + k + '=e;e=e.parentNode.firstChild;' +
-              'while(e!=N' + k +'){if(e.nodeType==1){' + source + '}e=e.nextSibling;}';
+              'while(e!=N' + k +'){if(e.nodeName.charCodeAt(0)>64){' + source + '}e=e.nextSibling;}';
           }
         }
 
@@ -1006,13 +1006,13 @@
           if (match[0] == origSelector) {
             source = 'if(e===g){' + source + '}';
           }
-          source = 'if(e!==g&&(e=e.parentNode)&&e.nodeType==1){' + source + '}';
+          source = 'if(e!==g&&(e=e.parentNode)&&e.nodeName.charCodeAt(0)>64){' + source + '}';
         }
 
         // *** Descendant combinator
         // E F (E ancestor of F)
         else if ((match = selector.match(ptnAncestor))) {
-          source = 'while(e!==g&&(e=e.parentNode)&&e.nodeType==1){' + source + '}';
+          source = 'while(e!==g&&(e=e.parentNode)&&e.nodeName.charCodeAt(0)>64){' + source + '}';
         }
 
         // *** Structural pseudo-classes
