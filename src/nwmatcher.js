@@ -48,20 +48,27 @@
   strEncoding = '(?:[-\\w]|[^\\x00-\\xa0]|\\\\.)+',
 
   // used to skip [ ] or ( ) groups in token tails
-  strSkipGroup = '(?:\\[.*\\]|\\(.*\\))',
+  // http://blog.stevenlevithan.com/archives/match-quoted-string/
+  strSkipGroup =
+    '(?:' +
+    '\\[(?:[-\\w]+:)?[-\\w]+(?:[~*^$|!]?=(["\']?)(?:(?!\\2)[^\\\\]|(?!\\])[^\\\\]|\\\\.)*\\2)?\\]' +
+    '|' +
+    '\\((["\']?).*?(?:\\(.*\\))?[^\'"()]*?\\3\\)' +
+    ')',
 
   // used to skip "..." or '...' quoted attribute values
-  strSkipQuotes = '(?:"(?:(?=\\\\?)\\\\?(?:\\n|\\r|.))*?"|\'(?:(?=\\\\?)\\\\?(?:\\n|\\r|.))*?\')',
-
-  strLeadingSpace = '\\x20+([\\])=>+~,^$|!]|\\*=)',
-
-  strTrailingSpace = '([[(=>+~,^$|!]|\\*=)\\x20+',
+  strSkipQuotes = '(["\'])(?:(?!\\2)[^\\\\]|\\\\.)*\\2',
 
   strEdgeSpace = '[\\t\\n\\r\\f]',
 
+  strLeadingSpace = '\\x20+([\\])=>+~,^$|!]|\\*=)',
+
   strMultiSpace = '\\x20{2,}',
 
-  reClassValue = /([-\w]+)/,
+  strTrailingSpace = '([[(=>+~,^$|!]|\\*=)\\x20+',
+
+
+  reClassValue = new RegExp(strEncoding),
 
   reSiblings = new RegExp("^(?:[.#]?" + strEncoding + ")?[+~]"),
 
@@ -71,10 +78,10 @@
 
   // split comma separated selector groups, exclude commas inside '' "" () []
   // example: (#div a, ul > li a) group 1 is (#div a) group 2 is (ul > li a)
-  reSplitGroup = /(?:(?:(?![(),[\]])[^\\]|\\.)|\(.*\)|\[.*\])+/g,
+  reSplitGroup = new RegExp('(' + strSkipGroup + '|(?!,)[^\\\\]|\\\\.)+', 'g'),
 
   // split last, right most, selector group token
-  reSplitToken = /(?:(?:(?![ >+~,()[\]])[^\\]|\\.)|\(.*\)|\[.*\])+|[>+~]$/g,
+  reSplitToken = new RegExp('((?:' + strSkipGroup + '|(?![ >+~,()[\\]])[^\\\\]|\\\\.)+|[>+~]$)', 'g'),
 
   // simple check to ensure the first character of a selector is valid
   // http://www.w3.org/TR/css3-syntax/#characters
@@ -88,8 +95,8 @@
 
   reEdgeSpacesWithQuotes     = new RegExp('(' + strEdgeSpace  + ')|' + strSkipQuotes, 'g'),
   reMultiSpacesWithQuotes    = new RegExp('(' + strMultiSpace + ')|' + strSkipQuotes, 'g'),
-  reLeadingSpacesWithQuotes  = new RegExp('(?:' + strLeadingSpace  + ')|' + strSkipQuotes, 'g'),
-  reTrailingSpacesWithQuotes = new RegExp('(?:' + strTrailingSpace + ')|' + strSkipQuotes, 'g'),
+  reLeadingSpacesWithQuotes  = new RegExp(strLeadingSpace  + '|' + strSkipQuotes, 'g'),
+  reTrailingSpacesWithQuotes = new RegExp(strTrailingSpace + '|' + strSkipQuotes, 'g'),
 
   /*----------------------------- UTILITY METHODS ----------------------------*/
 
@@ -522,13 +529,13 @@
   // precompiled Regular Expressions
   Patterns = {
     // element attribute matcher
-    'attribute': /^\[([-\w]*:?(?:[-\w])+)(?:([~*^$|!]?=)(["']*)([^'"()]*?)\3)?\](.*)/,
+    'attribute': /^\[([-\w]*:?(?:[-\w])+)(?:([~*^$|!]?=)(?:(["']?)((?:(?!\3)[^\\]|(?!\])[^\\]|\\.)*)\3))?\](.*)/,
 
     // structural pseudo-classes
     'spseudos': /^\:(root|empty|nth)?-?(first|last|only)?-?(child)?-?(of-type)?(?:\((even|odd|[^\)]*)\))?(.*)/,
 
     // uistates + dynamic + negation pseudo-classes
-    'dpseudos': /^\:([\w]+|[^\x00-\xa0]+)(?:\((["']*)(.*?(\(.*\))?[^'"()]*?)\2\))?(.*)/,
+    'dpseudos': /^\:((?:[-\w]|[^\x00-\xa0]|\\.)+)(?:\((["']?)(.*?(\(.*\))?[^'"()]*?)\2\))?(.*)/,
 
     // E > F
     'children': /^\>(.*)/,
