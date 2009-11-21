@@ -1,3 +1,5 @@
+* Modify the compiler to reduce the number of times it checks nodeName/nodeType values. [jddalton]
+
 * Revert to using `in` operator when resolving `:enabled` and `:disabled` dynamic pseudo classes on control elements. [Diego Perini]
 
 * Fix regression in `reSplitGroup` and allow escaped characters in `reSplitGroup`, `reSplitToken`, Patterns.attribute, and Patterns.dpseudos. [jddalton, pdanpdan]

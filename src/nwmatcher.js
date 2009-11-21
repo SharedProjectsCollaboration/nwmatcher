@@ -816,7 +816,11 @@
     typeof base.createElementNS == 'function' ? '.toUpperCase()' : '',
 
   // filter IE gEBTN('*') results containing non-elements like comments and `/video`
-  SKIP_NON_ELEMENTS = BUGGY_GEBTN ? 'if(e.nodeName.charCodeAt(0)<65){continue;}' : '',
+  ELEMENTS_ONLY = BUGGY_GEBTN ? 'e.nodeName.charCodeAt(0)>64' : 'e',
+
+  ELEMENTS_ONLY_AND = BUGGY_GEBTN ? ELEMENTS_ONLY + '&&' : '',
+
+  AND_ELEMENTS_ONLY = BUGGY_GEBTN ? '&&' + ELEMENTS_ONLY : '',
 
   // Use the textContent or innerText property to check CSS3 :contains
   // Safari 2 has a bug with innerText and hidden content, using an
@@ -859,10 +863,9 @@
       // for select method
       if (mode) {
         // (c-ollection, s-napshot, d-ocument, h-root, g-from, f-callback, x-notHTML)
-        return new Function('c,s,d,h,g,f,x', BUGGY_GEBTN ?
-          ('var e,n,N,t,i=-1,j=-1,r=[];main:while(N=e=c[++i]){' +
-           SKIP_NON_ELEMENTS + '++j;' + source + '}return r;') :
-          ('var e,n,N,t,j=-1,r=[];main:while(N=e=c[++j]){' + source + '}return r;'));
+        return new Function('c,s,d,h,g,f,x',
+          'var e,n,N,t,i=-1,j=-1,r=[];main:while(N=e=c[++i]){' +
+          source.replace('{', '{++j;') + '}return r;');
       }
       // for match method
       else {
@@ -877,10 +880,9 @@
   compileSingle =
     function(selector) {
       var source = compileSelector(selector, ACCEPT_NODE);
-      return new Function('c,s,d,h,g,f,x', BUGGY_GEBTN ?
-        ('var e,n,N,t,i=-1,j=-1,r=[];main:while(N=e=c[++i]){' +
-         SKIP_NON_ELEMENTS + '++j;' + source + '}return r;') :
-        ('var e,n,N,t,j=-1,r=[];main:while(N=e=c[++j]){' + source + '}return r;'));
+      return new Function('c,s,d,h,g,f,x',
+        'var e,n,N,t,i=-1,j=-1,r=[];main:while(N=e=c[++i]){' +
+        source.replace('{', '{++j;') + '}return r;');
     },
 
   // compile a CSS3 string selector into ad-hoc javascript matching function
@@ -905,13 +907,17 @@
        ptnUniversal = Patterns.universal,
        k = 0;
 
+     // assume matching `*` if F is not provided
+     if (/[>+~]$/.test(selector)) {
+       selector += '*';
+     }
+
       while (selector) {
         // *** Universal selector
         // * match all (empty block, do not remove)
         if ((match = selector.match(ptnUniversal))) {
-          // do nothing, handled in the compiler where
           // BUGGY_GEBTN return comment nodes (ex: IE)
-          true;
+          source = 'if(' + ELEMENTS_ONLY + '){' + source + '}';
         }
 
         // *** ID selector
@@ -978,28 +984,31 @@
           if (match[0] == origSelector) {
             source = 'if(e===g){' + source + '}';
           }
+
           source = NATIVE_TRAVERSAL_API ?
             'if((e=e.previousElementSibling)){' + source + '}' :
-            'while((e=e.previousSibling)){if(e.nodeName.charCodeAt(0)>64){' + source + 'break;}}';
+            'while((e=e.previousSibling)){' + source + 'if (e.nodeType==1)break;}';
         }
 
         // *** General sibling combinator
         // E ~ F (F relative sibling of E)
         else if ((match = selector.match(ptnRelative))) {
           k++;
+
           // assume matching context if E is not provided
           if (match[0] == origSelector) {
             source = 'if(e===g){' + source + '}';
           }
+
           // previousSibling particularly slow on Gecko based browsers prior to FF3.1
           if (NATIVE_TRAVERSAL_API) {
             source =
               'var N' + k + '=e;e=e==h?h:e.parentNode.firstElementChild;' +
-              'while(e!=N' + k +'){if(e){' + source + '}e=e.nextElementSibling;}';
+              'while(e&&e!=N' + k +'){' + source + 'e=e.nextElementSibling;}';
           } else {
             source =
               'var N' + k + '=e;e=e.parentNode.firstChild;' +
-              'while(e!=N' + k +'){if(e.nodeName.charCodeAt(0)>64){' + source + '}e=e.nextSibling;}';
+              'while(e&&e!=N' + k +'){' + source + 'e=e.nextSibling;}';
           }
         }
 
@@ -1010,13 +1019,14 @@
           if (match[0] == origSelector) {
             source = 'if(e===g){' + source + '}';
           }
-          source = 'if(e!==g&&(e=e.parentNode)&&e.nodeName.charCodeAt(0)>64){' + source + '}';
+
+          source = 'if(e!==g&&(e=e.parentNode)&&e.nodeType==1){' + source + '}';
         }
 
         // *** Descendant combinator
         // E F (E ancestor of F)
         else if ((match = selector.match(ptnAncestor))) {
-          source = 'while(e!==g&&(e=e.parentNode)&&e.nodeName.charCodeAt(0)>64){' + source + '}';
+          source = 'while(e!==g&&(e=e.parentNode)&&e.nodeType==1){' + source + '}';
         }
 
         // *** Structural pseudo-classes
@@ -1035,7 +1045,8 @@
 
             case 'empty':
               // element that has no children
-              source = 'if(!e.firstChild){' + source + '}';
+              source = 'if(' + ELEMENTS_ONLY_AND +
+                '!e.firstChild){' + source + '}';
               break;
 
             default:
@@ -1061,7 +1072,7 @@
                 type += '[e.' + UID + ']';
 
                 // build test expression out of structural pseudo (an+b) parameters
-                // see here: http://www.w3.org/TR/css3-selectors/#nth-child-pseudo 
+                // see here: http://www.w3.org/TR/css3-selectors/#nth-child-pseudo
                 test = b < 1 && a > 1 ? '(' + type + '-(' + b + '))%' + a + '==0' :
                   a > +1 ? type + '>=' + b + '&&(' + type + '-(' + b + '))%' + a + '==0' :
                   a < -1 ? type + '<=' + b + '&&(' + type + '-(' + b + '))%' + a + '==0' :
@@ -1069,7 +1080,7 @@
 
                 // 4 cases: 1 (nth) x 4 (child, of-type, last-child, last-of-type)
                 source =
-                  'if(e!==h){' +
+                  'if(e!==h' + AND_ELEMENTS_ONLY + '){' +
                     't=e.nodeName' + TO_UPPER_CASE +
                     ';n=s.getChildIndexes' + (match[4] ? 'ByTag' : '') +
                     '(e.parentNode' + (match[4] ? ',t' : '') + ');' +
@@ -1091,7 +1102,7 @@
                 }
 
                 source =
-                  'if(e!==h){' +
+                  'if(e!==h' + AND_ELEMENTS_ONLY + '){' +
                     ( 'n=e;while((n=n.' + a + 'Sibling)' + type + ');if(!n){' + (b ? source :
                       'n=e;while((n=n.' + n + 'Sibling)' + type + ');if(!n){' + source + '}') + '}' ) +
                   '}';
@@ -1113,7 +1124,8 @@
             case 'not':
               // compile nested selectors, need to escape double quotes characters
               // since the string we are inserting into already uses double quotes
-              source = 'if(!s.match(e, "' + match[3].replace(/\x22/g, '\\"') + '")){' + source +'}';
+              source = 'if(' + ELEMENTS_ONLY_AND +
+                '!s.match(e, "' + match[3].replace(/\x22/g, '\\"') + '")){' + source +'}';
               break;
 
             // CSS3 UI element states
