@@ -1119,15 +1119,15 @@
             // CSS3 UI element states
             case 'checked':
               // only radio buttons and check boxes
-              source = 'if(e.form&&/^(?:radio|checkbox)$/i.test(e.type)&&e.checked){' + source + '}';
+              source = 'if("form" in e&&/^(?:radio|checkbox)$/i.test(e.type)&&e.checked){' + source + '}';
               break;
             case 'enabled':
               // does not consider hidden input fields
-              source = 'if(((e.form&&(!e.type||e.type.toLowerCase()!=="hidden"))||s.isLink(e))&&!e.disabled){' + source + '}';
+              source = 'if((("form" in e&&e.type.toLowerCase()!=="hidden")||s.isLink(e))&&!e.disabled){' + source + '}';
               break;
             case 'disabled':
               // does not consider hidden input fields
-              source = 'if(e.form&&(!e.type||e.type.toLowerCase()!=="hidden")&&e.disabled){' + source + '}';
+              source = 'if("form" in e&&e.type.toLowerCase()!=="hidden"&&e.disabled){' + source + '}';
               break;
 
             // CSS3 target pseudo-class
