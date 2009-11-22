@@ -45,18 +45,23 @@
   // NOTE: Safari 2.0.x crashes with escaped (\\)
   // Unicode ranges in regular expressions so we
   // use a negated character range class instead
-  strEncoding = '(?:[-\\w]|[^\\x00-\\xa0]|\\\\.)+',
+  strIdentifier = '-?(?:[a-zA-Z_]|[^\\x00-\\xa0]|\\\\.)(?:[-\\w]|[^\\x00-\\xa0]|\\\\.)*',
 
-  // used to skip [ ] or ( ) groups in token tails
+  // used to match [ ] or ( ) groups
   // http://blog.stevenlevithan.com/archives/match-quoted-string/
-  strSkipGroup =
+  strGroups =
     '(?:' +
-    '\\[(?:[-\\w]+:)?[-\\w]+(?:[~*^$|!]?=(["\']?)(?:(?!\\2)[^\\\\]|(?!\\])[^\\\\]|\\\\.)*\\2)?\\]' +
+    '\\[(?:[-\\w]+:)?[-\\w]+(?:[~*^$|!]?=(["\']?)(?:(?!\\1)[^\\\\]|[^\\\\]|\\\\.)*\\1)?\\]' +
     '|' +
-    '\\((["\']?).*?(?:\\(.*\\))?[^\'"()]*?\\3\\)' +
+    '\\((["\']?).*?(?:\\(.*\\))?[^\'"()]*?\\2\\)' +
     ')',
 
+  // used to skip [ ] or ( ) groups
+  // we use \2 and \3 because we assume \1 will be the captured group not being skipped
+  strSkipGroups = strGroups.replace(/\\1/g, '\\2').replace('\\2', '\\3'),
+
   // used to skip "..." or '...' quoted attribute values
+  // we use \2 because we assume \1 will be the captured group not being skipped
   strSkipQuotes = '(["\'])(?:(?!\\2)[^\\\\]|\\\\.)*\\2',
 
   strEdgeSpace = '[\\t\\n\\r\\f]',
@@ -67,25 +72,26 @@
 
   strTrailingSpace = '([[(=>+~,^$|!]|\\*=)\\x20+',
 
+  // regexps used throughout nwmatcher
+  reIdentifier = new RegExp(strIdentifier),
 
-  reClassValue = new RegExp(strEncoding),
+  reSiblings = new RegExp('^(?:\\*|[.#]?' + strIdentifier + ')?[+~]'),
 
-  reSiblings = new RegExp("^(?:[.#]?" + strEncoding + ")?[+~]"),
+  reUseSafeNormalize = /[[(]/,
 
-  reUseSafeNormalize = /[[\(]/,
+  reUnnormalized = /[\t\n\r\f]|\x20{2,}|\x20(?:[\]\)=>+~,^$|!]|\*=)|(?:[\[\(=>+~,^$|!]|\*=)\x20/,
 
-  reUnnormalized = /[\t\n\r\f]|\x20{2,}|(?:\x20(?:[\]\)=>+~,^$|!]|\*=))|(?:(?:[\[\(=>+~,^$|!]|\*=)\x20)/,
-
-  // split comma separated selector groups, exclude commas inside '' "" () []
-  // example: (#div a, ul > li a) group 1 is (#div a) group 2 is (ul > li a)
-  reSplitGroup = new RegExp('(' + strSkipGroup + '|(?!,)[^\\\\]|\\\\.)+', 'g'),
+  // split comma separated selector groups
+  // exclude escaped commas and those inside '', "", (), []
+  // example: `#div a, ul > li a` group 1 is `#div a`, group 2 is `ul > li a`
+  reSplitGroup = new RegExp('(?:' + strGroups + '|(?!,)[^\\\\]|\\\\.)+', 'g'),
 
   // split last, right most, selector group token
-  reSplitToken = new RegExp('((?:' + strSkipGroup + '|(?![ >+~,()[\\]])[^\\\\]|\\\\.)+|[>+~]$)', 'g'),
+  reLastToken = new RegExp('(?:(?:' + strGroups + '|(?![ >+~,()[\\]])[^\\\\]|\\\\.)+|[>+~])$');
 
   // simple check to ensure the first character of a selector is valid
   // http://www.w3.org/TR/css3-syntax/#characters
-  reValidator = /^(?:[*>+~a-zA-Z]|\[[\x20\t\n\r\fa-zA-Z]|[.:#_]?(?!-?\d)(?:[-a-zA-Z]|[^\x00-\xa0]))/,
+  reValidator = /^(?:[*>+~a-zA-Z]|\[[\x20\t\n\r\fa-zA-Z]|(?:[.:#_]|::)?(?!-?\d)-?(?:[a-zA-Z_]|[^\x00-\xa0]|\\.))/,
 
   // for use with the normilize method
   reEdgeSpaces     = new RegExp(strEdgeSpace, 'g'),
@@ -170,7 +176,7 @@
   // Safari 2 bug with innerText (gasp!)
   // used to strip tags from innerHTML
   stripTags = function(s) {
-    return s.replace(/<\/?("[^\"]*"|'[^\']*'|[^>])+>/gi, '');
+    return s.replace(/<\/?(?:(["'])(?:(?!\1)[^\\]|\\.)*\1|[^>])+>/gi, '');
   },
 
   // trim leading/trailing spaces
@@ -323,7 +329,7 @@
       var input = document.createElement('input');
       if ((isSupported = testSupport('id', 'x'))) {
         RE_BUGGY_MUTATION = testSupport('disabled', true) ? testFalse :
-          /[\[:](?:checked|disabled)/i;
+          /(?:\[[\x20\t\n\r\f]*|:)(?:checked|disabled)/i;
       }
       return isSupported;
     })() :
@@ -413,8 +419,8 @@
 
   // matches simple id, tagname & classname selectors
   RE_SIMPLE_SELECTOR = BUGGY_GEBTN || BUGGY_GEBCN
-    ? /^#?[-\w]+$/
-    : /^[.#*]?[-\w]*$/,
+    ? new RegExp('^#' + strIdentifier + '$')
+    : new RegExp('^(?:\\*|[.#]?' + strIdentifier + ')$'),
 
   /*----------------------------- LOOKUP OBJECTS -----------------------------*/
 
@@ -521,21 +527,21 @@
 
   // optimization expressions
   Optimize = {
-    'id':        new RegExp("#("   + strEncoding + ")|" + strSkipGroup),
-    'className': new RegExp("\\.(" + strEncoding + ")|" + strSkipGroup),
-    'tagName':   new RegExp("(?:^|[>+~\\x20])(" + strEncoding + ")|" + strSkipGroup)
+    'id':        new RegExp("#("   + strIdentifier + ")|" + strSkipGroups),
+    'className': new RegExp("\\.(" + strIdentifier + ")|" + strSkipGroups),
+    'tagName':   new RegExp("(?:^|[>+~\\x20])(" + strIdentifier + ")|" + strSkipGroups)
   },
 
   // precompiled Regular Expressions
   Patterns = {
     // element attribute matcher
-    'attribute': /^\[([-\w]*:?(?:[-\w])+)(?:([~*^$|!]?=)(?:(["']?)((?:(?!\3)[^\\]|(?!\])[^\\]|\\.)*)\3))?\](.*)/,
+    'attribute': /^\[((?:[-\w]+\:)?[-\w]+)(?:([~*^$|!]?=)(["']?)((?:(?!\3)[^\\]|[^\\]|\\.)*)\3)?\](.*)/,
 
     // structural pseudo-classes
     'spseudos': /^\:(root|empty|nth)?-?(first|last|only)?-?(child)?-?(of-type)?(?:\((even|odd|[^\)]*)\))?(.*)/,
 
     // uistates + dynamic + negation pseudo-classes
-    'dpseudos': /^\:((?:[-\w]|[^\x00-\xa0]|\\.)+)(?:\((["']?)(.*?(\(.*\))?[^'"()]*?)\2\))?(.*)/,
+    'dpseudos': /^\:((?:[-\w]|[^\x00-\xa0]|\\.)+)(?:\((["']?)(.*?(?:\(.*\))?[^'"()]*?)\2\))?(.*)/,
 
     // E > F
     'children': /^\>(.*)/,
@@ -553,13 +559,13 @@
     'universal': /^\*(.*)/,
 
     // id
-    'id': new RegExp("^#(" + strEncoding + ")(.*)"),
+    'id': new RegExp("^#(" + strIdentifier + ")(.*)"),
 
     // tag
-    'tagName': new RegExp("^(" + strEncoding + ")(.*)"),
+    'tagName': new RegExp("^(" + strIdentifier + ")(.*)"),
 
     // class
-    'className': new RegExp("^\\.(" + strEncoding + ")(.*)")
+    'className': new RegExp("^\\.(" + strIdentifier + ")(.*)")
   },
 
   // place to add exotic functionalities
@@ -1035,7 +1041,7 @@
         // :first-of-type, :last-of-type, :only-of-type,
         // :nth-child(), :nth-last-child(), :nth-of-type(), :nth-last-of-type()
         else if ((match = selector.match(ptnSpseudos)) &&
-          pseudoStructural[selector.match(reClassValue)[0]]) {
+          pseudoStructural[selector.match(reIdentifier)[0]]) {
 
           switch (match[1]) {
             case 'root':
@@ -1117,7 +1123,7 @@
         // CSS3 :active, :hover, :focus
         // CSS3 :link, :visited
         else if ((match = selector.match(ptnDpseudos)) &&
-          pseudoOthers[selector.match(reClassValue)[0]]) {
+          pseudoOthers[selector.match(reIdentifier)[0]]) {
 
           switch (match[1]) {
             // CSS3 negation pseudo-class
@@ -1436,9 +1442,7 @@
 
         if (hasChanged) {
           // get right most selector token
-          parts = selector.match(reSplitToken);
-
-          token = parts[parts.length - 1];
+          token = selector.match(reLastToken)[0];
 
           // index where the last token was found
           // (avoids non-standard/deprecated RegExp.leftContext)

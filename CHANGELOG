@@ -1,3 +1,7 @@
+* Refine regexp used in stripTags(), Patterns.attribute, Patterns.dpseudos, `reSiblings`, `reSplitGroup`, `reLastToken`, `reUnnormalized`, `reUseSafeNormalize`, `reValidator`, `RE_BUGGY_MUTATION`, and `RE_SIMPLE_SELECTOR`. [jddalton]
+
+* Rename `strEncoding` to `strIdentifier`, `strSkipGroup` to strSkipGroups, `reClassValue` to `reIdentifier`, and `reSplitToken` to `reLastToken`. [jddalton]
+
 * Modify the compiler to reduce the number of times it checks nodeName/nodeType values. [jddalton]
 
 * Revert to using `in` operator when resolving `:enabled` and `:disabled` dynamic pseudo classes on control elements. [Diego Perini]
