@@ -1,3 +1,5 @@
+* Ensure `:enabled` and `:disabled` dynamic pseudos only match elements with a `type` property to avoid false positives on LABEL elements. [jddalton]
+
 * Rename `base` to `doc`, `doc` variable is updated for each selection so the in-line tests all references the ownerDocument of the scrutinized elements. [Diego Perini, kangax]
 
 * Refine regexp used in stripTags(), Patterns.attribute, Patterns.dpseudos, `reSiblings`, `reSplitGroup`, `reLastToken`, `reUnnormalized`, `reUseSafeNormalize`, `reValidator`, `RE_BUGGY_MUTATION`, and `RE_SIMPLE_SELECTOR`. [jddalton]
