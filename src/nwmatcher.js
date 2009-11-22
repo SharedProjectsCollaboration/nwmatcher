@@ -20,20 +20,20 @@
   var version = 'nwmatcher-1.2.0',
 
   // processing context
-  base = global.document,
+  doc = global.document,
 
   // context root element (HTML)
-  root = base.documentElement,
+  root = doc.documentElement,
 
   // temporary vars
-  isSupported, isBuggy, div = base.createElement('DiV'),
+  isSupported, isBuggy, div = doc.createElement('DiV'),
 
   // persist last selector parsing data
   lastCalled, lastIndex, lastSelector, lastSlice,
 
-  lastContext = base,
+  lastContext = doc,
 
-  notHTML = !('body' in base),
+  notHTML = !('body' in doc),
 
   // used in the RE_BUGGY_XXXXX regexp testers
   testFalse = { 'test': function() { return false; } },
@@ -210,7 +210,7 @@
 
   // Safari 2 missing document.compatMode property
   // makes it harder to detect Quirks vs. Strict
-  compatMode = base.compatMode ||
+  compatMode = doc.compatMode ||
     (function() {
       var el = document.createElement('div');
       return el.style && (el.style.width = 1) &&
@@ -230,12 +230,12 @@
   // so through the code read it as "supported", maybe BUGGY
 
   // detect if DOM methods are native in browsers
-  NATIVE_GEBID     = isNative(base, 'getElementById'),
+  NATIVE_GEBID     = isNative(doc, 'getElementById'),
   NATIVE_GEBCN     = isNative(root, 'getElementsByClassName'),
   NATIVE_GEBN      = isNative(root, 'getElementsByName'),
   NATIVE_GEBTN     = isNative(root, 'getElementsByTagName'),
-  NATIVE_HAS_FOCUS = isNative(base, 'hasFocus'),
-  NATIVE_QSA       = isNative(base, 'querySelectorAll'),
+  NATIVE_HAS_FOCUS = isNative(doc, 'hasFocus'),
+  NATIVE_QSA       = isNative(doc, 'querySelectorAll'),
 
   RE_BUGGY_MUTATION = testTrue,
 
@@ -376,7 +376,7 @@
       div.appendChild(createElement('p')).name = y;
 
       root.insertBefore(div, root.firstChild);
-      isBuggy = !base.getElementById(x) || !!base.getElementById(y);
+      isBuggy = !doc.getElementById(x) || !!doc.getElementById(y);
 
       if (NATIVE_GEBN) BUGGY_GEBN = isBuggy;
       root.removeChild(div);
@@ -388,7 +388,7 @@
   // detect IE gEBTN comment nodes bug
   BUGGY_GEBTN = NATIVE_GEBTN ?
     (function() {
-      clearElement(div).appendChild(base.createComment(''));
+      clearElement(div).appendChild(doc.createComment(''));
       return !!div.getElementsByTagName('*')[0];
     })() :
     true,
@@ -703,7 +703,7 @@
   // @return array (non native GEBCN)
   byClass =
     function(className, from) {
-      from || (from = base);
+      from || (from = doc);
       if (notHTML) {
         return select('[class~="' + className + '"]', from);
       }
@@ -731,7 +731,7 @@
   byId =
     function(id, from) {
       var element, elements, names, node, i = -1;
-      from || (from = base);
+      from || (from = doc);
       id = id.replace(/\\/g, '');
 
       if (!notHTML && from.getElementById) {
@@ -763,7 +763,7 @@
   byName =
     function(name, from) {
       var element, elements, names, i = -1;
-      from || (from = base);
+      from || (from = doc);
 
       if (notHTML) {
         return select('[name="' + name + '"]', from);
@@ -788,7 +788,7 @@
   byTag =
     function(tag, from) {
       var child, isUniversal, upperCased, results;
-      from || (from = base);
+      from || (from = doc);
 
       // support document fragments
       if (typeof from.getElementsByTagName == 'undefined' &&
@@ -819,7 +819,7 @@
 
   // checks if nodeName comparisons need to be upperCased
   TO_UPPER_CASE =
-    typeof base.createElementNS == 'function' ? '.toUpperCase()' : '',
+    typeof doc.createElementNS == 'function' ? '.toUpperCase()' : '',
 
   // filter IE gEBTN('*') results containing non-elements like comments and `/video`
   ELEMENTS_ONLY = BUGGY_GEBTN ? 'e.nodeName.charCodeAt(0)>64' : 'e',
@@ -1183,8 +1183,8 @@
               break;
             case 'selected':
               // fix Safari selectedIndex property bug
-              if (typeof base.getElementsByTagName !== 'undefined') {
-                n = base.getElementsByTagName('select');
+              if (typeof doc.getElementsByTagName !== 'undefined') {
+                n = doc.getElementsByTagName('select');
                 for (i = 0; n[i]; i++) {
                   n[i].selectedIndex;
                 }
@@ -1242,13 +1242,13 @@
     function(element, selector, from, callback) {
       // make sure an element node was passed
       var compiled, origSelector = selector;
-      base = element.ownerDocument;
-      if (!base) return false;
+      doc = element.ownerDocument;
+      if (!doc) return false;
 
-      from || (from = base);
+      from || (from = doc);
       if (lastContext != from) {
-        root = base.documentElement;
-        notHTML = !('body' in base);
+        root = doc.documentElement;
+        notHTML = !('body' in doc);
         lastContext = from;
       }
 
@@ -1277,7 +1277,7 @@
       childIndexes = { };
       childIndexesByTag = { };
 
-      return compiled(element, snap, base, root, from, callback, notHTML);
+      return compiled(element, snap, doc, root, from, callback, notHTML);
     },
 
   // select elements matching simple
@@ -1320,10 +1320,10 @@
     function (selector, from, callback) {
       var element, elements;
 
-      from || (from = base);
+      from || (from = doc);
       if (lastContext != from) {
-        root = (base = from.ownerDocument || from).documentElement;
-        notHTML = !('body' in base);
+        root = (doc = from.ownerDocument || from).documentElement;
+        notHTML = !('body' in doc);
         lastContext = from;
       }
 
@@ -1334,7 +1334,7 @@
           !notHTML && !RE_BUGGY_QSAPI.test(selector) &&
           (!from || QSA_NODE_TYPES[from.nodeType])) {
         try {
-          elements = (from || base).querySelectorAll(selector);
+          elements = (from || doc).querySelectorAll(selector);
         } catch(e) { }
 
         if (elements) {
@@ -1371,12 +1371,12 @@
        now, normSelector, origFrom, origSelector, parts, token;
 
       // extract context if changed
-      from || (from = base);
+      from || (from = doc);
       if (lastContext != from) {
         // reference context ownerDocument and document root (HTML)
-        root = (base = from.ownerDocument || from).documentElement;
+        root = (doc = from.ownerDocument || from).documentElement;
         // check if context is not (X)HTML
-        notHTML = !('body' in base);
+        notHTML = !('body' in doc);
         // save passed context
         lastContext = from;
       }
@@ -1388,10 +1388,10 @@
       // avoid caching disconnected nodes
       isCacheable = isCachingEnabled && !isCachingPaused &&
         !RE_BUGGY_MUTATION.test(selector) &&
-        !(from != base && isDisconnected(from, root));
+        !(from != doc && isDisconnected(from, root));
 
       if (isCacheable) {
-        snap = base.snapshot;
+        snap = doc.snapshot;
         // valid base context storage
         if (snap && !snap.isExpired) {
           if ((elements = snap.Results[selector]) &&
@@ -1405,10 +1405,10 @@
           if ((now - lastCalled) < minCacheRest) {
             isCacheable = false;
             isCachingPaused =
-              (base.snapshot = new Snapshot).isExpired = true;
+              (doc.snapshot = new Snapshot).isExpired = true;
             setTimeout(function() { isCachingPaused = false; }, minCacheRest);
-          } else setCache(true, base);
-          snap = base.snapshot;
+          } else setCache(true, doc);
+          snap = doc.snapshot;
           lastCalled = now;
         }
 
@@ -1534,7 +1534,7 @@
           : compileGroup(selector, '', true);
       }
 
-      data = compiled(elements, snap, base, root, from, callback, notHTML);
+      data = compiled(elements, snap, doc, root, from, callback, notHTML);
 
       if (isCacheable) {
         // a cached result set for the requested selector
@@ -1630,7 +1630,7 @@
   // script loading context will be used as default context
   setCache =
     function(enable, d) {
-      d || (d = base);
+      d || (d = doc);
       if (!!enable) {
         d.snapshot = new Snapshot;
         startMutation(d);

@@ -1,3 +1,5 @@
+* Rename `base` to `doc`, `doc` variable is updated for each selection so the in-line tests all references the ownerDocument of the scrutinized elements. [Diego Perini, kangax]
+
 * Refine regexp used in stripTags(), Patterns.attribute, Patterns.dpseudos, `reSiblings`, `reSplitGroup`, `reLastToken`, `reUnnormalized`, `reUseSafeNormalize`, `reValidator`, `RE_BUGGY_MUTATION`, and `RE_SIMPLE_SELECTOR`. [jddalton]
 
 * Rename `strEncoding` to `strIdentifier`, `strSkipGroup` to strSkipGroups, `reClassValue` to `reIdentifier`, and `reSplitToken` to `reLastToken`. [jddalton]
