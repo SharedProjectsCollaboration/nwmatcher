@@ -1,3 +1,5 @@
+* Rename variable `isClassNameLowered` to `isQuirks`. [Diego Perini]
+
 * Fix `RE_BUGGY_QSAPI` class attribute feature test and correct Dojo unit tests. [jddalton]
 
 * Fix regression in compileSelector() and make Patterns.attribute use a non-greedy `.*?`. [jddalton]

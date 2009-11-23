@@ -226,6 +226,10 @@
     };
   })(),
 
+  // detect quirks mode
+  isQuirks = compatMode.indexOf('CSS') < 0,
+
+
   // NOTE: NATIVE_XXXXX check for existance of method only
   // so through the code read it as "supported", maybe BUGGY
 
@@ -443,7 +447,7 @@
   // http://www.whatwg.org/specs/web-apps/current-work/#selectors
   HTML_TABLE = {
     // class attribute must be treated case-insensitive in HTML quirks mode
-    'class': compatMode.indexOf('CSS') > -1 ? 0 : 1,
+    'class': isQuirks ? 1 : 0,
     'accept': 1, 'accept-charset': 1, 'align': 1, 'alink': 1, 'axis': 1,
     'bgcolor': 1, 'charset': 1, 'checked': 1, 'clear': 1, 'codetype': 1, 'color': 1,
     'compact': 1, 'declare': 1, 'defer': 1, 'dir': 1, 'direction': 1, 'disabled': 1,
@@ -467,9 +471,6 @@
 
   INSENSITIVE_TABLE = div.nodeName === 'DiV' ?
     XHTML_TABLE : HTML_TABLE,
-
-  // shortcut for the frequently checked case sensitivity of the class attribute
-  isClassNameLowered = INSENSITIVE_TABLE['class'],
 
   // current CSS3 grouping of Pseudo-Classes
   // they allow implementing extensions
@@ -715,12 +716,12 @@
       if (BUGGY_GEBCN) {
         var element, i = -1, j = i, results = [ ],
          elements = byTag('*', from),
-         cn = isClassNameLowered ? className.toLowerCase() : className;
+         cn = isQuirks ? className.toLowerCase() : className;
 
         className = ' ' + cn.replace(/\\/g, '') + ' ';
         while ((element = elements[++i])) {
           if ((cn = element.className) && cn.length &&
-              (' ' + (isClassNameLowered ? cn.toLowerCase() : cn) + ' ')
+              (' ' + (isQuirks ? cn.toLowerCase() : cn) + ' ')
               .replace(reEdgeSpaces, ' ').indexOf(className) > -1) {
             results[++j] = element;
           }
@@ -959,9 +960,9 @@
           source =
             't = x ? s.getAttribute(e,"class") : e.className;' +
             'if(t && (" "+t+" ")' +
-            (isClassNameLowered ? '.toLowerCase()' : '') +
+            (isQuirks ? '.toLowerCase()' : '') +
             '.replace(/' + strEdgeSpace + '/g," ").indexOf(" ' +
-            (isClassNameLowered ? match[1].toLowerCase() : match[1]) +
+            (isQuirks ? match[1].toLowerCase() : match[1]) +
             ' ")>-1){' + source + '}';
         }
 
