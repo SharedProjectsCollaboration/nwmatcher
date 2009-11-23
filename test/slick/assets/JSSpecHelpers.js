@@ -18,6 +18,7 @@ var global = this;
 global.context = this;
 var specs, spec, it, its;
 var descriptionParent = '';
+var uniquespecs = {};
 
 function Describe(description,specBuilder){
 	// Backup existing object so we don't override it
@@ -44,11 +45,17 @@ function Describe(description,specBuilder){
 	
 	// Create the tests and go!
 	var spec_count = 0;
+	var specnames = [];
 	for (var specname in specs){
 		if (/^(before|after)[_ ](all|each)$/.test(specname)) continue;
-		if (specs[specname]) spec_count++;
+		if (!specs[specname]) continue;
+		spec_count++;
+		specnames.push(description+specname);
 	}
-	if (spec_count) describe(description, specs);
+	if (spec_count && !uniquespecs[specnames]){
+		describe(description, specs);
+		uniquespecs[specnames] = true;
+	}
 	
 	// Reset
 	descriptionParent = old_descriptionParent;
@@ -60,6 +67,8 @@ global.mocks = {};
 var Mock = (function(){
 	
 	function Mock(mockName, testBuilder){
+		if (mockName && !testBuilder) throw new Error("Invalid mockName, Mock syntax: `new Mock(/mockName/, function(specs, window){})`");
+		
 		if (Object.prototype.toString.call(mockName) != '[object RegExp]')
 			mockName = new RegExp(mockName);
 		
@@ -88,10 +97,17 @@ var Mock = (function(){
 	};
 
 	Mock.register.done = function(){
-		for (var i=0; i < Mock.mocks.length; i++)
-			Mock.mocks[i].run();
+		for (var i=0; i < Mock.mocks.length; i++){
+			try {
+				Mock.mocks[i].run();
+			} 
+			catch(e) { }
+			finally {
+				continue;
+			}
+		}
 		
-		setTimeout(runSpecs, 100);
+		global.runSpecs();
 	};
 	
 	
@@ -106,12 +122,11 @@ Mock.Request = function(mockName, url){
 	
 	var self = this;
 	this.callback = function(html, xml){
-		Mock.register(self.mockName +': '+ String(self.url).replace(/^.*\//,''), newSlickWinFromDoc(xml));
+		Mock.register(self.mockName +': '+ String(self.url).replace(/^.*\//,''), newFakeWinFromDoc(xml));
 	};
 	this.rq = new SimpleRequest();
 	this.rq.send(this.url, this.callback);
 };
-
 
 var TODO = function(){ throw "TODO: This test has not be written yet"; };
 
@@ -121,10 +136,13 @@ JSSpec.Browser.NativeConsole = !!(('console' in this) && ('log' in console) && (
 JSSpec.Browser.Trident = (JSSpec.Browser.Trident && !JSSpec.Browser.NativeConsole);
 
 // Stop the normal JSSpec onload from firing yet
-var runSpecs = window.onload;
+var runSpecs_actually = window.onload;
+var runSpecs = function(){
+	clearTimeout(global.runSpecs_timer);
+	global.runSpecs_timer = setTimeout(runSpecs_actually, 1000);
+};
 window.onload = function(){
 	window.loaded = true;
-	setTimeout(runSpecs, 100);
 };
 
 
@@ -252,5 +270,16 @@ function getXML(url,mime){
 	return request;
 	return request.responseXML || parseXML(request.responseText);
 	
+};
+
+
+function newFakeWinFromDoc(document){
+	var fakeWin = { fake:true };
+	fakeWin.document = document;
+	fakeWin.SELECT = function(context, expression){
+		return global.SELECT.call(fakeWin, context, expression);
+	};
+	
+	return fakeWin;
 };
 

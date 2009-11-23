@@ -7,22 +7,16 @@
   <script src="../../../src/nwmatcher.js" type="text/javascript" charset="utf-8"></script>
 	<script src="../nwmatcher-slick.js" type="text/javascript" charset="utf-8"></script>
 	<script type="text/javascript" charset="utf-8">
-
 	window.top.$$$ = function(selector, context, isXML){
 		context = context || document;
 		var o = {};
 		try{ o.QSA = context.querySelectorAll(selector).length }catch(e){}
 		try{ o.Slick = Slick(context,selector).length }catch(e){}
-		try{ o.Sizzle = Sizzle(selector, context).length }catch(e){}
-		try{ o.Sly = Sly(selector, context).length }catch(e){}
-		try{ o.Acme = acme.query(selector, context).length }catch(e){}
 		return o;
 	}
 	
 	window.top.Slick = window.Slick;
 	window.top.document.search = window.document.search;
-	
-	
 	</script>
 </head>
 <body onload="window.top.iframe_window_onload && window.top.iframe_window_onload();">

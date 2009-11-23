@@ -402,7 +402,7 @@ JSSpec.Runner.prototype.getSpecById = function(id) {
 
 JSSpec.Runner.prototype.getSpecByContext = function(context) {
 	for(var i = 0; i < this.specs.length; i++) {
-		if(this.specs[i].context == context) return this.specs[i];
+		if(this.specs[i].context.match(context)) return this.specs[i];
 	}
 	return null;
 };
@@ -473,7 +473,7 @@ JSSpec.Logger.prototype.onRunnerStart = function() {
 	var title = document.createElement("DIV");
 	title.id = "title";
 	title.innerHTML = [
-		'<h1>JSSpec</h1>',
+		'<h1><a href="http://jania.pe.kr/aw/moin.cgi/JSSpec">JSSpec</a></h1>',
 		'<ul>',
 		JSSpec.options.rerun ? '<li>[<a href="?" title="rerun all specs">X</a>] ' + JSSpec.util.escapeTags(decodeURIComponent(JSSpec.options.rerun)) + '</li>' : '',
 		'	<li><span id="total_examples">' + JSSpec.runner.totalExamples + '</span> examples</li>',
@@ -482,7 +482,6 @@ JSSpec.Logger.prototype.onRunnerStart = function() {
 		'	<li><span id="progress">0</span>% done</li>',
 		'	<li><span id="total_elapsed">0</span> secs</li>',
 		'</ul>',
-		'<p><a href="http://jania.pe.kr/aw/moin.cgi/JSSpec">JSSpec homepage</a></p>',
 	].join("");
 	container.appendChild(title);
 

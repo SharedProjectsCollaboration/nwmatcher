@@ -1,12 +1,14 @@
+function specsMatch(){
+
 var nodes = {};
 
-Describe('Slick Match',function(){
+Describe('Slick Match',function(specs, context){
 	
-	specs.before_all = function() {
-		nodes.nodeWithoutParent = document.createElement('div');
-		nodes.basic = nodes.nodeWithoutParent;
+	specs.before_each = function() {
+		nodeWithoutParent = document.createElement('div');
+		testNode = nodeWithoutParent;
 	};
-	specs.after_all = function() {
+	specs.after_each = function() {
 		for (var name in nodes) {
 			delete nodes[name];
 		}
@@ -16,17 +18,17 @@ Describe('Slick Match',function(){
 	// Removed these tests as they are specific to Slick (jddalton)
 	its['node should match another node'] = function(){
 		
-		value_of( Slick.match(nodes.basic, nodes.basic) ).should_be_true();
-		value_of( Slick.match(nodes.basic, document.createElement('div')) ).should_be_false();
+		value_of( context.MATCH(testNode, testNode) ).should_be_true();
+		value_of( context.MATCH(testNode, document.createElement('div')) ).should_be_false();
 		
 	};
 	
 	its['node should NOT match nothing'] = function(){
 		
-		value_of( Slick.match(nodes.basic) ).should_be_false();
-		value_of( Slick.match(nodes.basic, null) ).should_be_false();
-		value_of( Slick.match(nodes.basic, undefined) ).should_be_false();
-		value_of( Slick.match(nodes.basic, '') ).should_be_false();
+		value_of( context.MATCH(testNode) ).should_be_false();
+		value_of( context.MATCH(testNode, null) ).should_be_false();
+		value_of( context.MATCH(testNode, undefined) ).should_be_false();
+		value_of( context.MATCH(testNode, '') ).should_be_false();
 		
 	};
 	*/
@@ -34,6 +36,8 @@ Describe('Slick Match',function(){
 	
 	
 	Describe('attributes',function(){
+		
+		var nodes;
 		
 		var AttributeTests = [
 			{ operator:'=',  value:'test you!', matchAgainst:'test you!', shouldBeTrue:true },
@@ -49,11 +53,11 @@ Describe('Slick Match',function(){
 			{ operator:'!=', value:'test you!', matchAgainst:'test you!', shouldBeTrue:false }
 		];
 		function makeAttributeTest(operator, value, matchAgainst, shouldBeTrue) {
-			var code = [''];
-			code.push("nodes.basic.setAttribute('attr', '"+ String.escapeSingle(matchAgainst) +"');");
-			code.push("value_of( Slick.match(nodes.basic, \"[attr"+ operator +"'"+ String.escapeSingle(value) +"']\") ).should_be_"+ (shouldBeTrue ? 'true' : 'false') +"();");
-			code.push("nodes.basic.removeAttribute('attr');");
-			return Function(code.join("\n\t"));
+			return function(){
+				testNode.setAttribute('attr', matchAgainst);
+				value_of( context.MATCH(testNode, "[attr"+ operator +"'"+ value +"']") )[shouldBeTrue ? 'should_be_true' : 'should_be_false']();
+				testNode.removeAttribute('attr');
+			};
 		}
 		for (var t=0,J; J=AttributeTests[t]; t++)
 			its['"'+J.matchAgainst+'" should '+ (J.shouldBeTrue?'':'NOT') +" match \"[attr"+ J.operator +"'"+ String.escapeSingle(J.matchAgainst) +"']\""] =
@@ -62,41 +66,39 @@ Describe('Slick Match',function(){
 	
 	Describe('classes',function(){
 		
-		it['should match all possible classes'] = TODO;
+		// it['should match all possible classes'] = TODO;
 		
 	});
 	
 	Describe('pseudos',function(){
 		
-		it['should match all standard pseudos'] = TODO;
+		// it['should match all standard pseudos'] = TODO;
 		
 	});
 	
 	
 });
 
-Describe('Slick Deep Match',function(){
+Describe('Slick Deep Match',function(specs, context){
 	
-	specs.before_all = function() {
+	specs.before_each = function() {
 		
-		
-		nodes.basic = document.createElement('div');
-		nodes.basic.innerHTML = '\
+		testNode = context.document.createElement('div');
+		testNode.innerHTML = '\
 			<b class="b b1" id="b2">\
 				<a class="a"> lorem </a>\
 			</b>\
 			<b class="b b2" id="b2">\
-				<a id="nodes.basicID" class="a">\
+				<a id="a_tag1" class="a">\
 					lorem\
 				</a>\
 			</b>\
 		';
-		document.body.appendChild(nodes.basic);
+		context.document.body.appendChild(testNode);
 		
-		
-		nodes.nested_a = document.getElementById('nodes.basicID');
+		nested_a = context.document.getElementById('a_tag1');
 	};
-	specs.after_all = function() {
+	specs.after_each = function() {
 		for (var name in nodes) {
 			if (nodes[name] && nodes[name].parentNode) {
 				nodes[name].parentNode.removeChild(nodes[name]);
@@ -106,45 +108,41 @@ Describe('Slick Deep Match',function(){
 	};
 	
 	
-	
-	it['should match a simple selector'] = function(){
-		
-		// tags
-		value_of( deepMatch(nodes.nested_a, '*') ).should_be_true();
-		value_of( deepMatch(nodes.nested_a, 'a') ).should_be_true();
-		value_of( deepMatch(nodes.nested_a, ':not(a)') ).should_be_false();
-		value_of( deepMatch(nodes.nested_a, 'del') ).should_be_false();
-		value_of( deepMatch(nodes.nested_a, ':not(del)') ).should_be_true();
-		
-		// attributes
-		value_of( deepMatch(nodes.nested_a, '[id]') ).should_be_true();
-		value_of( deepMatch(nodes.nested_a, ':not([id])') ).should_be_false();
-		value_of( deepMatch(nodes.nested_a, '[class]') ).should_be_true();
-		value_of( deepMatch(nodes.nested_a, ':not([class])') ).should_be_false();
-		
-		// class
-		value_of( deepMatch(nodes.nested_a, '.a') ).should_be_true();
-		value_of( deepMatch(nodes.nested_a, ':not(.a)') ).should_be_false();
-		
+	function it_should_match_selector(node, selector, should_be){
+		it['should match selector "' + selector + '"'] = function(){
+			
+			value_of( context.MATCH(global[node], selector) ).should_be(should_be);
+			
+		};
 	};
 	
-	it['should match a selector with combinators'] = function(){
-		
-		value_of( deepMatch(nodes.nested_a, '* *') ).should_be_true();
-		value_of( deepMatch(nodes.nested_a, '* > *') ).should_be_true();
-		value_of( deepMatch(nodes.nested_a, '* ~ *') ).should_be_false(); // has no previous siblings
-		value_of( deepMatch(nodes.nested_a, '* + *') ).should_be_false(); // has no previous siblings
-		
-		value_of( deepMatch(nodes.nested_a, 'b a') ).should_be_true();
-		value_of( deepMatch(nodes.nested_a, 'b > a') ).should_be_true();
-		value_of( deepMatch(nodes.nested_a, 'div > b > a') ).should_be_true();
-		value_of( deepMatch(nodes.nested_a, 'div > b + b > a') ).should_be_true();
-		value_of( deepMatch(nodes.nested_a, 'div > b ~ b > a') ).should_be_true();
-		value_of( deepMatch(nodes.nested_a, 'div a') ).should_be_true();
-	};
+	it_should_match_selector('nested_a', '*'             ,true  );
+	it_should_match_selector('nested_a', 'a'             ,true  );
+	it_should_match_selector('nested_a', ':not(a)'       ,false );
+	it_should_match_selector('nested_a', 'del'           ,false );
+	it_should_match_selector('nested_a', ':not(del)'     ,true  );
+	it_should_match_selector('nested_a', '[id]'          ,true  );
+	it_should_match_selector('nested_a', ':not([id])'    ,false );
+	it_should_match_selector('nested_a', '[class]'       ,true  );
+	it_should_match_selector('nested_a', ':not([class])' ,false );
+	it_should_match_selector('nested_a', '.a'            ,true  );
+	it_should_match_selector('nested_a', ':not(.a)'      ,false );
+
+	it_should_match_selector('nested_a', '* *'             ,true  );
+	it_should_match_selector('nested_a', '* > *'           ,true  );
+	it_should_match_selector('nested_a', '* ~ *'           ,false );
+	it_should_match_selector('nested_a', '* + *'           ,false );
+	it_should_match_selector('nested_a', 'b a'             ,true  );
+	it_should_match_selector('nested_a', 'b > a'           ,true  );
+	it_should_match_selector('nested_a', 'div > b > a'     ,true  );
+	it_should_match_selector('nested_a', 'div > b + b > a' ,true  );
+	it_should_match_selector('nested_a', 'div > b ~ b > a' ,true  );
+	it_should_match_selector('nested_a', 'div a'           ,true  );
 	
-	it['should match a node outside the DOM'] = TODO;
+	// it['should match a node outside the DOM'] = TODO;
 	
-	it['should match a node on a different window/iframe'] = TODO;
+	// it['should match a node on a different window/iframe'] = TODO;
 	
 });
+
+};

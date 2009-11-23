@@ -1,38 +1,61 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="ko">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="ko" debug="true">
 <head>
 <meta http-equiv="Content-Type" content="text/html;charset=UTF-8" />
 <title>Matcher :: SlickSpec</title>
+
+<!-- Debugger -->
+<script type="text/javascript" src="assets/moobugger/debugger.js" charset="utf-8"></script>
 
 <!-- JSSpec -->
 <link rel="stylesheet" type="text/css" href="assets/slickspec.css" />
 <script type="text/javascript" src="assets/diff_match_patch.js"></script>
 <script type="text/javascript" src="assets/JSSpec.js"></script>
 <script type="text/javascript" src="assets/JSSpecHelpers.js"></script>
+<script type="text/javascript" src="assets/simple_request.js"></script>
 
 <!-- Slick -->
 <script type="text/javascript" src="../../src/nwmatcher.js" charset="utf-8"></script>
 <script type="text/javascript" src="nwmatcher-slick.js" charset="utf-8"></script>
+<script type="text/javascript" src="assets/JSSpecHelpers_slick.js" charset="utf-8"></script>
+
+<!-- Specs -->
+<script type="text/javascript" src="syntax.js" charset="utf-8"></script>
+<script type="text/javascript" src="slick_match_specs.js"></script>
 
 <!-- Runner -->
 <script type="text/javascript" charset="utf-8">
-function deepMatch(node, expression){
-	return Slick.deepMatch(node, expression);
-};
+
+Describe('MATCH', specsMatch);
+
 </script>
-<script type="text/javascript" src="slick_match_specs.js"></script>
 </head>
 <body>
 
 <h1 id="slickspec_logo"><a href="./">Slick<strong>Spec</strong></a></h1>
+<p id="copyright">SlickSpec&mdash;Copyright &copy; MooTools 2009&mdash;MIT License</p>
+<h1 id="framework_name">NWMatcher</h1>
+
+<!-- mocks -->
+<iframe onload="Mock.register('Generic HTML (standard)',this.contentWindow)" src="mocks/template-standard.html"></iframe>
+<iframe onload="Mock.register('Generic HTML (almost-standard)',this.contentWindow)" src="mocks/template-almost.html"></iframe>
+<iframe onload="Mock.register('Generic HTML (quirks)',this.contentWindow)" src="mocks/template-quirks.html"></iframe>
+
+<!--[if gt IE 8]><!-->
+<iframe onload="Mock.register('Generic XHTML',this.contentWindow)" src="mocks/template.xhtml"></iframe>
+<iframe onload="Mock.register('Generic XML',this.contentWindow)" src="mocks/template.xml"></iframe>
+<iframe onload="Mock.register('SVG',this.contentWindow)" src="mocks/MooTools_Logo.svg"></iframe>
+<!-- <![endif]-->
+
+<!--[if gte IE 8]>
+<iframe onload="Mock.register('Generic HTML (IE8 as IE7)',this.contentWindow)" src="mocks/template-ie7.html"></iframe>
+<![endif]-->
 
 <script type="text/javascript" charset="utf-8">
-(function(){try{
-	
-	var result = window.location.search.match(/\bscript=(.*?\.js)/i);
-	if (result) document.write('<scr'+'ipt type="text/javascript" src="'+ result[1] +'"><\/script>');
-	
-}catch(e){}})();
-</script>	
+
+new Mock.Request('XML responseXML','mocks/xmlmock1.xml');
+new Mock.Request('SVG responseXML','mocks/MooTools_Logo.svg');
+
+</script>
 </body>
 </html>
