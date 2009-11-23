@@ -2,7 +2,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="ko" debug="true">
 <head>
 <meta http-equiv="Content-Type" content="text/html;charset=UTF-8" />
-<title>Google Closure Mock :: SlickSpec</title>
+<title>Dojo Mock :: SlickSpec</title>
 
 <!-- Debugger -->
 <script type="text/javascript" src="assets/moobugger/debugger.js" charset="utf-8"></script>
@@ -16,17 +16,17 @@
 
 <!-- Slick -->
 <script type="text/javascript" src="../../src/nwmatcher.js" charset="utf-8"></script>
-<script type="text/javascript" src="nwmatcher-slick.js" charset="utf-8"></script>
+<script type="text/javascript" src="bootstrap/nwmatcher.slickspec.js" charset="utf-8"></script>
 <script type="text/javascript" src="assets/JSSpecHelpers_slick.js" charset="utf-8"></script>
 
 <!-- Specs -->
-<script type="text/javascript" src="syntax.js" charset="utf-8"></script>
-<script type="text/javascript" src="specsGoogleClosure.js" charset="utf-8"></script>
+<script type="text/javascript" src="specs/syntax.js" charset="utf-8"></script>
+<script type="text/javascript" src="specs/specsDojo.js" charset="utf-8"></script>
 
 <!-- Runner -->
 <script type="text/javascript" charset="utf-8">
 
-new Mock('Google Closure', specsGoogleClosure);
+new Mock('Dojo', specsDojo);
 
 </script>
 </head>
@@ -37,7 +37,7 @@ new Mock('Google Closure', specsGoogleClosure);
 <h1 id="framework_name">NWMatcher</h1>
 
 <!-- mocks -->
-<iframe onload="Mock.register('Google Closure',this.contentWindow)" src="mocks/GoogleClosure-query_test.html"></iframe>
+<iframe onload="Mock.register('Dojo',this.contentWindow)" src="mocks/dojo-query_test.html"></iframe>
 
 </body>
 </html>

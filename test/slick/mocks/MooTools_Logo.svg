@@ -22,5 +22,5 @@
 	</g>
 </g>
 <script type="text/ecmascript" xlink:href="../../../src/nwmatcher.js"></script>
-<script type="text/ecmascript" xlink:href="../nwmatcher-slick.js"></script>
+<script type="text/ecmascript" xlink:href="../bootstrap/nwmatcher.slickspec.js"></script>
 </svg>
