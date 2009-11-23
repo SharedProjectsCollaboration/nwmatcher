@@ -1,3 +1,5 @@
+* Removed strict check for (even/odd) in the Patterns.spseudos regexp and simplify regexps in the `an+b` processing in compileSelector(). [Diego Perini, jddalton]
+
 * Rename variable `isClassNameLowered` to `isQuirks`. [Diego Perini]
 
 * Fix `RE_BUGGY_QSAPI` class attribute feature test and correct Dojo unit tests. [jddalton]

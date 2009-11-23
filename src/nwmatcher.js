@@ -544,7 +544,7 @@
     'attribute': /^\[((?:[-\w]+\:)?[-\w]+)(?:([~*^$|!]?=)(["']?)((?:(?!\3)[^\\]|[^\\]|\\.)*?)\3)?\](.*)/,
 
     // structural pseudo-classes
-    'spseudos': /^\:(root|empty|nth)?-?(first|last|only)?-?(child)?-?(of-type)?(?:\((even|odd|[^\)]*)\))?(.*)/,
+    'spseudos': /^\:(root|empty|nth)?-?(first|last|only)?-?(child)?-?(of-type)?(?:\(([^\)]*)\))?(.*)/,
 
     // uistates + dynamic + negation pseudo-classes
     'dpseudos': /^\:((?:[-\w]|[^\x00-\xa0]|\\.)+)(?:\((["']?)(.*?(?:\(.*\))?[^'"()]*?)\2\))?(.*)/,
@@ -1071,8 +1071,8 @@
                   b = 1;
                 } else {
                   // assumes correct "an+b" format, "b" before "a" to keep "n" values
-                  b = (n = match[5].match(/(-?\d{1,})$/)) ? parseInt(n[1], 10) : 0;
-                  a = (n = match[5].match(/(-?\d{0,})n/)) ? parseInt(n[1], 10) : 0;
+                  b = (n = match[5].match(/(-?\d+)$/)) ? parseInt(n[1], 10) : 0;
+                  a = (n = match[5].match(/(-?\d*)n/)) ? parseInt(n[1], 10) : 0;
                   if (n && n[1] == '-') a = -1;
                 }
 
