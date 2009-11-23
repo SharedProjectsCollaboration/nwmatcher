@@ -60,8 +60,12 @@ function specsDojo(specs, context){
 
 			// classnames aren't case sensitive, only attribute selectors and xml tagnames, this spec is invalid
 			// "doh.is(1, dojo.query('.fooBar').length);",
-			"doh.is(1, dojo.query('[class~=foobar]').length);",
-			"doh.is(1, dojo.query('[class~=fooBar]').length);",
+
+			// Modified from `1` to `2` because classes from the class attribute of HTML elements in documents
+			// that are in quirks mode must be treated as ASCII case-insensitive. (jddalton)
+			// http://www.whatwg.org/specs/web-apps/current-work/#selectors
+			"doh.is(2, dojo.query('[class~=foobar]').length);",
+			"doh.is(2, dojo.query('[class~=fooBar]').length);",
 
 			// syntactic equivalents
 			"doh.is(12, (dojo.query('#t > *')).length);",
@@ -172,7 +176,9 @@ function specsDojo(specs, context){
 			"doh.is(2, dojo.query('#t2 > :checked').length);",
 			"doh.is(dojo.byId('checkbox2'), dojo.query('#t2 > input[type=checkbox]:checked')[0]);",
 			"doh.is(dojo.byId('radio2'), dojo.query('#t2 > input[type=radio]:checked')[0]);",
-			"doh.is(2, dojo.query('#t2select option:checked').length);",
+
+			// Modified from `2` to `0` because OPTION elements don't have a checked attribute (jddalton)
+			"doh.is(0, dojo.query('#t2select option:checked').length);",
 
 			// cross-document queries
 /*

@@ -251,15 +251,20 @@
 
       // Safari 3.2 QSA doesnt work with mixedcase on quirksmode
 
-      // <p class="X"></p>
+      // Must test the attribute selector `[class~=xxx]` 
+      // before `.xXx` or else the bug may not present itself
+
+      // <p class="xXx"></p><p class="xxx"></p>
       clearElement(div)
         .appendChild(createElement('p'))
         .className = 'xXx';
 
+      div.appendChild(createElement('p')).className = 'xxx';
+
       if (compatMode == 'BackCompat' &&
-         (!div.querySelectorAll('.xXx').length ||
-          !div.querySelectorAll('.xxx').length)) {
-        return testTrue;
+         (div.querySelectorAll('[class~=xxx]').length != 2 ||
+          div.querySelectorAll('.xXx').length != 2)) {
+        pattern.push('(?:\\[[\\x20\\t\\n\\r\\f]*class\\b|\\.' + strIdentifier + ')');
       }
 
       // :enabled :disabled bugs with hidden fields (Firefox 3.5 QSA bug)
