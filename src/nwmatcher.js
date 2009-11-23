@@ -375,17 +375,16 @@
 
   BUGGY_GEBID = NATIVE_GEBID ?
     (function() {
-      var uid = String(+new Date).slice(0, 10),
-       x = 'x' + uid, y = 'y' + uid;
+      var x = 'x'+ String(+new Date);
 
-      // <p id="x"></p><p name="y"></p>
+      // <p id="x"></p>
       clearElement(div)
         .appendChild(createElement('p')).id = x;
 
-      div.appendChild(createElement('p')).name = y;
-
+      // check for a buggy GEBN, because unlike GEBID, it will
+      // present the bug before the document has finished loading
       root.insertBefore(div, root.firstChild);
-      isBuggy = !doc.getElementById(x) || !!doc.getElementById(y);
+      isBuggy = !doc.getElementById(x) || !!doc.getElementsByName(x)[0];
 
       if (NATIVE_GEBN) BUGGY_GEBN = isBuggy;
       root.removeChild(div);
