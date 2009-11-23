@@ -51,7 +51,7 @@
   // http://blog.stevenlevithan.com/archives/match-quoted-string/
   strGroups =
     '(?:' +
-    '\\[(?:[-\\w]+:)?[-\\w]+(?:[~*^$|!]?=(["\']?)(?:(?!\\1)[^\\\\]|[^\\\\]|\\\\.)*\\1)?\\]' +
+    '\\[(?:[-\\w]+:)?[-\\w]+(?:[~*^$|!]?=(["\']?)(?:(?!\\1)[^\\\\]|[^\\\\]|\\\\.)*?\\1)?\\]' +
     '|' +
     '\\((["\']?).*?(?:\\(.*\\))?[^\'"()]*?\\2\\)' +
     ')',
@@ -535,7 +535,7 @@
   // precompiled Regular Expressions
   Patterns = {
     // element attribute matcher
-    'attribute': /^\[((?:[-\w]+\:)?[-\w]+)(?:([~*^$|!]?=)(["']?)((?:(?!\3)[^\\]|[^\\]|\\.)*)\3)?\](.*)/,
+    'attribute': /^\[((?:[-\w]+\:)?[-\w]+)(?:([~*^$|!]?=)(["']?)((?:(?!\3)[^\\]|[^\\]|\\.)*?)\3)?\](.*)/,
 
     // structural pseudo-classes
     'spseudos': /^\:(root|empty|nth)?-?(first|last|only)?-?(child)?-?(of-type)?(?:\((even|odd|[^\)]*)\))?(.*)/,
@@ -896,6 +896,11 @@
   compileSelector =
     function(selector, source) {
 
+      // assume matching `*` if F is not provided
+      if (/[>+~]$/.test(selector)) {
+        selector += '*';
+      }
+
       var i, a, b, n, expr, isLowered, match, result, status, test, type,
        origSelector = selector,
        pseudoStructural = CSS3PseudoClasses.Structural,
@@ -912,11 +917,6 @@
        ptnTagName   = Patterns.tagName,
        ptnUniversal = Patterns.universal,
        k = 0;
-
-     // assume matching `*` if F is not provided
-     if (/[>+~]$/.test(selector)) {
-       selector += '*';
-     }
 
       while (selector) {
         // *** Universal selector
@@ -1140,7 +1140,7 @@
               source = 'if("form" in e&&/^(?:radio|checkbox)$/i.test(e.type)&&e.checked){' + source + '}';
               break;
             case 'enabled':
-              // we assume form controls have a `form` and `type` property
+              // we assume form controls have a `form` and `type` property.
               // does not consider hidden input fields
               source = 'if((("form" in e&&e.type&&e.type.toLowerCase()!=="hidden")||s.isLink(e))&&!e.disabled){' + source + '}';
               break;
