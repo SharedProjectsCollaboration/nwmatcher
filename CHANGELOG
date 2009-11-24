@@ -1,3 +1,5 @@
+* Ensure byName() returns an array of elements. [jddalton]
+
 * Fix jQuery adapter regression in `even`, `odd`, `eq`, `lt`, and `gt` pseudo selectors. [jddalton]
 
 * Reduce variables used in compileSelector(), replace a compatMode check with `isQuirks` and modify a couple code comments. [jddalton]

@@ -771,7 +771,7 @@
       from || (from = doc);
 
       if (notHTML) {
-        return select('[name="' + name + '"]', from);
+        return select('*[name="' + name + '"]', from);
       }
       name = name.replace(/\\/g, '');
       if (BUGGY_GEBN) {
@@ -779,7 +779,7 @@
         names = from.getElementsByName(name);
         while ((element = names[++i])) {
           if (element.getAttribute('name') == name) {
-            elements.push(name);
+            elements.push(element);
           }
         }
         return elements;
