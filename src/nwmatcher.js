@@ -41,11 +41,14 @@
   testTrue  = { 'test': function() { return true;  } },
 
   // http://www.w3.org/TR/css3-syntax/#characters
-  // unicode/ISO 10646 characters 161 and higher
+  // Unicode/ISO 10646 characters 161 and higher
   // NOTE: Safari 2.0.x crashes with escaped (\\)
   // Unicode ranges in regular expressions so we
-  // use a negated character range class instead
-  strIdentifier = '-?(?:[a-zA-Z_]|[^\\x00-\\xa0]|\\\\.)(?:[-\\w]|[^\\x00-\\xa0]|\\\\.)*',
+  // use a negated character range class instead.
+
+  // More correct but slower alternative:
+  // '-?(?:[a-zA-Z_]|[^\\x00-\\xa0]|\\\\.)(?:[-\\w]|[^\\x00-\\xa0]|\\\\.)*'
+  strIdentifier = '(?:[-\\w]|[^\\x00-\\xa0]|\\\\.)+',
 
   // used to match [ ] or ( ) groups
   // http://blog.stevenlevithan.com/archives/match-quoted-string/
@@ -72,14 +75,12 @@
 
   strTrailingSpace = '([[(=>+~,^$|!]|\\*=)\\x20+',
 
-  strWhitespace = '[\\x20\\t\\n\\r\\f]',
-
-  strNameAttr = '\\[#*name#*=#*(["\']?)(?:(?!\\1)[^\\\\]|[^\\\\]|\\\\.)*?\\1#*\\]'.replace(/#/g, strWhitespace),
+  strNameAttr = '\\*?\\[name=(["\']?)(?:(?!\\1)[^\\\\]|[^\\\\]|\\\\.)*?\\1\\]',
 
   // regexps used throughout nwmatcher
   reIdentifier = new RegExp(strIdentifier),
 
-  reNameValue = new RegExp('=#*(["\']?)((?:(?!\\1)[^\\\\]|[^\\\\]|\\\\.)*?)\\1#*\\]$'.replace(/#/g, strWhitespace)),
+  reNameValue = /=(['"]?)((?:(?!\1)[^\\]|[^\\]|\\.)*?)\1\]$/,
 
   reSiblings = new RegExp('^(?:\\*|[.#]?' + strIdentifier + ')?[+~]'),
 
@@ -261,7 +262,7 @@
 
       // Safari 3.2 QSA doesnt work with mixedcase on quirksmode
 
-      // Must test the attribute selector `[class~=xxx]` 
+      // Must test the attribute selector `[class~=xxx]`
       // before `.xXx` or else the bug may not present itself
 
       // <p class="xXx"></p><p class="xxx"></p>
@@ -274,7 +275,7 @@
       if (isQuirks &&
          (div.querySelectorAll('[class~=xxx]').length != 2 ||
           div.querySelectorAll('.xXx').length != 2)) {
-        pattern.push('(?:\\[' + strWhitespace + '*class\\b|\\.' + strIdentifier + ')');
+        pattern.push('(?:\\[[\\x20\\t\\n\\r\\f]*class\\b|\\.' + strIdentifier + ')');
       }
 
       // :enabled :disabled bugs with hidden fields (Firefox 3.5 QSA bug)
@@ -714,9 +715,8 @@
   // @return array (non native GEBCN)
   byClass =
     function(className, from) {
-      from || (from = doc);
       if (notHTML) {
-        return select('[class~="' + className + '"]', from);
+        return select('*[class~="' + className + '"]', from || doc);
       }
       if (BUGGY_GEBCN) {
         var element, i = -1, j = i, results = [ ],
@@ -734,7 +734,7 @@
         return results;
       }
 
-      return from.getElementsByClassName(className.replace(/\\/g, ''));
+      return (from || doc).getElementsByClassName(className.replace(/\\/g, ''));
     },
 
   // element by id
@@ -773,16 +773,13 @@
   // @return array
   byName =
     function(name, from) {
-      var element, elements, names, i = -1;
-      from || (from = doc);
-
       if (notHTML) {
-        return select('*[name="' + name + '"]', from);
+        return select('*[name="' + name + '"]', from || doc);
       }
       name = name.replace(/\\/g, '');
       if (BUGGY_GEBN) {
-        elements = [ ];
-        names = from.getElementsByName(name);
+        var element, elements = [ ], i = -1,
+         names = (from || doc).getElementsByName(name);
         while ((element = names[++i])) {
           if (element.getAttribute('name') == name) {
             elements.push(element);
@@ -791,34 +788,32 @@
         return elements;
       }
 
-      return from.getElementsByName(name);
+      return (from || doc).getElementsByName(name);
     },
 
   // elements by tag
   // @return nodeList (live)
   byTag =
     function(tag, from) {
-      var child, isUniversal, upperCased, results;
-      from || (from = doc);
-
       // support document fragments
-      if (typeof from.getElementsByTagName == 'undefined' &&
-          (child = from.firstChild)) {
-        results = [ ];
-        isUniversal = tag === '*';
-        upperCased = tag.toUpperCase();
-        do {
-          if (isUniversal || child.nodeName.toUpperCase() === upperCased) {
-            results.push(child);
-          }
-          if (child.getElementsByTagName) {
-            results = concatList(results, child.getElementsByTagName(tag));
-          }
-        } while ((child = child.nextSibling));
+      if (from && typeof from.getElementsByTagName == 'undefined') {
+        var child, isUniversal, upperCased, results = [ ];
+        if ((child = from.firstChild)) {
+          isUniversal = tag === '*';
+          upperCased = tag.toUpperCase();
+          do {
+            if (isUniversal || child.nodeName.toUpperCase() === upperCased) {
+              results.push(child);
+            }
+            if (child.getElementsByTagName) {
+              results = concatList(results, child.getElementsByTagName(tag));
+            }
+          } while ((child = child.nextSibling));
+        }
         return results;
       }
 
-      return from.getElementsByTagName(tag);
+      return (from || doc).getElementsByTagName(tag);
     },
 
   /*---------------------------- COMPILER METHODS ----------------------------*/
@@ -1253,7 +1248,7 @@
       // make sure an element node was passed
       var compiled, origSelector = selector;
       doc = element.ownerDocument;
-      if (!doc) return false;
+      if (!doc && (doc = element)) return false;
 
       from || (from = doc);
       if (lastContext != from) {
@@ -1316,11 +1311,15 @@
           break;
 
         default:
-          // only ran if non BUGGY_GEBTN
-          data = byTag(selector, from);
+          if (selector.charAt(1) == '[') {
+            data = byName(selector.match(reNameValue)[2], from);
+          } else {
+          	// only ran if non BUGGY_GEBTN
+            data = byTag(selector, from);
+          }
       }
 
-      if ('item' in data) {
+      if (data.item) {
         return callback ? concatCall([ ], data, callback) : concatList([ ], data);
       }
       callback && forEachCall(data, callback);
@@ -1333,9 +1332,8 @@
   select_qsa =
     function (selector, from, callback) {
       var element, elements;
-
-      from || (from = doc);
-      if (lastContext != from) {
+      if (lastContext != (from || doc)) {
+        from || (from = doc);
         root = (doc = from.ownerDocument || from).documentElement;
         notHTML = !('body' in doc);
         lastContext = from;
@@ -1385,8 +1383,9 @@
        now, normSelector, origFrom, origSelector, parts, token;
 
       // extract context if changed
-      from || (from = doc);
-      if (lastContext != from) {
+      // avoid setting `from` before calling select_simple()
+      if (lastContext != (from || doc)) {
+        from || (from = doc);
         // reference context ownerDocument and document root (HTML)
         root = (doc = from.ownerDocument || from).documentElement;
         // check if context is not (X)HTML
@@ -1399,10 +1398,12 @@
         return select_simple(selector, from, callback);
       }
 
+      from || (from = doc);
+
       // avoid caching disconnected nodes
       isCacheable = isCachingEnabled && !isCachingPaused &&
         !RE_BUGGY_MUTATION.test(selector) &&
-        !(from != doc && isDisconnected(from, root));
+        !(from.nodeType != 9 && isDisconnected(from, root));
 
       if (isCacheable) {
         snap = doc.snapshot;

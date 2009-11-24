@@ -1,3 +1,5 @@
+* Tweak byTag(), byName(), byClass(), select_qsa(), client_api(), and `reNameValue` to gain performance. [jddalton]
+
 * Add `[name=...]` to the `RE_SIMPLE_SELECTOR` regexp. [jddalton]
 
 * Ensure byName() returns an array of elements. [jddalton]
