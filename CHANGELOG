@@ -1,3 +1,5 @@
+* Add `[name=...]` to the `RE_SIMPLE_SELECTOR` regexp. [jddalton]
+
 * Ensure byName() returns an array of elements. [jddalton]
 
 * Fix jQuery adapter regression in `even`, `odd`, `eq`, `lt`, and `gt` pseudo selectors. [jddalton]

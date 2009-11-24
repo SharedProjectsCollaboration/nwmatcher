@@ -72,8 +72,14 @@
 
   strTrailingSpace = '([[(=>+~,^$|!]|\\*=)\\x20+',
 
+  strWhitespace = '[\\x20\\t\\n\\r\\f]',
+
+  strNameAttr = '\\[#*name#*=#*(["\']?)(?:(?!\\1)[^\\\\]|[^\\\\]|\\\\.)*?\\1#*\\]'.replace(/#/g, strWhitespace),
+
   // regexps used throughout nwmatcher
   reIdentifier = new RegExp(strIdentifier),
+
+  reNameValue = new RegExp('=#*(["\']?)((?:(?!\\1)[^\\\\]|[^\\\\]|\\\\.)*?)\\1#*\\]$'.replace(/#/g, strWhitespace)),
 
   reSiblings = new RegExp('^(?:\\*|[.#]?' + strIdentifier + ')?[+~]'),
 
@@ -268,7 +274,7 @@
       if (isQuirks &&
          (div.querySelectorAll('[class~=xxx]').length != 2 ||
           div.querySelectorAll('.xXx').length != 2)) {
-        pattern.push('(?:\\[[\\x20\\t\\n\\r\\f]*class\\b|\\.' + strIdentifier + ')');
+        pattern.push('(?:\\[' + strWhitespace + '*class\\b|\\.' + strIdentifier + ')');
       }
 
       // :enabled :disabled bugs with hidden fields (Firefox 3.5 QSA bug)
@@ -427,8 +433,8 @@
 
   // matches simple id, tagname & classname selectors
   RE_SIMPLE_SELECTOR = BUGGY_GEBTN || BUGGY_GEBCN
-    ? new RegExp('^#' + strIdentifier + '$')
-    : new RegExp('^(?:\\*|[.#]?' + strIdentifier + ')$'),
+    ? new RegExp('^(?:#' + strIdentifier + '|' + strNameAttr + ')$')
+    : new RegExp('^(?:\\*|[.#]?' + strIdentifier + '|' + strNameAttr + ')$'),
 
   /*----------------------------- LOOKUP OBJECTS -----------------------------*/
 
@@ -1303,6 +1309,10 @@
         case '.':
           // only ran if non BUGGY_GEBCN
           data = byClass(selector.slice(1), from);
+          break;
+
+        case '[':
+          data = byName(selector.match(reNameValue)[2], from);
           break;
 
         default:
