@@ -1,3 +1,5 @@
+* Make compileSelector() ensure element exists before checking nodeType on adjacent sibling selectors. [jddalton]
+
 * Make `UID`'s property name harder to conflict with. [Diego Perini, jddalton]
 
 * Fix `BUGGY_GEBID` feature test. [Diego Perini, jddalton]

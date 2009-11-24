@@ -998,7 +998,7 @@
 
           source = NATIVE_TRAVERSAL_API ?
             'if((e=e.previousElementSibling)){' + source + '}' :
-            'while((e=e.previousSibling)){' + source + 'if (e.nodeType==1)break;}';
+            'while((e=e.previousSibling)){' + source + 'if(!e||e.nodeType==1)break;}';
         }
 
         // *** General sibling combinator
