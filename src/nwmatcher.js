@@ -774,7 +774,8 @@
   byName =
     function(name, from) {
       if (notHTML) {
-        return select('*[name="' + name + '"]', from || doc);
+      	// prefix with a <space> so it isn't caught by RE_SIMPLE_SELECTOR
+        return select(' *[name="' + name + '"]', from || doc);
       }
       name = name.replace(/\\/g, '');
       if (BUGGY_GEBN) {
