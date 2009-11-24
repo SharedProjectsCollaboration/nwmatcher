@@ -177,8 +177,8 @@ function specsDojo(specs, context){
 			"doh.is(dojo.byId('checkbox2'), dojo.query('#t2 > input[type=checkbox]:checked')[0]);",
 			"doh.is(dojo.byId('radio2'), dojo.query('#t2 > input[type=radio]:checked')[0]);",
 
-			// Modified from `2` to `0` because OPTION elements don't have a checked attribute (jddalton)
-			"doh.is(0, dojo.query('#t2select option:checked').length);",
+			// Removed invalid selector because OPTION elements don't have a checked attribute (jddalton)
+			// "doh.is(2, dojo.query('#t2select option:checked').length);",
 
 			// cross-document queries
 /*
