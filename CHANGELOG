@@ -1,3 +1,5 @@
+* Make `UID`'s property name harder to conflict with. [Diego Perini, jddalton]
+
 * Fix `BUGGY_GEBID` feature test. [Diego Perini, jddalton]
 
 * Removed strict check for (even/odd) in the Patterns.spseudos regexp and simplify regexps in the `an+b` processing in compileSelector(). [Diego Perini, jddalton]

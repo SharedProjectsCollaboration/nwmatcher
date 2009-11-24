@@ -1568,7 +1568,7 @@
   // during a selection session
   UID_COUNT = 1,
 
-  UID = 'uniqueID' in root ? 'uniqueID' : 'UID',
+  UID = 'uniqueID' in root ? 'uniqueID' : 'NWID_' + String(+new Date),
 
   isCachingEnabled = NATIVE_MUTATION_EVENTS,
 
