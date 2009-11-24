@@ -227,7 +227,7 @@
   })(),
 
   // detect quirks mode
-  isQuirks = compatMode.indexOf('CSS') < 0,
+  isQuirks = compatMode === 'BackCompat',
 
 
   // NOTE: NATIVE_XXXXX check for existance of method only
@@ -248,10 +248,10 @@
     (function() {
       var pattern = [ ];
 
-      // WebKit treats case insensitivity correctly with classNames (when no DOCTYPE)
+      // WebKit is correct with className case insensitivity (when no DOCTYPE)
       // obsolete bug https://bugs.webkit.org/show_bug.cgi?id=19047
       // so the bug is in all other browsers code now :-)
-      // new specs http://www.whatwg.org/specs/web-apps/current-work/#selectors
+      // http://www.whatwg.org/specs/web-apps/current-work/#selectors
 
       // Safari 3.2 QSA doesnt work with mixedcase on quirksmode
 
@@ -265,7 +265,7 @@
 
       div.appendChild(createElement('p')).className = 'xxx';
 
-      if (compatMode == 'BackCompat' &&
+      if (isQuirks &&
          (div.querySelectorAll('[class~=xxx]').length != 2 ||
           div.querySelectorAll('.xXx').length != 2)) {
         pattern.push('(?:\\[[\\x20\\t\\n\\r\\f]*class\\b|\\.' + strIdentifier + ')');
@@ -906,7 +906,7 @@
         selector += '*';
       }
 
-      var i, a, b, n, expr, isLowered, match, result, status, test, type,
+      var i, a, b, n, expr, match, result, status, test, type,
        origSelector = selector,
        pseudoStructural = CSS3PseudoClasses.Structural,
        pseudoOthers = CSS3PseudoClasses.Others,
@@ -973,14 +973,14 @@
           if (match[2]) {
             // xml namespaced attribute ?
             expr = match[1].split(':');
-            expr = expr.length == 2 ? expr[1] : expr[0] + '';
-            isLowered = INSENSITIVE_TABLE[expr.toLowerCase()];
+            expr = expr.length == 2 ? expr[1] : expr[0];
+            test = INSENSITIVE_TABLE[expr.toLowerCase()];
 
             source =
               'n=s.getAttribute(e,"' + match[1] + '");' +
               'if(' + Operators[match[2]].replace(/\%p/g, 'n' +
-                (isLowered ? '.toLowerCase()' : ''))
-                .replace(/\%m/g, isLowered ? match[4].toLowerCase() : match[4]) +
+                (test ? '.toLowerCase()' : ''))
+                .replace(/\%m/g, test ? match[4].toLowerCase() : match[4]) +
               '){' + source + '}';
           }
           else {
