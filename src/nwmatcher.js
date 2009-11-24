@@ -875,8 +875,7 @@
       if (mode) {
         // (c-ollection, s-napshot, d-ocument, h-root, g-from, f-callback, x-notHTML)
         return new Function('c,s,d,h,g,f,x',
-          'var e,n,N,t,i=-1,j=-1,r=[];main:while(N=e=c[++i]){' +
-          source.replace('{', '{++j;') + '}return r;');
+          'var e,n,N,t,i=-1,j=-1,r=[];main:while(N=e=c[++i]){' + source + '}return r;');
       }
       // for match method
       else {
@@ -892,8 +891,7 @@
     function(selector) {
       var source = compileSelector(selector, ACCEPT_NODE);
       return new Function('c,s,d,h,g,f,x',
-        'var e,n,N,t,i=-1,j=-1,r=[];main:while(N=e=c[++i]){' +
-        source.replace('{', '{++j;') + '}return r;');
+        'var e,n,N,t,i=-1,j=-1,r=[];main:while(N=e=c[++i]){' + source + '}return r;');
     },
 
   // compile a CSS3 string selector into ad-hoc javascript matching function

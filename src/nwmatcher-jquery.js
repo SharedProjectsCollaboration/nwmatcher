@@ -33,19 +33,19 @@ NW.Dom.registerSelector(
 
     switch (match[1]) {
       case 'even':
-        source = source.replace(ACCEPT_NODE, 'if(!(j%2)){' + ACCEPT_NODE + '}');
+        source = source.replace(ACCEPT_NODE, '++j;if(!(j%2)){' + ACCEPT_NODE + '}');
         break;
       case 'odd':
-        source = source.replace(ACCEPT_NODE, 'if(j%2){' + ACCEPT_NODE + '}');
+        source = source.replace(ACCEPT_NODE, '++j;if(j%2){' + ACCEPT_NODE + '}');
         break;
       case 'eq':
-        source = source.replace(ACCEPT_NODE, 'if(j==' + match[2] + '){' + ACCEPT_NODE + '}');
+        source = source.replace(ACCEPT_NODE, '++j;if(j==' + match[2] + '){' + ACCEPT_NODE + '}');
         break;
       case 'lt':
-        source = source.replace(ACCEPT_NODE, 'if(j<' + match[2] + '){' + ACCEPT_NODE + '}');
+        source = source.replace(ACCEPT_NODE, '++j;if(j<' + match[2] + '){' + ACCEPT_NODE + '}');
         break;
       case 'gt':
-        source = source.replace(ACCEPT_NODE, 'if(j>' + match[2] + '){' + ACCEPT_NODE + '}');
+        source = source.replace(ACCEPT_NODE, '++j;if(j>' + match[2] + '){' + ACCEPT_NODE + '}');
         break;
       case 'first':
         source = 'n=s.byTag(e.nodeName, h);if(n.length&&n[0]==e){' + source + '}';
