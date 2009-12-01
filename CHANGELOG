@@ -1,3 +1,5 @@
+* Perform `e.type` before the `"form" in e` check to resolve `:enabled` and `:disabled` dynamic pseudos faster. [Diego Perini]
+
 * Refactor attribute resolver in compileSelector() to avoid unneeded String#replace calls and other operations. [Diego Perini, jddalton]
 
 * Define compile() and setQSA() as private methods in the `DEBUG API` section and ensure exposed byClass(), byName(), and byTag(), return array values. [Diego Perini, jddalton]
