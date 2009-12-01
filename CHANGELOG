@@ -1,3 +1,5 @@
+* Replace `NATIVE_SLICE_PROTO` feature test with one from kangax's CFT. [Diego Perini, kangax]
+
 * Avoid infinite loop for non html elements in byName(). [jddalton]
 
 * Tweak byTag(), byName(), byClass(), select_qsa(), client_api(), and `reNameValue` to gain performance. [jddalton]

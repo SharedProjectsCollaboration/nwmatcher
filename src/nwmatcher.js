@@ -351,23 +351,15 @@
     })() :
     false,
 
-  // nodeList can be converted by native .slice()
-  // Opera 9.27 and an id="length" will fold this
+  // check if slice() can convert nodelist to array
+  // see http://yura.thinkweb2.com/cft/
   NATIVE_SLICE_PROTO =
     (function() {
       try {
-        // <p id="length"></p>
-        clearElement(div)
-          .appendChild(createElement('p'))
-          .id = 'length';
-
-        root.insertBefore(div, root.firstChild);
-        isSupported = !!slice.call(div.childNodes, 0)[0];
-      } catch(e) { }
-
-      root.removeChild(div);
-
-      return !!isSupported;
+        return slice.call(doc.childNodes, 0) instanceof Array;
+      } catch(e) { 
+        return false;
+      }
     })(),
 
   // supports the new traversal API
