@@ -7,7 +7,7 @@
  * Author: Diego Perini <diego.perini at gmail com>
  * Version: 1.2.0
  * Created: 20070722
- * Release: 20091101
+ * Release: 20091201
  *
  * License:
  *  http://javascript.nwbox.com/NWMatcher/MIT-LICENSE
@@ -586,45 +586,48 @@
 
   /*------------------------------ DOM METHODS -------------------------------*/
 
+  // concat elements to data
   concatList =
-    function(listout, listin) {
-      var element, i = -1, pad = listout.length;
-      if (!pad && Array.slice) return Array.slice(listin);
-      while (element = listin[++i]) listout[pad + i] = element;
-      return listout;
+    function(data, elements) {
+      var element, i = -1, pad = data.length;
+      if (!pad && Array.slice) return Array.slice(elements);
+      while (element = elements[++i]) data[pad + i] = element;
+      return data;
     },
 
+  // concat elements to data and callback
   concatCall =
-    function(listout, listin, callback) {
-      var element, i = -1, pad = listout.length;
-      while (element = listin[++i])
-        callback(listout[pad + i] = element);
-      return listout;
+    function(data, elements, callback) {
+      var element, i = -1, pad = data.length;
+      while (element = elements[++i])
+        callback(data[pad + i] = element);
+      return data;
     },
 
+  // iterate over data and callback
   forEachCall =
-    function(listout, callback) {
+    function(data, callback) {
       var element, i = -1;
-      while (element = listout[++i]) callback(element);
+      while (element = data[++i]) callback(element);
     },
 
   // children position by nodeType
   // @return number
   getChildIndexes =
     function(element) {
-      var indexes, node, i = 0,
+      var indexes, i = 0,
        id = element[UID] || (element[UID] = ++UID_COUNT);
 
       if (!(indexes = childIndexes[id])) {
         indexes =
         childIndexes[id] = { };
 
-        if ((node = element.firstChild)) {
+        if ((element = element.firstChild)) {
           do {
-            if (node.nodeName.charCodeAt(0) > 64) {
-              indexes[node[UID] || (node[UID] = ++UID_COUNT)] = ++i;
+            if (element.nodeName.charCodeAt(0) > 64) {
+              indexes[element[UID] || (element[UID] = ++UID_COUNT)] = ++i;
             }
-          } while ((node = node.nextSibling));
+          } while ((element = element.nextSibling));
         }
         indexes.length = i;
       }
@@ -635,18 +638,18 @@
   // @return number
   getChildIndexesByTag =
     function(element, name) {
-      var indexes, node, i = 0,
+      var indexes, i = 0,
        id = element[UID] || (element[UID] = ++UID_COUNT),
        cache = childIndexesByTag[id] || (childIndexesByTag[id] = { });
 
       if (!(indexes = cache[name])) {
         indexes = cache[name] = { };
-        if ((node = element.firstChild)) {
+        if ((element = element.firstChild)) {
           do {
-            if (node.nodeName.toUpperCase() == name) {
-              indexes[node[UID] || (node[UID] = ++UID_COUNT)] = ++i;
+            if (element.nodeName.toUpperCase() == name) {
+              indexes[element[UID] || (element[UID] = ++UID_COUNT)] = ++i;
             }
-          } while ((node = node.nextSibling));
+          } while ((element = element.nextSibling));
         }
         indexes.length = i;
       }
@@ -733,15 +736,15 @@
   // @return element reference or null
   byId =
     function(id, from) {
-      var element, elements, names, node, i = -1;
+      var element, elements, node, i = -1;
       from || (from = doc);
       id = id.replace(/\\/g, '');
 
       if (!notHTML && from.getElementById) {
         if ((element = from.getElementById(id)) && BUGGY_GEBID &&
             id != getAttribute(element, 'id')) {
-          names = from.getElementsByName(id);
-          while ((element = names[++i])) {
+          elements = from.getElementsByName(id);
+          while ((element = elements[++i])) {
             if (element.getAttribute('id') == id) {
               return element;
             }
@@ -771,14 +774,14 @@
       }
       name = name.replace(/\\/g, '');
       if (BUGGY_GEBN) {
-        var element, elements = [ ], i = -1,
-         names = (from || doc).getElementsByName(name);
-        while ((element = names[++i])) {
+        var element, results = [ ], i = -1,
+         elements = (from || doc).getElementsByName(name);
+        while ((element = elements[++i])) {
           if (element.getAttribute('name') == name) {
-            elements.push(element);
+            results.push(element);
           }
         }
-        return elements;
+        return results;
       }
 
       return (from || doc).getElementsByName(name);
