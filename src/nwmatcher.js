@@ -509,21 +509,21 @@
   Operators = {
     // ! is not really in the specs
     // still unit tests have to pass
-     '=': "%p==='%m'",
-    '!=': "%p!=='%m'",
-    '^=': "%p.indexOf('%m')==0",
-    '*=': "%p.indexOf('%m')>-1",
+     '=': "n==='%m'",
+    '!=': "n!=='%m'",
+    '^=': "n.indexOf('%m')==0",
+    '*=': "n.indexOf('%m')>-1",
 
     // sensitivity handled by compiler
     // NOTE: working alternative
-    // '|=': "/%m-/i.test(%p+'-')",
-    '|=': "(%p+'-').indexOf('%m-')==0",
-    '~=': "(' '+%p+' ').indexOf(' %m ')>-1",
+    // '|=': "/%m-/i.test(n+'-')",
+    '|=': "(n+'-').indexOf('%m-')==0",
+    '~=': "(' '+n+' ').indexOf(' %m ')>-1",
 
     // precompile in '%m' string length to optimize
     // NOTE: working alternative
-    // '$=': "%p.lastIndexOf('%m')==%p.length-'%m'.length"
-    '$=': "%p.substr(%p.length - '%m'.length) === '%m'"
+    // '$=': "n.lastIndexOf('%m')==n.length-'%m'.length"
+    '$=': "n.substr(n.length - '%m'.length) === '%m'"
   },
 
   // optimization expressions
@@ -969,10 +969,10 @@
             test = INSENSITIVE_TABLE[expr.toLowerCase()];
 
             source =
-              'n=s.getAttribute(e,"' + match[1] + '");' +
-              'if(' + Operators[match[2]].replace(/\%p/g, 'n' +
-                (test ? '.toLowerCase()' : ''))
-                .replace(/\%m/g, test ? match[4].toLowerCase() : match[4]) +
+              'n=s.getAttribute(e,"' + match[1] + '")' +
+                (test ? '.toLowerCase();' : ';') +
+              'if(' +
+                Operators[match[2]].replace(/\%m/g, test ? match[4].toLowerCase() : match[4]) +
               '){' + source + '}';
           }
           else {
