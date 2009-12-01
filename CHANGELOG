@@ -1,3 +1,5 @@
+* Merge `compatMode` into `isQuirks` to reduce a variable. [Diego Perini] 
+
 * Make all loops use `element` and `elements` variables for better compression and bump datestamp. [Diego Perini, jddalton]
 
 * Replace `NATIVE_SLICE_PROTO` feature test with one from kangax's CFT. [Diego Perini, kangax]

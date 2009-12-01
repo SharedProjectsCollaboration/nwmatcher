@@ -215,15 +215,6 @@
 
   /*----------------------------- FEATURE TESTING ----------------------------*/
 
-  // Safari 2 missing document.compatMode property
-  // makes it harder to detect Quirks vs. Strict
-  compatMode = doc.compatMode ||
-    (function() {
-      var el = document.createElement('div');
-      return el.style && (el.style.width = 1) &&
-        el.style.width == '1px' ? 'BackCompat' : 'CSS1Compat';
-    })(),
-
   // detect native methods
   isNative = (function() {
     var s = (global.open + '').replace(/open/g, '');
@@ -233,8 +224,14 @@
     };
   })(),
 
-  // detect quirks mode
-  isQuirks = compatMode === 'BackCompat',
+  // Safari 2 missing document.compatMode property
+  // makes it harder to detect Quirks vs. Strict
+  isQuirks = doc.compatMode ?
+    doc.compatMode === 'BackCompat' :
+    (function() {
+      return div.style && (div.style.width = 1) &&
+        div.style.width == '1px';
+    })(),
 
 
   // NOTE: NATIVE_XXXXX check for existance of method only
@@ -1080,9 +1077,9 @@
                 // build test expression out of structural pseudo (an+b) parameters
                 // see here: http://www.w3.org/TR/css3-selectors/#nth-child-pseudo
                 test = b < 1 && a > 1 ? '(' + type + '-(' + b + '))%' + a + '==0' :
-                  a > +1 ? type + '>=' + b + '&&(' + type + '-(' + b + '))%' + a + '==0' :
-                  a < -1 ? type + '<=' + b + '&&(' + type + '-(' + b + '))%' + a + '==0' :
-                  a == 0 ? type + '==' + expr : a == -1 ? type + '<=' + b : type + '>=' + b;
+                  a > +1  ? type + '>=' + b + '&&(' + type + '-(' + b + '))%' + a + '==0' :
+                  a < -1  ? type + '<=' + b + '&&(' + type + '-(' + b + '))%' + a + '==0' :
+                  a === 0 ? type + '==' + expr : a == -1 ? type + '<=' + b : type + '>=' + b;
 
                 // 4 cases: 1 (nth) x 4 (child, of-type, last-child, last-of-type)
                 source =
