@@ -1,3 +1,5 @@
+* Define compile() and setQSA() as private methods in the `DEBUG API` section and ensure exposed byClass(), byName(), and byTag(), return array values. [Diego Perini, jddalton]
+
 * Merge `compatMode` into `isQuirks` to reduce a variable. [Diego Perini] 
 
 * Make all loops use `element` and `elements` variables for better compression and bump datestamp. [Diego Perini, jddalton]

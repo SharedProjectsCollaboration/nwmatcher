@@ -354,7 +354,7 @@
     (function() {
       try {
         return slice.call(doc.childNodes, 0) instanceof Array;
-      } catch(e) { 
+      } catch(e) {
         return false;
       }
     })(),
@@ -766,7 +766,7 @@
   byName =
     function(name, from) {
       if (notHTML) {
-      	// prefix with a <space> so it isn't caught by RE_SIMPLE_SELECTOR
+        // prefix with a <space> so it isn't caught by RE_SIMPLE_SELECTOR
         return select(' *[name="' + name + '"]', from || doc);
       }
       name = name.replace(/\\/g, '');
@@ -1307,7 +1307,7 @@
           if (selector.charAt(1) == '[') {
             data = byName(selector.match(reNameValue)[2], from);
           } else {
-          	// only ran if non BUGGY_GEBTN
+            // only ran if non BUGGY_GEBTN
             data = byTag(selector, from);
           }
       }
@@ -1563,6 +1563,29 @@
     select_qsa :
     client_api,
 
+  /*------------------------------- DEBUG API --------------------------------*/
+
+  // compile selectors to functions resolvers
+  // @selector string
+  // @mode boolean
+  // false = select resolvers
+  // true = match resolvers
+  compile =
+    function(selector, mode) {
+      return String(compileGroup(normalize(selector), '', mode));
+    },
+
+  // use client_api() or select_qsa() for select()
+  // @enable boolean
+  // false = disable QSA
+  // true = enable QSA
+  setQSA =
+    function(enable) {
+      this.select = enable && NATIVE_QSA
+        ? select_qsa
+        : client_api;
+    },
+
   /*-------------------------------- CACHING ---------------------------------*/
 
   // UID expando on elements,
@@ -1705,23 +1728,29 @@
     // retrieve elements by class name
     'byClass': BUGGY_GEBCN ? byClass :
       function(className, from) {
-        return slice.call(byClass(className, from), 0);
+        var elements = byClass(className, from);
+        return elements.item ? concatList([ ], elements) : elements;
       },
 
     // retrieve element by id attr
     'byId': byId,
 
     // retrieve elements by name attr
-    'byName': byName,
+    'byName': BUGGY_GEBN ? byName :
+      function(name, from) {
+        var elements = byName(name, from);
+        return elements.item ? concatList([ ], elements) : elements;
+      },
 
     // retrieve elements by tag name
-    'byTag': byTag,
-
-    // for testing purposes only
-    'compile':
-      function(selector, mode) {
-        return String(compileGroup(normalize(selector), '', mode));
+    'byTag':
+      function(tag, from) {
+        var elements = byTag(tag, from);
+        return elements.item ? concatList([ ], elements) : elements;
       },
+
+    // for debug only
+    'compile': compile,
 
     // forced expire of DOM tree cache
     'expireCache': expireCache,
@@ -1737,7 +1766,7 @@
     // element match selector, return boolean true/false
     'match': match,
 
-    // for testing purposes only
+    // for debug only
     'normalize': normalize,
 
     // add selector patterns for user defined callbacks
@@ -1764,12 +1793,7 @@
     // enable/disable cache
     'setCache': setCache,
 
-    // for testing purposes only
-    'setQSA':
-      function(enable) {
-        this.select = enable && NATIVE_QSA
-          ? select_qsa
-          : client_api;
-      }
+    // for debug only
+    'setQSA': setQSA
   };
 })(this);
