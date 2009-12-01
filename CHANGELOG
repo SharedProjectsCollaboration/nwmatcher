@@ -1,3 +1,5 @@
+* Remove `cn.length` check in byClass() because non-html elements are handled elsewhere and rename `cn` to `n` for better compression with other `n` variables. [jddalton]
+
 * Perform `e.type` before the `"form" in e` check to resolve `:enabled` and `:disabled` dynamic pseudos faster. [Diego Perini]
 
 * Refactor attribute resolver in compileSelector() to avoid unneeded String#replace calls and other operations. [Diego Perini, jddalton]

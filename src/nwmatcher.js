@@ -703,8 +703,8 @@
     },
 
   // elements by class
-  // @return nodeList (native GEBCN)
-  // @return array (non native GEBCN)
+  // @return nodeList (non buggy native GEBCN)
+  // @return array (non native/buggy GEBCN)
   byClass =
     function(className, from) {
       if (notHTML) {
@@ -713,12 +713,12 @@
       if (BUGGY_GEBCN) {
         var element, i = -1, j = i, results = [ ],
          elements = byTag('*', from),
-         cn = isQuirks ? className.toLowerCase() : className;
+         n = isQuirks ? className.toLowerCase() : className;
 
-        className = ' ' + cn.replace(/\\/g, '') + ' ';
+        className = ' ' + n.replace(/\\/g, '') + ' ';
         while ((element = elements[++i])) {
-          if ((cn = element.className) && cn.length &&
-              (' ' + (isQuirks ? cn.toLowerCase() : cn) + ' ')
+          if ((n = element.className) &&
+              (' ' + (isQuirks ? n.toLowerCase() : n) + ' ')
               .replace(reEdgeSpaces, ' ').indexOf(className) > -1) {
             results[++j] = element;
           }
@@ -762,7 +762,8 @@
     },
 
   // elements by name
-  // @return array
+  // @return nodeList (non buggy native GEBN)
+  // @return array (non native/buggy GEBN)
   byName =
     function(name, from) {
       if (notHTML) {
@@ -785,7 +786,8 @@
     },
 
   // elements by tag
-  // @return nodeList (live)
+  // @return nodeList (native GEBTN)
+  // @return array (document fragments)
   byTag =
     function(tag, from) {
       // support document fragments
