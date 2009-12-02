@@ -75,7 +75,7 @@
 
   strTrailingSpace = '([[(=>+~,^$|!]|\\*=)\\x20+',
 
-  strNameAttr = '\\*?\\[name=(["\']?)(?:(?!\\1)[^\\\\]|[^\\\\]|\\\\.)*?\\1\\]',
+  strNameAttr = '\\[name=(["\']?)(?:(?!\\1)[^\\\\]|[^\\\\]|\\\\.)*?\\1\\]',
 
   // regexps used throughout nwmatcher
   reIdentifier = new RegExp(strIdentifier),
@@ -436,8 +436,8 @@
 
   // matches simple id, tagname & classname selectors
   RE_SIMPLE_SELECTOR = BUGGY_GEBTN || BUGGY_GEBCN
-    ? new RegExp('^(?:#' + strIdentifier + '|' + strNameAttr + ')$')
-    : new RegExp('^(?:\\*|[.#]?' + strIdentifier + '|' + strNameAttr + ')$'),
+    ? new RegExp('^(?:#' + strIdentifier + '|\\*?' + strNameAttr + ')$')
+    : new RegExp('^(?:\\*|[.#]?' + strIdentifier + '|\\*?' + strNameAttr + ')$'),
 
   /*----------------------------- LOOKUP OBJECTS -----------------------------*/
 
@@ -543,6 +543,7 @@
   Optimize = {
     'id':        new RegExp("#("   + strIdentifier + ")|" + strSkipGroups),
     'className': new RegExp("\\.(" + strIdentifier + ")|" + strSkipGroups),
+    'name':      new RegExp("(" + strNameAttr.replace(/\\1/g, '\\2') + ")|" + strSkipGroups, 'i'),
     'tagName':   new RegExp("(?:^|[>+~\\x20])(" + strIdentifier + ")|" + strSkipGroups)
   },
 
@@ -839,8 +840,7 @@
   // conditionals optimizers for the compiler
 
   // checks if nodeName comparisons need to be upperCased
-  TO_UPPER_CASE =
-    typeof doc.createElementNS == 'function' ? '.toUpperCase()' : '',
+  TO_UPPER_CASE = typeof doc.createElementNS == 'function' ? '.toUpperCase()' : '',
 
   // filter IE gEBTN('*') results containing non-elements like comments and `/video`
   ELEMENTS_ONLY = BUGGY_GEBTN ? 'e.nodeName.charCodeAt(0)>64' : 'e',
@@ -1468,7 +1468,7 @@
       /* pre-filtering pass allow to scale proportionally with big DOM trees */
 
       // commas separators are treated sequentially to maintain order
-      if ((isSingle = selector.match(reSplitGroup).length < 2)) {
+      if ((isSingle = selector.match(reSplitGroup).length < 2) && !notHTML) {
 
         if (hasChanged) {
           // get right most selector token
@@ -1519,6 +1519,15 @@
           if ((elements = byClass(token, from)).length) {
             selector = selector.slice(0, lastIndex) +
               selector.slice(lastIndex).replace('.' + token, '*');
+          }
+        }
+
+        // NAME optimization RTL
+        else if ((parts = lastSlice.match(Optimize.name)) && (token = parts[1])) {
+          if ((elements = byName(token.match(reNameValue)[2], from,
+              lastSlice.slice(lastIndex - 5, lastIndex).toLowerCase() === 'input')).length) {
+            selector = selector.slice(0, lastIndex) +
+              selector.slice(lastIndex).replace(token, '');
           }
         }
 

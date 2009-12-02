@@ -1,3 +1,5 @@
+* Add `NAME optimization RTL` to client_api(). [jddalton]
+
 * Change `notHTML` from `!('body' in doc)` to `!('body' in doc) || !('innerHTML' in root)` to correct the feature test for WebKit. [jddalton]
 
 * Make compileSelector() use getAttribute() for ID selectors on non-html elements. [Diego Perini, jddalton]
