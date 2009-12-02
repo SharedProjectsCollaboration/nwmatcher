@@ -1,3 +1,5 @@
+* Make compileSelector() use getAttribute() for ID selectors on non-html elements. [Diego Perini, jddalton]
+
 * Fix Opera 9.25 bug by ensuring compileSelector() checks `e.nodeType==1` before attempting (get/has)Attribute and tweak `reUnnormalized` and `reValidator` regexps. [jddalton]
 
 * Rewrite byName(), fix `NATIVE_GEBN` check and add feature tests for `BUGGY_GEBN_MATCH_ID`, `BUGGY_GEBN_WITH_ID_LENGTH`, and `BUGGY_GEBN_WITH_NON_INPUT`. [jddalton]

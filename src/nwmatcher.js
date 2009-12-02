@@ -779,8 +779,8 @@
   byName =
     function(name, from, allInputs) {
       if (notHTML || BUGGY_GEBN_WITH_NON_INPUT && !allInputs) {
-        // append a <space> so it isn't caught by RE_SIMPLE_SELECTOR
-        return select('*[name="' + name + '"] ', from || doc);
+        // prefix a <space> so it isn't caught by RE_SIMPLE_SELECTOR
+        return select(' *[name="' + name + '"]', from || doc);
       }
 
       name = name.replace(/\\/g, '');
@@ -950,7 +950,7 @@
         else if ((match = selector.match(ptnId))) {
           // document can contain conflicting elements (id/name)
           // prototype selector unit need this method to recover bad HTML forms
-          source = 'if((e.submit?s.getAttribute(e,"id"):e.id)=="' +
+          source = 'if((x||e.submit?s.getAttribute(e,"id"):e.id)=="' +
             match[1] + '"){' + source + '}';
         }
 
