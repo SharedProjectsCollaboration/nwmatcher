@@ -98,7 +98,7 @@
 
   // simple check to ensure the first character of a selector is valid
   // http://www.w3.org/TR/css3-syntax/#characters
-  reValidator = /^[\x20\t\n\r]*(?:[*>+~a-zA-Za-zA-Z]|\[[\x20\t\n\r\fa-zA-Z]|(?:[.:#_]|::)?(?!-?\d)-?(?:[a-zA-Z_]|[^\x00-\xa0]|\\.))/,
+  reValidator = /^[\x20\t\n\r]*(?:[*>+~a-zA-Za-zA-Z]|\[[\x20\t\n\r\fa-zA-Z]|[.:#_]?(?!-?\d)-?(?:[a-zA-Z_]|[^\x00-\xa0]|\\.))/,
 
   // for use with the normilize method
   reEdgeSpaces     = new RegExp(strEdgeSpace, 'g'),
@@ -885,7 +885,7 @@
             seen[token] = true;
             // reset `e` to begin another selector
             source += (i ? 'e=N;' : '') +
-              compileSelector(token, mode ? ACCEPT_NODE : 'f&&f(N);return true;');
+              compileSelector(token, mode ? ACCEPT_NODE : 'f&&f(N);return true;', mode);
           }
         }
       }
@@ -908,7 +908,7 @@
   // @return function (compiled)
   compileSingle =
     function(selector) {
-      var source = compileSelector(selector, ACCEPT_NODE);
+      var source = compileSelector(selector, ACCEPT_NODE, true);
       return new Function('c,s,d,h,g,f,x',
         'var e,n,N,t,i=-1,j=-1,r=[];main:while(N=e=c[++i]){' + source + '}return r;');
     },
@@ -916,7 +916,7 @@
   // compile a CSS3 string selector into ad-hoc javascript matching function
   // @return string (to be compiled)
   compileSelector =
-    function(selector, source) {
+    function(selector, source, mode) {
 
       // assume matching `*` if F is not provided
       if (/[>+~]$/.test(selector)) {
@@ -1222,30 +1222,26 @@
 
           // this is where external extensions are
           // invoked if expressions match selectors
-          expr = false;
-          status = true;
+          expr =
+          status = false;
 
           for (expr in Selectors) {
             if ((match = selector.match(Selectors[expr].Expression))) {
               result = Selectors[expr].Callback(match, source);
               source = result.source;
-              status |= result.status;
+              status || (status = result.status);
             }
           }
 
-          // if an extension fails to parse the selector
-          // it must return a false boolean in "status"
-          if (!status) {
+          // if an extension successfully parses a selector
+          // it must return a truthy value for "status"
+          if (!status || !match) {
             // log error but continue execution, don't throw real exceptions
             // because blocking following processes maybe is not a good idea
-            emit('DOMException: unknown pseudo selector "' + selector + '"');
-            return source;
-          }
+            emit('DOMException: unknown ' + (!status ? 'pseudo' : 'token in') + ' selector "' + selector + '"');
 
-          if (!expr) {
-            // see above, log error but continue execution
-            emit('DOMException: unknown token in selector "' + selector + '"');
-            return source;
+            // return empty array or false depending on mode
+            return mode ? 'return r;' : '';
           }
         }
 
@@ -1397,8 +1393,8 @@
   // @return array
   client_api =
     function (selector, from, callback) {
-      var Contexts, Results, allInputs, className, compiled,
-       data, element, elements, hasChanged, isCacheable, isSingle,
+      var Contexts, Results, className, compiled, data,
+       element, elements, hasChanged, isCacheable, isSingle,
        now, normSelector, origFrom, origSelector, parts, token;
 
       // extract context if changed
