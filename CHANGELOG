@@ -1,3 +1,5 @@
+* Make the definition of `RE_SIMPLE_SELECTOR` more granular, tweak private byName() usage for IE, and simplify the public byClass(), byName(), and byTag(). [jddalton]
+
 * Ensure compileSelector() handles tag selectors as case-insensitive for non-html elements. [jddalton]
 
 * Make non-html elements in byClass() and byName() use client_api() instead of select() and avoid an infinite loop in the `NAME optimization RTL` section of client_api(). [jddalton]

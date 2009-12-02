@@ -435,9 +435,12 @@
     true,
 
   // matches simple id, tagname & classname selectors
-  RE_SIMPLE_SELECTOR = BUGGY_GEBTN || BUGGY_GEBCN
-    ? new RegExp('^(?:#' + strIdentifier + '|\\*?' + strNameAttr + ')$')
-    : new RegExp('^(?:\\*|[.#]?' + strIdentifier + '|\\*?' + strNameAttr + ')$'),
+  RE_SIMPLE_SELECTOR = new RegExp('^(?:' +
+    (BUGGY_GEBTN ? ''  : '\\*|') +
+    (BUGGY_GEBCN ? '#' : '[.#]') +
+    (BUGGY_GEBTN ? ''  : '?')    + strIdentifier +
+    (BUGGY_GEBN_WITH_NON_INPUT ? '' : '|\\*?' + strNameAttr) +
+  ')$'),
 
   /*----------------------------- LOOKUP OBJECTS -----------------------------*/
 
@@ -778,8 +781,8 @@
   // @return nodeList (non buggy native GEBN)
   // @return array (non native/buggy GEBN)
   byName =
-    function(name, from, allInputs) {
-      if (notHTML || BUGGY_GEBN_WITH_NON_INPUT && !allInputs) {
+    function(name, from) {
+      if (notHTML) {
         // prefix a <space> so it isn't caught by RE_SIMPLE_SELECTOR
         return client_api(' *[name="' + name + '"]', from || doc);
       }
@@ -1317,11 +1320,12 @@
           }
 
         case '.':
-          // only ran if non BUGGY_GEBCN
+          // only ran if not BUGGY_GEBCN
           data = byClass(selector.slice(1), from);
           break;
 
         case '[':
+          // only ran if not BUGGY_GEBN_WITH_NON_INPUT
           data = byName(selector.match(reNameValue)[2], from);
           break;
 
@@ -1329,7 +1333,7 @@
           if (selector.charAt(1) == '[') {
             data = byName(selector.match(reNameValue)[2], from);
           } else {
-            // only ran if non BUGGY_GEBTN
+            // only ran if not BUGGY_GEBTN
             data = byTag(selector, from);
           }
       }
@@ -1525,8 +1529,8 @@
         // NAME optimization RTL
         else if ((parts = lastSlice.match(Optimize.name)) && (token = parts[1])) {
           if ((!BUGGY_GEBN_WITH_NON_INPUT || (BUGGY_GEBN_WITH_NON_INPUT &&
-              (allInputs = lastSlice.slice(lastIndex - 5, lastIndex).toLowerCase() === 'input'))) &&
-              (elements = byName(token.match(reNameValue)[2], from, allInputs)).length) {
+              lastSlice.slice(lastIndex - 5, lastIndex).toLowerCase() === 'input')) &&
+              (elements = byName(token.match(reNameValue)[2], from)).length) {
             selector = selector.slice(0, lastIndex) +
               selector.slice(lastIndex).replace(token, '');
           }
@@ -1760,26 +1764,25 @@
     // get elements by class name
     'byClass': BUGGY_GEBCN ? byClass :
       function(className, from) {
-        var elements = byClass(className, from);
-        return elements.item ? concatList([ ], elements) : elements;
+        return concatList([ ], byClass(className, from));
       },
 
     // get element by id attr
     'byId': byId,
 
     // get elements by name attr
-    'byName': BUGGY_GEBN_MATCH_ID || BUGGY_GEBN_WITH_ID_LENGTH || BUGGY_GEBN_WITH_NON_INPUT ?
-      byName :
+    'byName': BUGGY_GEBN_WITH_NON_INPUT ?
       function(name, from) {
-        var elements = byName(name, from);
-        return elements.item ? concatList([ ], elements) : elements;
+        return client_api(' *[name="' + name + '"]', from);
+      } :
+      function(name, from) {
+        return concatList([ ], byName(name, from));
       },
 
     // get elements by tag name
     'byTag':
       function(tag, from) {
-        var elements = byTag(tag, from);
-        return elements.item ? concatList([ ], elements) : elements;
+        return concatList([ ], byTag(tag, from));
       },
 
     // for debug only
