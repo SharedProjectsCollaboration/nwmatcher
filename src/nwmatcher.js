@@ -959,7 +959,7 @@
         else if ((match = selector.match(ptnTagName))) {
           // both tagName and nodeName properties may be upper or lower case
           // depending on their creation NAMESPACE in createElementNS()
-          source = 'if(e.nodeName' + TO_UPPER_CASE + '=="' +
+          source = 'if((x&&e.nodeName.toUpperCase()||e.nodeName' + TO_UPPER_CASE + ')=="' +
             match[1].toUpperCase() + '"){' + source + '}';
         }
 
