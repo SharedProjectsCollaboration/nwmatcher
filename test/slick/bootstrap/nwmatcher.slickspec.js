@@ -21,9 +21,7 @@
 
   Slick.isXML = function(element){
 		var ownerDocument = element.ownerDocument || element;
-		return (!!ownerDocument.xmlVersion)
-			|| (!!ownerDocument.xml)
-			|| (toString.call(ownerDocument) == '[object XMLDocument]')
-			|| (ownerDocument.nodeType == 9 && ownerDocument.documentElement.nodeName != 'HTML');
+		return !('body' in ownerDocument) || !('innerHTML' in ownerDocument.documentElement) ||
+		  ownerDocument.createElement('DiV').nodeName === 'DiV';
 	};
 })(this);
