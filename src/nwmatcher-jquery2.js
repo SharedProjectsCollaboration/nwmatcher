@@ -15,67 +15,58 @@
  *
  */
 
-// the following regular expressions are taken from latest jQuery
+// The following regular expressions are taken from latest jQuery
 // /:(nth|eq|gt|lt|first|last|even|odd)(?:\((\d*)\))?(?=[^-]|$)/;
 // /:((?:[\w\u00c0-\uFFFF_-]|\\.)+)(?:\((['"]*)((?:\([^\)]+\)|[^\2\(\)]*)+)\2\))?/
 
-// must register in this order due to how the selectors
-// are written, the second begins with a grab all rule...
+// For structural pseudo-classes extensions
+NW.Dom.Selectors['jq:child'] = {
+  'expression': /^\:((?:first|last|even|odd)(?![-\(])|(?:nth|eq|gt|lt)(?=\())(?:\(([^()]*)\))?(.*)/,
+  'callback': function(match, source) {
 
-// for structural pseudo-classes extensions
-NW.Dom.registerSelector(
-  'jquery:child',
-  /^\:(first|last|even|odd|nth|eq|gt|lt)(?:\(([^()]*)\))?(.*)/,
-  function(match, source) {
     // do not change this, it is searched & replaced
-    var ACCEPT_NODE = 'f&&f(N);r[r.length]=N;continue main;',
-     status = true;
+    var ACCEPT_NODE = 'f&&f(N);r[r.length]=N;continue main;';
 
     switch (match[1]) {
       case 'even':
-        source = source.replace(ACCEPT_NODE, '++j;if(!(j%2)){' + ACCEPT_NODE + '}');
-        break;
-      case 'odd':
-        source = source.replace(ACCEPT_NODE, '++j;if(j%2){' + ACCEPT_NODE + '}');
-        break;
-      case 'eq':
-        source = source.replace(ACCEPT_NODE, '++j;if(j==' + match[2] + '){' + ACCEPT_NODE + '}');
-        break;
-      case 'lt':
-        source = source.replace(ACCEPT_NODE, '++j;if(j<' + match[2] + '){' + ACCEPT_NODE + '}');
-        break;
-      case 'gt':
-        source = source.replace(ACCEPT_NODE, '++j;if(j>' + match[2] + '){' + ACCEPT_NODE + '}');
-        break;
-      case 'first':
-        source = 'n=s.byTag(e.nodeName, h);if(n.length&&n[0]==e){' + source + '}';
-        break;
-      case 'last':
-        source = 'n=s.byTag(e.nodeName, h);if(n.length&&n[n.length-1]==e){' + source + '}';
-        break;
-      case 'nth':
-        source = 'n=s.byTag(e.nodeName, h);if(n.length&&n[' + match[2] + ']==e){' + source + '}';
-        break;
-      default:
-        status = false;
-    }
-    // compiler will add this to "source"
-    return { 'source': source, 'status': status };
-  });
+        return source.replace(ACCEPT_NODE, '++j;if(!(j%2)){' + ACCEPT_NODE + '}');
 
-// for element pseudo-classes extensions
-NW.Dom.registerSelector(
-  'jquery:pseudo',
-  /^\:(\w+|^\x00-\xa0+)(?:\((["']*)([^'"()]*)\2\))?(.*)/,
-  function(match, source) {
+      case 'odd':
+        return source.replace(ACCEPT_NODE, '++j;if(j%2){' + ACCEPT_NODE + '}');
+
+      case 'eq':
+        return source.replace(ACCEPT_NODE, '++j;if(j==' + match[2] + '){' + ACCEPT_NODE + '}');
+
+      case 'lt':
+        return source.replace(ACCEPT_NODE, '++j;if(j<' + match[2] + '){' + ACCEPT_NODE + '}');
+
+      case 'gt':
+        return source.replace(ACCEPT_NODE, '++j;if(j>' + match[2] + '){' + ACCEPT_NODE + '}');
+
+      case 'first':
+        return 'n=s.byTag(e.nodeName, h);if(n.length&&n[0]==e){' + source + '}';
+
+      case 'last':
+        return 'n=s.byTag(e.nodeName, h);if(n.length&&n[n.length-1]==e){' + source + '}';
+
+      case 'nth':
+        return 'n=s.byTag(e.nodeName, h);if(n.length&&n[' + match[2] + ']==e){' + source + '}';
+    }
+  }
+};
+
+// For element pseudo-classes extensions
+NW.Dom.Selectors['jq:pseudo'] = {
+  'expression': /^\:((?:button|checkbox|file|header|hidden|image|input|parent|password|radio|reset|submit|text|visible)(?![-\(])|has(?=\())(?:\((["']*)([^'"()]*)\2\))?(.*)/,
+  'callback': function(match, source) {
+ 
     // do not change this, it is searched & replaced
-    var ACCEPT_NODE = 'f&&f(N);r[r.length]=N;continue main;',
-     status = true;
+    var ACCEPT_NODE = 'f&&f(N);r[r.length]=N;continue main;';
 
     switch (match[1]) {
       case 'has':
-        source = source.replace(ACCEPT_NODE, 'if(s.byTag("' + match[3] + '",e)[0]){' + ACCEPT_NODE + '}');
-        break;
+        return source.replace(ACCEPT_NODE, 'if(s.byTag("' + match[3] + '",e)[0]){' + ACCEPT_NODE + '}');
+
       case 'checkbox':
       case 'file':
       case 'image':
@@ -84,30 +75,26 @@ NW.Dom.registerSelector(
       case 'reset':
       case 'submit':
       case 'text':
-        source = 'if(e.type&&e.type=="' + match[1] + '"){' + source + '}';
-        break;
+        return 'if(e.type&&e.type=="' + match[1] + '"){' + source + '}';
+
       case 'button':
       case 'input':
-        source = 'if(e.type||/button/i.test(e.nodeName)){' + source + '}';
-        break;
+        return 'if(e.type||/button/i.test(e.nodeName)){' + source + '}';
+
       case 'header':
-        source = 'if(/h[1-6]/i.test(e.nodeName)){' + source + '}';
-        break;
+        return 'if(/h[1-6]/i.test(e.nodeName)){' + source + '}';
+
       case 'hidden':
-        source = 'if(!e.offsetWidth&&!e.offsetHeight){' + source + '}';
-        break;
+        return 'if(!e.offsetWidth&&!e.offsetHeight){' + source + '}';
+
       case 'visible':
-        source = 'if(e.offsetWidth||e.offsetHeight){' + source + '}';
-        break;
+        return 'if(e.offsetWidth||e.offsetHeight){' + source + '}';
+
       case 'parent':
-        source += 'if(e.firstChild){' + source + '}';
-        break;
-      default:
-        status = false;
+        return source += 'if(e.firstChild){' + source + '}';
     }
-    // compiler will add this to "source"
-    return { 'source': source, 'status': status };
-  });
+  }
+};
 
 (function(global) {
   // # cleaned

@@ -26,7 +26,7 @@
   root = doc.documentElement,
 
   // temporary vars
-  isSupported, isBuggy, div = doc.createElement('DiV'),
+  isSupported, isBuggy, k, div = doc.createElement('DiV'),
 
   // persist last selector parsing data
   lastCalled, lastIndex, lastSelector, lastSlice,
@@ -483,44 +483,6 @@
   INSENSITIVE_TABLE = div.nodeName === 'DiV' ?
     XHTML_TABLE : HTML_TABLE,
 
-  // current CSS3 grouping of Pseudo-Classes
-  // they allow implementing extensions
-  // and improve error notifications;
-  // the assigned value represent current spec status:
-  // 3 = CSS3, 2 = CSS2, '?' = maybe implemented
-  CSS3PseudoClasses = {
-    Structural: {
-      'root': 3, 'empty': 3,
-      'first-child': 3, 'last-child': 3, 'only-child': 3,
-      'first-of-type': 3, 'last-of-type': 3, 'only-of-type': 3,
-      'first-child-of-type': 3, 'last-child-of-type': 3, 'only-child-of-type': 3,
-      'nth-child': 3, 'nth-last-child': 3, 'nth-of-type': 3, 'nth-last-of-type': 3
-      // (the 4rd line is not in W3C CSS specs but is an accepted alias of 3nd line)
-    },
-
-    // originally separated in different pseudo-classes
-    // we have grouped them to optimize a bit size+speed
-    // all are going through the same code path (switch)
-    Others: {
-      // Content
-      // http://www.w3.org/TR/2001/CR-css3-selectors-20011113/#content-selectors
-      'contains': '?',
-
-      // UIElementStates
-      // we group them to optimize
-      'checked': 3, 'disabled': 3, 'enabled': 3, 'selected': 2, 'indeterminate': '?',
-
-      // Dynamic
-      'active': 3, 'focus': 3, 'hover': 3, 'link': 3, 'visited': 3,
-
-      'target': 3,
-
-      'lang': 3,
-
-      'not': 3
-    }
-  },
-
   // attribute operators
   Operators = {
     // ! is not really in the specs
@@ -550,52 +512,320 @@
     'tagName':   new RegExp("(?:^|[>+~\\x20])(" + strIdentifier + ")|" + strSkipGroups)
   },
 
-  // precompiled Regular Expressions
-  Patterns = {
-    // element attribute matcher
-    'attribute': /^\[((?:[-\w]+\:)?[-\w]+)(?:([~*^$|!]?=)(["']?)((?:(?!\3)[^\\]|[^\\]|\\.)*?)\3)?\](.*)/,
-
-    // structural pseudo-classes
-    'spseudos': /^\:(root|empty|nth)?-?(first|last|only)?-?(child)?-?(of-type)?(?:\(([^\)]*)\))?(.*)/,
-
-    // uistates + dynamic + negation pseudo-classes
-    'dpseudos': /^\:((?:[-\w]|[^\x00-\xa0]|\\.)+)(?:\((["']?)(.*?(?:\(.*\))?[^'"()]*?)\2\))?(.*)/,
-
-    // E > F
-    'children': /^\>(.*)/,
-
-    // E + F
-    'adjacent': /^\+(.*)/,
-
-    // E ~ F
-    'relative': /^\~(.*)/,
-
-    // E F
-    'ancestor': /^\x20(.*)/,
-
-    // universal
-    'universal': /^\*(.*)/,
-
-    // id
-    'id': new RegExp("^#(" + strIdentifier + ")(.*)"),
-
-    // tag
-    'tagName': new RegExp("^(" + strIdentifier + ")(.*)"),
-
-    // class
-    'className': new RegExp("^\\.(" + strIdentifier + ")(.*)")
-  },
-
-  // place to add exotic functionalities
+  // default supported selectors
   Selectors = {
-    // For example this will check for chars not in standard ascii table.
-    // 'mySelectorCallback' will be invoked only after passing all other
-    // standard checks and only if none of them worked.
+    // Each type of selector has an expression and callback.
+    // The callback should return the modified source argument or
+    // an undefined/falsey value for invalid matches.
+
+    // *** Attribute selector
+    // [attr] [attr=value] [attr="value"] [attr='value'] and !=, *=, ~=, |=, ^=, $=
+    // case sensitivity is treated differently depending on the document type (see map)
+    'attribute': {
+      'expression': /^\[((?:[-\w]+\:)?[-\w]+)(?:([~*^$|!]?=)(["']?)((?:(?!\3)[^\\]|[^\\]|\\.)*?)\3)?\](.*)/,
+      'callback':
+        function(match, source) {
+          // check case treatment from INSENSITIVE_TABLE
+          if (match[2]) {
+            // xml namespaced attribute ?
+            var test, expr = match[1].split(':');
+            expr = expr.length == 2 ? expr[1] : expr[0];
+            test = INSENSITIVE_TABLE[expr.toLowerCase()];
+
+            return (
+              'n=e.nodeType==1&&s.getAttribute(e,"' + match[1] + '")' +
+                (test ? '.toLowerCase()' : '') + '||"";' +
+              'if(' +
+                Operators[match[2]].replace(/\%m/g, test ? match[4].toLowerCase() : match[4]) +
+              '){' + source + '}');
+          }
+
+          return 'if(e.nodeType==1&&s.hasAttribute(e,"' + match[1] + '")){' + source + '}';
+        }
+    },
+
+    // *** Structural CSS3 pseudo-classes
+    // :root, :empty,
+    // :first-child, :last-child, :only-child,
+    // :first-of-type, :last-of-type, :only-of-type,
+    // :nth-child, :nth-last-child, :nth-of-type, :nth-last-of-type
+    // :first-child-of-type, :last-child-of-type, only-child-of-type (custom)
+    'spseudos': {
+      'expression': /^\:(root|empty|(?:first|last|only)-(?:child(?:-of-type)?|of-type)|nth-(?:last-)?(?:child|of-type))(?:\(([^\)]*)\))?(.*)/,
+      'callback':
+        function(match, source, selector) {
+          var a, b, n, expr, test, type,
+           isLast  = match[1].indexOf('last') > -1,
+           parts   = match[1].split('-'),
+           pseudo  = parts[0],
+           ofType  = parts.pop() == 'type';
+           formula = match[2];
+
+          switch (pseudo) {
+            case 'root':
+              // element root of the document
+              return 'if(e===h){' + source + '}';
+
+            case 'empty':
+              // element that has no children
+              return 'if(' + ELEMENTS_ONLY_AND + '!e.firstChild){' + source + '}';
+
+            default:
+              if (formula) {
+                if (formula == 'even') {
+                  a = 2;
+                  b = 0;
+                } else if (formula == 'odd') {
+                  a = 2;
+                  b = 1;
+                } else {
+                  // assumes correct "an+b" format, "b" before "a" to keep "n" values
+                  b = (n = formula.match(/(-?\d+)$/)) ? parseInt(n[1], 10) : 0;
+                  a = (n = formula.match(/(-?\d*)n/)) ? parseInt(n[1], 10) : 0;
+                  if (n && n[1] == '-') a = -1;
+                }
+
+                // executed after the count is computed
+                type = ofType ? 'n[t]' : 'n';
+                expr = isLast ? type + '.length-' + (b - 1) : b;
+
+                // shortcut check for of-type selectors
+                type += '[e.' + UID + ']';
+
+                // build test expression out of structural pseudo (an+b) parameters
+                // see here: http://www.w3.org/TR/css3-selectors/#nth-child-pseudo
+                test = b < 1 && a > 1 ? '(' + type + '-(' + b + '))%' + a + '==0' :
+                  a > +1  ? type + '>=' + b + '&&(' + type + '-(' + b + '))%' + a + '==0' :
+                  a < -1  ? type + '<=' + b + '&&(' + type + '-(' + b + '))%' + a + '==0' :
+                  a === 0 ? type + '==' + expr : a == -1 ? type + '<=' + b : type + '>=' + b;
+
+                // 4 cases: 1 (nth) x 4 (child, of-type, last-child, last-of-type)
+                return (
+                  'if(e!==h' + AND_ELEMENTS_ONLY + '){' +
+                    't=e.nodeName' + TO_UPPER_CASE +
+                    ';n=s.getChildIndexes' + (ofType ? 'ByTag' : '') +
+                    '(e.parentNode' + (ofType ? ',t' : '') + ');' +
+                    'if(' + test + '){' + source + '}' +
+                  '}');
+              }
+
+              // 6 cases: 3 (first, last, only) x 1 (child) x 2 (-of-type)
+              a = pseudo == 'first' ? 'previous' : 'next';
+              n = pseudo == 'only'  ? 'previous' : 'next';
+              b = pseudo == 'first' || isLast;
+
+              type = ofType ? '&&n.nodeName!=e.nodeName' : '&&n.nodeName.charCodeAt(0)<65';
+
+              if (NATIVE_TRAVERSAL_API) {
+                a += 'Element';
+                n += 'Element';
+                if (!ofType) type = '&&false';
+              }
+
+              return (
+                'if(e!==h' + AND_ELEMENTS_ONLY + '){' +
+                  ( 'n=e;while((n=n.' + a + 'Sibling)' + type + ');if(!n){' + (b ? source :
+                    'n=e;while((n=n.' + n + 'Sibling)' + type + ');if(!n){' + source + '}') + '}' ) +
+                '}');
+          }
+        }
+    },
+
+    // *** negation, user action and target pseudo-classes
+    // *** UI element states and dynamic pseudo-classes
+    // CSS3 :not, :checked, :enabled, :disabled, :target
+    // CSS3 :active, :hover, :focus
+    // CSS3 :link, :visited
     //
-    // 'mySpecialSelector': {
-    //    'Expression': /\u0080-\uffff/,
-    //    'Callback': mySelectorCallback
-    //  }
+    // CSS2 :contains, :selected (deprecated)
+    // http://www.w3.org/TR/2001/CR-css3-selectors-20011113/#content-selectors
+    //
+    // TODO: :indeterminate, :lang
+    'dpseudos': {
+      'expression': /^\:((?:active|checked|disabled|enabled|focus|hover|link|selected|target|visited)(?!\()|(?:contains|not)(?=\())(?:\((["']?)(.*?(?:\(.*\))?[^'"()]*?)\2\))?(.*)/,
+      'callback':
+        function(match, source, selector) {
+          switch (match[1]) {
+            /* CSS3 negation pseudo-class */
+            case 'not':
+              // compile nested selectors, need to escape double quotes characters
+              // since the string we are inserting into already uses double quotes
+              return 'if(' + ELEMENTS_ONLY_AND +
+                '!s.match(e, "' + match[3].replace(/\x22/g, '\\"') + '")){' + source +'}';
+
+            /* CSS3 UI element states */
+            case 'checked':
+              // only radio buttons and check boxes
+              return 'if("form" in e&&/^(?:radio|checkbox)$/i.test(e.type)&&e.checked){' + source + '}';
+
+            case 'enabled':
+              // we assume form controls have a `form` and `type` property.
+              // does not consider hidden input fields
+              return 'if(((e.type&&"form" in e&&e.type.toLowerCase()!=="hidden")||s.isLink(e))&&!e.disabled){' + source + '}';
+
+            case 'disabled':
+              // does not consider hidden input fields
+              return 'if(e.type&&"form" in e&&e.type.toLowerCase()!=="hidden"&&e.disabled){' + source + '}';
+
+            /* CSS3 target pseudo-class */
+            case 'target':
+              return 'if(e.id=="' + global.location.hash + '"&&e.href!=void 0){' + source + '}';
+
+            /* CSS3 dynamic pseudo-classes */
+            case 'link':
+              return 'if(s.isLink(e)&&!e.visited){' + source + '}';
+
+            case 'visited':
+              return 'if(s.isLink(e)&&!!e.visited){' + source + '}';
+
+            /* CSS3 user action pseudo-classes */
+            // IE & FF3 have native support
+            // these capabilities may be emulated by some event managers
+            case 'active':
+              return 'if(e===d.activeElement){' + source + '}';
+
+            case 'hover':
+              return 'if(e===d.hoverElement){' + source + '}';
+
+            case 'focus':
+              return NATIVE_HAS_FOCUS ?
+                'if(e===d.activeElement&&d.hasFocus()){' + source + '}' :
+                'if(e===d.activeElement){' + source + '}';
+
+            /* CSS2 :contains and :selected pseudo-classes */
+            // not currently part of CSS3 drafts
+            case 'contains':
+              return 'if(' + CONTAINS_TEXT + '.indexOf("' + match[3] + '")>-1){' + source + '}';
+
+            case 'selected':
+              // fix Safari selectedIndex property bug
+              if (typeof doc.getElementsByTagName !== 'undefined') {
+                var i = 0, n = doc.getElementsByTagName('select');
+                while (n[i]) { n[i++].selectedIndex; }
+              }
+              return 'if(e.selected){' + source + '}';
+          }
+        }
+    },
+
+    // *** Child combinator
+    // E > F (F children of E)
+    'children': {
+      'expression': /^\>(.*)/,
+      'callback':
+        function(match, source, selector, origSelector) {
+          // assume matching context if E is not provided
+          if (match[0] == origSelector) {
+            source = 'if(e===g){' + source + '}';
+          }
+          return 'if(e!==g&&(e=e.parentNode)&&e.nodeType==1){' + source + '}';
+        }
+    },
+
+    // *** Adjacent sibling combinator
+    // E + F (F adiacent sibling of E)
+    'adjacent': {
+      'expression': /^\+(.*)/,
+      'callback':
+        function(match, source, selector, origSelector) {
+          // assume matching context if E is not provided
+          if (match[0] == origSelector) {
+            source = 'if(e===g){' + source + '}';
+          }
+          return NATIVE_TRAVERSAL_API ?
+            'if((e=e.previousElementSibling)){' + source + '}' :
+            'while((e=e.previousSibling)){' + source + 'if(!e||e.nodeType==1)break;}';
+        }
+    },
+
+    // *** General sibling combinator
+    // E ~ F (F relative sibling of E)
+    'relative': {
+      'expression': /^\~(.*)/,
+      'callback':
+        function(match, source, selector, origSelector) {
+          // increment private counter
+          k++;
+
+          // assume matching context if E is not provided
+          if (match[0] == origSelector) {
+            source = 'if(e===g){' + source + '}';
+          }
+
+          // previousSibling particularly slow on Gecko based browsers prior to FF3.1
+          return NATIVE_TRAVERSAL_API ?
+            ('var N' + k + '=e;e=e==h?h:e.parentNode.firstElementChild;' +
+             'while(e&&e!=N' + k +'){' + source + 'e=e.nextElementSibling;}') :
+            ('var N' + k + '=e;e=e.parentNode.firstChild;' +
+            'while(e&&e!=N' + k +'){' + source + 'e=e.nextSibling;}');
+        }
+    },
+
+    // *** Descendant combinator
+    // E F (E ancestor of F)
+    'ancestor': {
+      'expression': /^\x20(.*)/,
+      'callback':
+        function(match, source) {
+          return 'while(e!==g&&(e=e.parentNode)&&e.nodeType==1){' + source + '}';
+        }
+    },
+
+    // *** Universal selector
+    // * match all elements
+    'universal': {
+      'expression': /^\*(.*)/,
+      'callback':
+        function(match, source) {
+          // BUGGY_GEBTN return comment nodes (ex: IE)
+          return 'if(' + ELEMENTS_ONLY + '){' + source + '}';
+        }
+    },
+
+    // *** ID selector
+    // #Foo Id case sensitive
+    'id': {
+      'expression': new RegExp("^#(" + strIdentifier + ")(.*)"),
+      'callback':
+        function(match, source) {
+          // document can contain conflicting elements (id/name)
+          // prototype selector unit need this method to recover bad HTML forms
+          return 'if((x||e.submit?s.getAttribute(e,"id"):e.id)=="' + match[1] + '"){' + source + '}';
+        }
+    },
+
+    // *** Type selector
+    // Foo Tag (case insensitive)
+    'tagName': {
+      'expression': new RegExp("^(?!not\\()(" + strIdentifier + ")(.*)"),
+      'callback':
+        function(match, source) {
+          // both tagName and nodeName properties may be upper or lower case
+          // depending on their creation NAMESPACE in createElementNS()
+          return 'if((x&&e.nodeName.toUpperCase()||e.nodeName' + TO_UPPER_CASE + ')=="' +
+            match[1].toUpperCase() + '"){' + source + '}';
+        }
+    },
+
+    // *** Class selector
+    // .Foo Class
+    // case sensitivity is treated differently depending on the document type (see map)
+    'className': {
+      'expression': new RegExp("^\\.(" + strIdentifier + ")(.*)"),
+      'callback':
+        function(match, source) {
+          // W3C CSS3 specs: element whose "class" attribute has been assigned a
+          // list of whitespace-separated values, see section 6.4 Class selectors
+          // and notes at the bottom; explicitly non-normative in this specification.
+          return (
+            't = x ? s.getAttribute(e,"class") : e.className;' +
+            'if(t && (" "+t+" ")' +
+            (isQuirks ? '.toLowerCase()' : '') +
+            '.replace(/' + strEdgeSpace + '/g," ").indexOf(" ' +
+            (isQuirks ? match[1].toLowerCase() : match[1]) +
+            ' ")>-1){' + source + '}');
+        }
+    }
   },
 
   /*------------------------------ DOM METHODS -------------------------------*/
@@ -917,337 +1147,35 @@
   // @return string (to be compiled)
   compileSelector =
     function(selector, source, mode) {
-
       // assume matching `*` if F is not provided
       if (/[>+~]$/.test(selector)) {
         selector += '*';
       }
 
-      var i, a, b, n, expr, match, result, status, test, type,
-       origSelector = selector,
-       pseudoStructural = CSS3PseudoClasses.Structural,
-       pseudoOthers = CSS3PseudoClasses.Others,
-       ptnAdjacent  = Patterns.adjacent,
-       ptnAncestor  = Patterns.ancestor,
-       ptnAttribute = Patterns.attribute,
-       ptnClassName = Patterns.className,
-       ptnChildren  = Patterns.children,
-       ptnDpseudos  = Patterns.dpseudos,
-       ptnId        = Patterns.id,
-       ptnRelative  = Patterns.relative,
-       ptnSpseudos  = Patterns.spseudos,
-       ptnTagName   = Patterns.tagName,
-       ptnUniversal = Patterns.universal,
-       k = 0;
+      // reset private counter
+      // used by sibling combinator
+      // E ~ F (F relative sibling of E)
+      k = 0;
 
+      var expr, match, result, origSelector = selector;
       while (selector) {
-        // *** Universal selector
-        // * match all (empty block, do not remove)
-        if ((match = selector.match(ptnUniversal))) {
-          // BUGGY_GEBTN return comment nodes (ex: IE)
-          source = 'if(' + ELEMENTS_ONLY + '){' + source + '}';
-        }
+        result = null;
+        for (expr in Selectors) {
+          if ((match = selector.match(Selectors[expr].expression))) {
+            result = Selectors[expr].callback(match, source, selector, origSelector);
+            if (!result ) { break; }
 
-        // *** ID selector
-        // #Foo Id case sensitive
-        else if ((match = selector.match(ptnId))) {
-          // document can contain conflicting elements (id/name)
-          // prototype selector unit need this method to recover bad HTML forms
-          source = 'if((x||e.submit?s.getAttribute(e,"id"):e.id)=="' +
-            match[1] + '"){' + source + '}';
-        }
-
-        // *** Type selector
-        // Foo Tag (case insensitive)
-        else if ((match = selector.match(ptnTagName))) {
-          // both tagName and nodeName properties may be upper or lower case
-          // depending on their creation NAMESPACE in createElementNS()
-          source = 'if((x&&e.nodeName.toUpperCase()||e.nodeName' + TO_UPPER_CASE + ')=="' +
-            match[1].toUpperCase() + '"){' + source + '}';
-        }
-
-        // *** Class selector
-        // .Foo Class
-        // case sensitivity is treated differently depending on the document type (see map)
-        else if ((match = selector.match(ptnClassName))) {
-          // W3C CSS3 specs: element whose "class" attribute has been assigned a
-          // list of whitespace-separated values, see section 6.4 Class selectors
-          // and notes at the bottom; explicitly non-normative in this specification.
-          source =
-            't = x ? s.getAttribute(e,"class") : e.className;' +
-            'if(t && (" "+t+" ")' +
-            (isQuirks ? '.toLowerCase()' : '') +
-            '.replace(/' + strEdgeSpace + '/g," ").indexOf(" ' +
-            (isQuirks ? match[1].toLowerCase() : match[1]) +
-            ' ")>-1){' + source + '}';
-        }
-
-        // *** Attribute selector
-        // [attr] [attr=value] [attr="value"] [attr='value'] and !=, *=, ~=, |=, ^=, $=
-        // case sensitivity is treated differently depending on the document type (see map)
-        else if ((match = selector.match(ptnAttribute))) {
-          // check case treatment from INSENSITIVE_TABLE
-          if (match[2]) {
-            // xml namespaced attribute ?
-            expr = match[1].split(':');
-            expr = expr.length == 2 ? expr[1] : expr[0];
-            test = INSENSITIVE_TABLE[expr.toLowerCase()];
-
-            source =
-              'n=e.nodeType==1&&s.getAttribute(e,"' + match[1] + '")' +
-                (test ? '.toLowerCase()' : '') + '||"";' +
-              'if(' +
-                Operators[match[2]].replace(/\%m/g, test ? match[4].toLowerCase() : match[4]) +
-              '){' + source + '}';
-          }
-          else {
-            source = 'if(e.nodeType==1&&s.hasAttribute(e,"' + match[1] + '")){' + source + '}';
+            source = result;
+            selector = match[match.length - 1];
+            if (!selector) { break; }
           }
         }
-
-        // *** Adjacent sibling combinator
-        // E + F (F adiacent sibling of E)
-        else if ((match = selector.match(ptnAdjacent))) {
-          // assume matching context if E is not provided
-          if (match[0] == origSelector) {
-            source = 'if(e===g){' + source + '}';
-          }
-
-          source = NATIVE_TRAVERSAL_API ?
-            'if((e=e.previousElementSibling)){' + source + '}' :
-            'while((e=e.previousSibling)){' + source + 'if(!e||e.nodeType==1)break;}';
+        if (!result) {
+          // log error but continue execution
+          emit('DOMException: unknown selector "' + selector + '"');
+          // return empty array or false depending on mode
+          return mode ? 'return r;' : '';
         }
-
-        // *** General sibling combinator
-        // E ~ F (F relative sibling of E)
-        else if ((match = selector.match(ptnRelative))) {
-          k++;
-
-          // assume matching context if E is not provided
-          if (match[0] == origSelector) {
-            source = 'if(e===g){' + source + '}';
-          }
-
-          // previousSibling particularly slow on Gecko based browsers prior to FF3.1
-          if (NATIVE_TRAVERSAL_API) {
-            source =
-              'var N' + k + '=e;e=e==h?h:e.parentNode.firstElementChild;' +
-              'while(e&&e!=N' + k +'){' + source + 'e=e.nextElementSibling;}';
-          } else {
-            source =
-              'var N' + k + '=e;e=e.parentNode.firstChild;' +
-              'while(e&&e!=N' + k +'){' + source + 'e=e.nextSibling;}';
-          }
-        }
-
-        // *** Child combinator
-        // E > F (F children of E)
-        else if ((match = selector.match(ptnChildren))) {
-          // assume matching context if E is not provided
-          if (match[0] == origSelector) {
-            source = 'if(e===g){' + source + '}';
-          }
-
-          source = 'if(e!==g&&(e=e.parentNode)&&e.nodeType==1){' + source + '}';
-        }
-
-        // *** Descendant combinator
-        // E F (E ancestor of F)
-        else if ((match = selector.match(ptnAncestor))) {
-          source = 'while(e!==g&&(e=e.parentNode)&&e.nodeType==1){' + source + '}';
-        }
-
-        // *** Structural pseudo-classes
-        // :root, :empty,
-        // :first-child, :last-child, :only-child,
-        // :first-of-type, :last-of-type, :only-of-type,
-        // :nth-child(), :nth-last-child(), :nth-of-type(), :nth-last-of-type()
-        else if ((match = selector.match(ptnSpseudos)) &&
-          pseudoStructural[selector.match(reIdentifier)[0]]) {
-
-          switch (match[1]) {
-            case 'root':
-              // element root of the document
-              source = 'if(e===h){' + source + '}';
-              break;
-
-            case 'empty':
-              // element that has no children
-              source = 'if(' + ELEMENTS_ONLY_AND +
-                '!e.firstChild){' + source + '}';
-              break;
-
-            default:
-              if (match[1] && match[5]) {
-                if (match[5] == 'even') {
-                  a = 2;
-                  b = 0;
-                } else if (match[5] == 'odd') {
-                  a = 2;
-                  b = 1;
-                } else {
-                  // assumes correct "an+b" format, "b" before "a" to keep "n" values
-                  b = (n = match[5].match(/(-?\d+)$/)) ? parseInt(n[1], 10) : 0;
-                  a = (n = match[5].match(/(-?\d*)n/)) ? parseInt(n[1], 10) : 0;
-                  if (n && n[1] == '-') a = -1;
-                }
-
-                // executed after the count is computed
-                type = match[4] ? 'n[t]' : 'n';
-                expr = match[2] == 'last' ? type + '.length-' + (b - 1) : b;
-
-                // shortcut check for of-type selectors
-                type += '[e.' + UID + ']';
-
-                // build test expression out of structural pseudo (an+b) parameters
-                // see here: http://www.w3.org/TR/css3-selectors/#nth-child-pseudo
-                test = b < 1 && a > 1 ? '(' + type + '-(' + b + '))%' + a + '==0' :
-                  a > +1  ? type + '>=' + b + '&&(' + type + '-(' + b + '))%' + a + '==0' :
-                  a < -1  ? type + '<=' + b + '&&(' + type + '-(' + b + '))%' + a + '==0' :
-                  a === 0 ? type + '==' + expr : a == -1 ? type + '<=' + b : type + '>=' + b;
-
-                // 4 cases: 1 (nth) x 4 (child, of-type, last-child, last-of-type)
-                source =
-                  'if(e!==h' + AND_ELEMENTS_ONLY + '){' +
-                    't=e.nodeName' + TO_UPPER_CASE +
-                    ';n=s.getChildIndexes' + (match[4] ? 'ByTag' : '') +
-                    '(e.parentNode' + (match[4] ? ',t' : '') + ');' +
-                    'if(' + test + '){' + source + '}' +
-                  '}';
-
-              } else {
-                // 6 cases: 3 (first, last, only) x 1 (child) x 2 (-of-type)
-                a = match[2] == 'first' ? 'previous' : 'next';
-                n = match[2] == 'only'  ? 'previous' : 'next';
-                b = match[2] == 'first' || match[2] == 'last';
-
-                type = match[4] ? '&&n.nodeName!=e.nodeName' : '&&n.nodeName.charCodeAt(0)<65';
-
-                if (NATIVE_TRAVERSAL_API) {
-                  a += 'Element';
-                  n += 'Element';
-                  if (!match[4]) type = '&&false';
-                }
-
-                source =
-                  'if(e!==h' + AND_ELEMENTS_ONLY + '){' +
-                    ( 'n=e;while((n=n.' + a + 'Sibling)' + type + ');if(!n){' + (b ? source :
-                      'n=e;while((n=n.' + n + 'Sibling)' + type + ');if(!n){' + source + '}') + '}' ) +
-                  '}';
-              }
-              break;
-          }
-        }
-
-        // *** negation, user action and target pseudo-classes
-        // *** UI element states and dynamic pseudo-classes
-        // CSS3 :not, :checked, :enabled, :disabled, :target
-        // CSS3 :active, :hover, :focus
-        // CSS3 :link, :visited
-        else if ((match = selector.match(ptnDpseudos)) &&
-          pseudoOthers[selector.match(reIdentifier)[0]]) {
-
-          switch (match[1]) {
-            // CSS3 negation pseudo-class
-            case 'not':
-              // compile nested selectors, need to escape double quotes characters
-              // since the string we are inserting into already uses double quotes
-              source = 'if(' + ELEMENTS_ONLY_AND +
-                '!s.match(e, "' + match[3].replace(/\x22/g, '\\"') + '")){' + source +'}';
-              break;
-
-            // CSS3 UI element states
-            case 'checked':
-              // only radio buttons and check boxes
-              source = 'if("form" in e&&/^(?:radio|checkbox)$/i.test(e.type)&&e.checked){' + source + '}';
-              break;
-            case 'enabled':
-              // we assume form controls have a `form` and `type` property.
-              // does not consider hidden input fields
-              source = 'if(((e.type&&"form" in e&&e.type.toLowerCase()!=="hidden")||s.isLink(e))&&!e.disabled){' + source + '}';
-              break;
-            case 'disabled':
-              // does not consider hidden input fields
-              source = 'if(e.type&&"form" in e&&e.type.toLowerCase()!=="hidden"&&e.disabled){' + source + '}';
-              break;
-
-            // CSS3 target pseudo-class
-            case 'target':
-              n = global.location.hash;
-              source = 'if(e.id=="' + n + '"&&e.href!=void 0){' + source + '}';
-              break;
-
-            // CSS3 dynamic pseudo-classes
-            case 'link':
-              source = 'if(s.isLink(e)&&!e.visited){' + source + '}';
-              break;
-            case 'visited':
-              source = 'if(s.isLink(e)&&!!e.visited){' + source + '}';
-              break;
-
-            // CSS3 user action pseudo-classes IE & FF3 have native support
-            // these capabilities may be emulated by some event managers
-            case 'active':
-              source = 'if(e===d.activeElement){' + source + '}';
-              break;
-            case 'hover':
-              source = 'if(e===d.hoverElement){' + source + '}';
-              break;
-            case 'focus':
-              source = NATIVE_HAS_FOCUS ?
-                'if(e===d.activeElement&&d.hasFocus()){' + source + '}' :
-                'if(e===d.activeElement){' + source + '}';
-              break;
-
-            // CSS2 :contains and :selected pseudo-classes
-            // not currently part of CSS3 drafts
-            case 'contains':
-              source = 'if(' + CONTAINS_TEXT + '.indexOf("' + match[3] + '")>-1){' + source + '}';
-              break;
-            case 'selected':
-              // fix Safari selectedIndex property bug
-              if (typeof doc.getElementsByTagName !== 'undefined') {
-                n = doc.getElementsByTagName('select');
-                for (i = 0; n[i]; i++) {
-                  n[i].selectedIndex;
-                }
-              }
-              source = 'if(e.selected){' + source + '}';
-              break;
-
-            default:
-              break;
-          }
-        } else {
-
-          // this is where external extensions are
-          // invoked if expressions match selectors
-          expr =
-          status = false;
-
-          for (expr in Selectors) {
-            if ((match = selector.match(Selectors[expr].Expression))) {
-              result = Selectors[expr].Callback(match, source);
-              source = result.source;
-              status || (status = result.status);
-            }
-          }
-
-          // if an extension successfully parses a selector
-          // it must return a truthy value for "status"
-          if (!status || !match) {
-            // log error but continue execution, don't throw real exceptions
-            // because blocking following processes maybe is not a good idea
-            emit('DOMException: unknown ' + (!status ? 'pseudo' : 'token in') + ' selector "' + selector + '"');
-
-            // return empty array or false depending on mode
-            return mode ? 'return r;' : '';
-          }
-        }
-
-        // ensure "match" is not null or empty since
-        // we do not throw real DOMExceptions above
-        selector = match && match[match.length - 1];
       }
 
       return source;
@@ -1757,6 +1685,15 @@
   global.NW || (global.NW = { });
 
   global.NW.Dom = {
+
+    'version': version,
+
+    // attribute operators
+    'Operators': Operators,
+
+    // supported selectors
+    'Selectors': Selectors,
+
     // get elements by class name
     'byClass': BUGGY_GEBCN ? byClass :
       function(className, from) {
@@ -1800,24 +1737,6 @@
 
     // for debug only
     'normalize': normalize,
-
-    // add selector patterns for user defined callbacks
-    'registerSelector':
-      function (name, rexp, func) {
-        if (!Selectors[name]) {
-          var entry = Selectors[name] = { };
-          entry.Expression = rexp;
-          entry.Callback = func;
-        }
-      },
-
-    // add or overwrite user defined operators
-    'registerOperator':
-      function (symbol, resolver) {
-        if (!Operators[symbol]) {
-          Operators[symbol] = resolver;
-        }
-      },
 
     // elements matching selector, starting from element
     'select': select,

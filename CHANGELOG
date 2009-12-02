@@ -1,3 +1,5 @@
+* Remove registerSelector()/registerOperator() API and expose NW.Dom.Selectors/NW.Dom.Operators allowing developers to overwrite the default selectors with custom ones. [jddalton]
+
 * Ensure select()/match() return an empty array/false for unsupported/invalid selectors. [jddalton]
 
 * Make the definition of `RE_SIMPLE_SELECTOR` more granular, tweak private byName() usage for IE, and simplify the public byClass(), byName(), and byTag(). [jddalton]
