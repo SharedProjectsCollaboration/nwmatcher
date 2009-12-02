@@ -61,7 +61,7 @@
 
   // used to skip [ ] or ( ) groups
   // we use \2 and \3 because we assume \1 will be the captured group not being skipped
-  strSkipGroups = strGroups.replace(/\\1/g, '\\2').replace('\\2', '\\3'),
+  strSkipGroups = strGroups.replace('\\2', '\\3').replace(/\\1/g, '\\2'),
 
   // used to skip "..." or '...' quoted attribute values
   // we use \2 because we assume \1 will be the captured group not being skipped
