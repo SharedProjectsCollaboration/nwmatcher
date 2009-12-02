@@ -86,7 +86,7 @@
 
   reUseSafeNormalize = /[[(]/,
 
-  reUnnormalized = /[\t\n\r\f]|\x20{2,}|\x20(?:[\]\)=>+~,^$|!]|\*=)|(?:[\[\(=>+~,^$|!]|\*=)\x20/,
+  reUnnormalized = /^\x20|[\t\n\r\f]|\x20{2,}|\x20(?:[\]\)=>+~,^$|!]|\*=)|(?:[\[\(=>+~,^$|!]|\*=)\x20|\x20$/,
 
   // split comma separated selector groups
   // exclude escaped commas and those inside '', "", (), []
@@ -98,7 +98,7 @@
 
   // simple check to ensure the first character of a selector is valid
   // http://www.w3.org/TR/css3-syntax/#characters
-  reValidator = /^(?:[*>+~a-zA-Z]|\[[\x20\t\n\r\fa-zA-Z]|(?:[.:#_]|::)?(?!-?\d)-?(?:[a-zA-Z_]|[^\x00-\xa0]|\\.))/,
+  reValidator = /^[\x20\t\n\r]*(?:[*>+~a-zA-Za-zA-Z]|\[[\x20\t\n\r\fa-zA-Z]|(?:[.:#_]|::)?(?!-?\d)-?(?:[a-zA-Z_]|[^\x00-\xa0]|\\.))/,
 
   // for use with the normilize method
   reEdgeSpaces     = new RegExp(strEdgeSpace, 'g'),
@@ -669,28 +669,27 @@
   // attribute value
   // @return string
   getAttribute = NATIVE_HAS_ATTRIBUTE ?
-    function(element, attribute) {
-      return element.getAttribute(attribute) + '';
+    function(node, attribute) {
+      return node.getAttribute(attribute) + '';
     } :
-    function(element, attribute) {
+    function(node, attribute) {
       // specific URI attributes (parameter 2 to fix IE bug)
       if (ATTRIBUTES_URI[attribute]) {
-        return element.getAttribute(attribute, 2) + '';
+        return node.getAttribute(attribute, 2) + '';
       }
-      var node = element.getAttributeNode(attribute);
+      node = node.getAttributeNode(attribute);
       return (node && node.value) + '';
     },
 
   // attribute presence
   // @return boolean
   hasAttribute = NATIVE_HAS_ATTRIBUTE ?
-    function(element, attribute) {
-      return element.hasAttribute(attribute);
+    function(node, attribute) {
+      return node.hasAttribute(attribute);
     } :
-    function(element, attribute) {
-      // need to get at AttributeNode first on IE
-      var node = element.getAttributeNode(attribute);
+    function(node, attribute) {
       // use both "specified" & "nodeValue" properties
+      node = node.getAttributeNode(attribute);
       return !!(node && (node.specified || node.nodeValue));
     },
 
@@ -992,14 +991,14 @@
             test = INSENSITIVE_TABLE[expr.toLowerCase()];
 
             source =
-              'n=s.getAttribute(e,"' + match[1] + '")' +
-                (test ? '.toLowerCase();' : ';') +
+              'n=e.nodeType==1&&s.getAttribute(e,"' + match[1] + '")' +
+                (test ? '.toLowerCase()' : '') + '||"";' +
               'if(' +
                 Operators[match[2]].replace(/\%m/g, test ? match[4].toLowerCase() : match[4]) +
               '){' + source + '}';
           }
           else {
-            source = 'if(s.hasAttribute(e,"' + match[1] + '")){' + source + '}';
+            source = 'if(e.nodeType==1&&s.hasAttribute(e,"' + match[1] + '")){' + source + '}';
           }
         }
 
