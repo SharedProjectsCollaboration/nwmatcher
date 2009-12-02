@@ -33,7 +33,7 @@
 
   lastContext = doc,
 
-  notHTML = !('body' in doc),
+  notHTML = !('body' in doc) || !('innerHTML' in root),
 
   // used in the RE_BUGGY_XXXXX regexp testers
   testFalse = { 'test': function() { return false; } },
@@ -1268,7 +1268,7 @@
       from || (from = doc);
       if (lastContext != from) {
         root = doc.documentElement;
-        notHTML = !('body' in doc);
+        notHTML = !('body' in doc) || !('innerHTML' in root);
         lastContext = from;
       }
 
@@ -1350,7 +1350,7 @@
       if (lastContext != (from || doc)) {
         from || (from = doc);
         root = (doc = from.ownerDocument || from).documentElement;
-        notHTML = !('body' in doc);
+        notHTML = !('body' in doc) || !('innerHTML' in root);
         lastContext = from;
       }
 
@@ -1404,7 +1404,7 @@
         // reference context ownerDocument and document root (HTML)
         root = (doc = from.ownerDocument || from).documentElement;
         // check if context is not (X)HTML
-        notHTML = !('body' in doc);
+        notHTML = !('body' in doc) || !('innerHTML' in root);
         // save passed context
         lastContext = from;
       }

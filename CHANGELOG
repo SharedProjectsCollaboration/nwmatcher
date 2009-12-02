@@ -1,3 +1,5 @@
+* Change `notHTML` from `!('body' in doc)` to `!('body' in doc) || !('innerHTML' in root)` to correct the feature test for WebKit. [jddalton]
+
 * Make compileSelector() use getAttribute() for ID selectors on non-html elements. [Diego Perini, jddalton]
 
 * Fix Opera 9.25 bug by ensuring compileSelector() checks `e.nodeType==1` before attempting (get/has)Attribute and tweak `reUnnormalized` and `reValidator` regexps. [jddalton]
