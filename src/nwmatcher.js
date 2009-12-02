@@ -721,7 +721,7 @@
   byClass =
     function(className, from) {
       if (notHTML) {
-        return select('*[class~="' + className + '"]', from || doc);
+        return client_api('*[class~="' + className + '"]', from || doc);
       }
       if (BUGGY_GEBCN) {
         var element, i = -1, j = i, results = [ ],
@@ -781,7 +781,7 @@
     function(name, from, allInputs) {
       if (notHTML || BUGGY_GEBN_WITH_NON_INPUT && !allInputs) {
         // prefix a <space> so it isn't caught by RE_SIMPLE_SELECTOR
-        return select(' *[name="' + name + '"]', from || doc);
+        return client_api(' *[name="' + name + '"]', from || doc);
       }
 
       name = name.replace(/\\/g, '');
@@ -792,7 +792,7 @@
         // fix for nodeLists containing an element with id="length"
         // assumed browsers must be BUGGY_GEBN_MATCH_ID to be BUGGY_GEBN_WITH_ID_LENGTH
         if (BUGGY_GEBN_WITH_ID_LENGTH && elements.length.nodeType) {
-          return select(' *[name="' + name + '"]', from || doc);
+          return client_api(' *[name="' + name + '"]', from || doc);
         }
 
         while ((element = elements[++i])) {
@@ -1393,8 +1393,8 @@
   // @return array
   client_api =
     function (selector, from, callback) {
-      var Contexts, Results, className, compiled, data,
-       element, elements, hasChanged, isCacheable, isSingle,
+      var Contexts, Results, allInputs, className, compiled,
+       data, element, elements, hasChanged, isCacheable, isSingle,
        now, normSelector, origFrom, origSelector, parts, token;
 
       // extract context if changed
@@ -1524,8 +1524,9 @@
 
         // NAME optimization RTL
         else if ((parts = lastSlice.match(Optimize.name)) && (token = parts[1])) {
-          if ((elements = byName(token.match(reNameValue)[2], from,
-              lastSlice.slice(lastIndex - 5, lastIndex).toLowerCase() === 'input')).length) {
+          if ((!BUGGY_GEBN_WITH_NON_INPUT || (BUGGY_GEBN_WITH_NON_INPUT &&
+              (allInputs = lastSlice.slice(lastIndex - 5, lastIndex).toLowerCase() === 'input'))) &&
+              (elements = byName(token.match(reNameValue)[2], from, allInputs)).length) {
             selector = selector.slice(0, lastIndex) +
               selector.slice(lastIndex).replace(token, '');
           }
