@@ -1,3 +1,5 @@
+* Rewrite byName(), fix `NATIVE_GEBN` check and add feature tests for `BUGGY_GEBN_MATCH_ID`, `BUGGY_GEBN_WITH_ID_LENGTH`, and `BUGGY_GEBN_WITH_NON_INPUT`. [jddalton]
+
 * Fix regression in `strSkipGroups` that stopped NWMatcher running in Chrome. [jddalton]
 
 * Remove `cn.length` check in byClass() because non-html elements are handled elsewhere and rename `cn` to `n` for better compression with other `n` variables. [jddalton]

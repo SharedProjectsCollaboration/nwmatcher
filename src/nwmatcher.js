@@ -240,7 +240,7 @@
   // detect if DOM methods are native in browsers
   NATIVE_GEBID     = isNative(doc, 'getElementById'),
   NATIVE_GEBCN     = isNative(root, 'getElementsByClassName'),
-  NATIVE_GEBN      = isNative(root, 'getElementsByName'),
+  NATIVE_GEBN      = isNative(doc, 'getElementsByName'),
   NATIVE_GEBTN     = isNative(root, 'getElementsByTagName'),
   NATIVE_HAS_FOCUS = isNative(doc, 'hasFocus'),
   NATIVE_QSA       = isNative(doc, 'querySelectorAll'),
@@ -367,27 +367,40 @@
 
   // NOTE: BUGGY_XXXXX check both for existance and no known bugs.
 
-  BUGGY_GEBN = true,
+  BUGGY_GEBN_MATCH_ID = true,
 
-  BUGGY_GEBID = NATIVE_GEBID ?
+  BUGGY_GEBN_WITH_ID_LENGTH = true,
+
+  BUGGY_GEBN_WITH_NON_INPUT = true,
+
+  BUGGY_GEBID =
     (function() {
-      var x = 'x'+ String(+new Date);
+      // <p id="x"></p><p name="y"></p><input name="z">
+      var uid = String(+new Date), x = 'x' + uid, y = 'y' + uid, z = 'z' + uid;
+      clearElement(div).appendChild(createElement('p')).id = x;
+      div.appendChild(createElement('p')).setAttribute('name', y);
+      div.appendChild(createInput('text')).setAttribute('name', z);
+      div.lastChild.id = 'length';
 
-      // <p id="x"></p>
-      clearElement(div)
-        .appendChild(createElement('p')).id = x;
-
-      // check for a buggy GEBN, because unlike GEBID, it will
-      // present the bug before the document has finished loading
       root.insertBefore(div, root.firstChild);
-      isBuggy = !doc.getElementById(x) || !!doc.getElementsByName(x)[0];
 
-      if (NATIVE_GEBN) BUGGY_GEBN = isBuggy;
+      isBuggy = !NATIVE_GEBID || !doc.getElementById(x);
+
+      // reuse test div for BUGGY_GEBN
+      if (NATIVE_GEBN) {
+        // check for a buggy GEBN with id, because unlike GEBID, it will
+        // present the bug before the document has finished loading
+        BUGGY_GEBN_MATCH_ID = !!doc.getElementsByName(x)[0];
+        if (!isBuggy) isBuggy = BUGGY_GEBN_MATCH_ID;
+
+        BUGGY_GEBN_WITH_ID_LENGTH = !!doc.getElementsByName(z).length.nodeType;
+
+        BUGGY_GEBN_WITH_NON_INPUT = !doc.getElementsByName(y)[0];
+      }
+
       root.removeChild(div);
-
       return isBuggy;
-    })() :
-    true,
+    })(),
 
   // detect IE gEBTN comment nodes bug
   BUGGY_GEBTN = NATIVE_GEBTN ?
@@ -765,15 +778,23 @@
   // @return nodeList (non buggy native GEBN)
   // @return array (non native/buggy GEBN)
   byName =
-    function(name, from) {
-      if (notHTML) {
-        // prefix with a <space> so it isn't caught by RE_SIMPLE_SELECTOR
-        return select(' *[name="' + name + '"]', from || doc);
+    function(name, from, allInputs) {
+      if (notHTML || BUGGY_GEBN_WITH_NON_INPUT && !allInputs) {
+        // append a <space> so it isn't caught by RE_SIMPLE_SELECTOR
+        return select('*[name="' + name + '"] ', from || doc);
       }
+
       name = name.replace(/\\/g, '');
-      if (BUGGY_GEBN) {
+      if (BUGGY_GEBN_MATCH_ID) {
         var element, results = [ ], i = -1,
-         elements = (from || doc).getElementsByName(name);
+         elements = (from && (from.ownerDocument || from) || doc).getElementsByName(name);
+
+        // fix for nodeLists containing an element with id="length"
+        // assumed browsers must be BUGGY_GEBN_MATCH_ID to be BUGGY_GEBN_WITH_ID_LENGTH
+        if (BUGGY_GEBN_WITH_ID_LENGTH && elements.length.nodeType) {
+          return select(' *[name="' + name + '"]', from || doc);
+        }
+
         while ((element = elements[++i])) {
           if (element.getAttribute('name') == name) {
             results.push(element);
@@ -782,7 +803,7 @@
         return results;
       }
 
-      return (from || doc).getElementsByName(name);
+      return (from && (from.ownerDocument || from) || doc).getElementsByName(name);
     },
 
   // elements by tag
@@ -1727,24 +1748,25 @@
   global.NW || (global.NW = { });
 
   global.NW.Dom = {
-    // retrieve elements by class name
+    // get elements by class name
     'byClass': BUGGY_GEBCN ? byClass :
       function(className, from) {
         var elements = byClass(className, from);
         return elements.item ? concatList([ ], elements) : elements;
       },
 
-    // retrieve element by id attr
+    // get element by id attr
     'byId': byId,
 
-    // retrieve elements by name attr
-    'byName': BUGGY_GEBN ? byName :
+    // get elements by name attr
+    'byName': BUGGY_GEBN_MATCH_ID || BUGGY_GEBN_WITH_ID_LENGTH || BUGGY_GEBN_WITH_NON_INPUT ?
+      byName :
       function(name, from) {
         var elements = byName(name, from);
         return elements.item ? concatList([ ], elements) : elements;
       },
 
-    // retrieve elements by tag name
+    // get elements by tag name
     'byTag':
       function(tag, from) {
         var elements = byTag(tag, from);
