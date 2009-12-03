@@ -516,7 +516,7 @@
   Selectors = {
     // Each type of selector has an expression and callback.
     // The callback should return the modified source argument or
-    // an undefined/falsey value for invalid matches.
+    // an undefined/falsy value for invalid matches.
 
     // *** Attribute selector
     // [attr] [attr=value] [attr="value"] [attr='value'] and !=, *=, ~=, |=, ^=, $=
@@ -790,7 +790,11 @@
         function(match, source) {
           // document can contain conflicting elements (id/name)
           // prototype selector unit need this method to recover bad HTML forms
-          return 'if((x||e.submit?s.getAttribute(e,"id"):e.id)=="' + match[1] + '"){' + source + '}';
+          return 'if((x||e.submit?' +
+            (NATIVE_HAS_ATTRIBUTE ?
+              '(e.getAttribute("id")+"")' :
+              '(t=e.getAttributeNode("id"))&&(t.value+"")') +
+            ':e.id)=="' + match[1] + '"){' + source + '}';
         }
     },
 
@@ -802,8 +806,11 @@
         function(match, source) {
           // both tagName and nodeName properties may be upper or lower case
           // depending on their creation NAMESPACE in createElementNS()
-          return 'if((x&&e.nodeName.toUpperCase()||e.nodeName' + TO_UPPER_CASE + ')=="' +
-            match[1].toUpperCase() + '"){' + source + '}';
+          return 'if(' +
+            (TO_UPPER_CASE ?
+              'e.nodeName' + TO_UPPER_CASE :
+              '(x&&e.nodeName.toUpperCase()||e.nodeName)') +
+            '=="' + match[1].toUpperCase() + '"){' + source + '}';
         }
     },
 
@@ -911,8 +918,7 @@
       if (ATTRIBUTES_URI[attribute]) {
         return node.getAttribute(attribute, 2) + '';
       }
-      node = node.getAttributeNode(attribute);
-      return (node && node.value) + '';
+      return (node = node.getAttributeNode(attribute)) ? node.value + '' : '';
     },
 
   // attribute presence
@@ -1081,6 +1087,7 @@
   ELEMENTS_ONLY_AND = BUGGY_GEBTN ? ELEMENTS_ONLY + '&&' : '',
 
   AND_ELEMENTS_ONLY = BUGGY_GEBTN ? '&&' + ELEMENTS_ONLY : '',
+
 
   // Use the textContent or innerText property to check CSS3 :contains
   // Safari 2 has a bug with innerText and hidden content, using an

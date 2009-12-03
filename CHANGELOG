@@ -1,3 +1,5 @@
+* Tweak compiled id/tag selector code and ensure s.getAttribute() returns an empty string when getAttributeNode() is null. [jddalton]
+
 * Remove registerSelector()/registerOperator() API and expose NW.Dom.Selectors/NW.Dom.Operators allowing developers to overwrite the default selectors with custom ones. [jddalton]
 
 * Ensure select()/match() return an empty array/false for unsupported/invalid selectors. [jddalton]
