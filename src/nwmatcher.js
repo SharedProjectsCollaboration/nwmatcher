@@ -130,7 +130,7 @@
     function(type) {
       try {
         return createElement('<input type="' + type + '">');
-      } catch(e) {
+      } catch (e) {
         var input = createElement('input');
         input.type = type;
         return input;
@@ -369,19 +369,11 @@
 
   BUGGY_GEBN_MATCH_ID = true,
 
-  BUGGY_GEBN_WITH_ID_LENGTH = true,
-
-  BUGGY_GEBN_WITH_NON_INPUT = true,
-
   BUGGY_GEBID =
     (function() {
-      // <p id="x"></p><p name="y"></p><input name="z">
-      var uid = String(+new Date), x = 'x' + uid, y = 'y' + uid, z = 'z' + uid;
-      clearElement(div).appendChild(createElement('p')).id = x;
-      div.appendChild(createElement('p')).setAttribute('name', y);
-      div.appendChild(createInput('text')).setAttribute('name', z);
-      div.lastChild.id = 'length';
-
+      // <a id="x"></p><a name="y"></p><input name="z">
+      var x = 'x' + String(+new Date);
+      clearElement(div).appendChild(createElement('a')).id = x;
       root.insertBefore(div, root.firstChild);
 
       isBuggy = !NATIVE_GEBID || !doc.getElementById(x);
@@ -392,10 +384,6 @@
         // present the bug before the document has finished loading
         BUGGY_GEBN_MATCH_ID = !!doc.getElementsByName(x)[0];
         if (!isBuggy) isBuggy = BUGGY_GEBN_MATCH_ID;
-
-        BUGGY_GEBN_WITH_ID_LENGTH = !!doc.getElementsByName(z).length.nodeType;
-
-        BUGGY_GEBN_WITH_NON_INPUT = !doc.getElementsByName(y)[0];
       }
 
       root.removeChild(div);
@@ -437,9 +425,8 @@
   // matches simple id, tagname & classname selectors
   RE_SIMPLE_SELECTOR = new RegExp('^(?:' +
     (BUGGY_GEBTN ? ''  : '\\*|') +
-    (BUGGY_GEBCN ? '#' : '[.#]') +
-    (BUGGY_GEBTN ? ''  : '?')    + strIdentifier +
-    (BUGGY_GEBN_WITH_NON_INPUT ? '' : '|\\*?' + strNameAttr) +
+    (BUGGY_GEBCN ? '#' : '[.#]') + '?' +
+    strIdentifier + '|\\*?' + strNameAttr +
   ')$'),
 
   /*----------------------------- LOOKUP OBJECTS -----------------------------*/
@@ -964,7 +951,7 @@
       }
       if (BUGGY_GEBCN) {
         var element, i = -1, j = i, results = [ ],
-         elements = byTag('*', from),
+         elements = (from || doc).getElementsByTagName('*'),
          n = isQuirks ? className.toLowerCase() : className;
 
         className = ' ' + n.replace(/\\/g, '') + ' ';
@@ -985,28 +972,34 @@
   // @return element reference or null
   byId =
     function(id, from) {
+      if (notHTML) {
+        // prefix a <space> so it isn't caught by RE_SIMPLE_SELECTOR
+        return client_api(' *[id="' + id + '"]', from || doc)[0];
+      }
+
       var element, elements, node, i = -1;
       from || (from = doc);
       id = id.replace(/\\/g, '');
 
-      if (!notHTML && from.getElementById) {
-        if ((element = from.getElementById(id)) && BUGGY_GEBID &&
-            id != getAttribute(element, 'id')) {
+      if (!from.getElementById) {
+        elements = from.getElementsByTagName('*');
+      }
+      else if ((element = from.getElementById(id)) && BUGGY_GEBID) {
+        if (element.id != id) {
           elements = from.getElementsByName(id);
-          while ((element = elements[++i])) {
-            if (element.getAttribute('id') == id) {
-              return element;
-            }
-          }
-          return null;
+        } else {
+          return element;
         }
+      } else {
         return element;
       }
 
-      // fallback to manual
-      elements = byTag('*', from);
       while ((element = elements[++i])) {
-        if (element.getAttribute('id') == id) {
+        if (element.submit) {
+          if ((node = element.getAttributeNode('id')) && node.value == id) {
+            return element;
+          }
+        } else if (element.id == id) {
           return element;
         }
       }
@@ -1019,23 +1012,27 @@
   byName =
     function(name, from) {
       if (notHTML) {
-        // prefix a <space> so it isn't caught by RE_SIMPLE_SELECTOR
         return client_api(' *[name="' + name + '"]', from || doc);
       }
 
       name = name.replace(/\\/g, '');
       if (BUGGY_GEBN_MATCH_ID) {
-        var element, results = [ ], i = -1,
-         elements = (from && (from.ownerDocument || from) || doc).getElementsByName(name);
+        from || (from = doc);
+        var element, node, results = [ ], i = -1,
+         elements = (from.ownerDocument || from).getElementsByName(name),
+         length = elements.length;
 
-        // fix for nodeLists containing an element with id="length"
-        // assumed browsers must be BUGGY_GEBN_MATCH_ID to be BUGGY_GEBN_WITH_ID_LENGTH
-        if (BUGGY_GEBN_WITH_ID_LENGTH && elements.length.nodeType) {
-          return client_api(' *[name="' + name + '"]', from || doc);
+        // use gEBTN if result of gEBN contains an element with
+        // id="length" because it will produce incorrect results
+        if (!length || length.nodeType) {
+          elements = from.getElementsByTagName('*');
         }
-
         while ((element = elements[++i])) {
-          if (element.getAttribute('name') == name) {
+          if (element.submit) {
+            if ((node = element.getAttributeNode('name')) && node.value == name) {
+              results.push(element);
+            }
+          } else if (element.name == name) {
             results.push(element);
           }
         }
@@ -1051,7 +1048,7 @@
   byTag =
     function(tag, from) {
       // support document fragments
-      if (from && typeof from.getElementsByTagName == 'undefined') {
+      if (notHTML && typeof from.getElementsByTagName == 'undefined') {
         var child, isUniversal, upperCased, results = [ ];
         if ((child = from.firstChild)) {
           isUniversal = tag === '*';
@@ -1258,7 +1255,6 @@
           break;
 
         case '[':
-          // only ran if not BUGGY_GEBN_WITH_NON_INPUT
           data = byName(selector.match(reNameValue)[2], from);
           break;
 
@@ -1446,7 +1442,7 @@
               selector = selector.replace('#' + token, '*');
               from = element;
             } else from = element.parentNode;
-            elements = byTag('*', from);
+            elements = from.getElementsByTagName('*');
           }
           else elements = 1;
         }
@@ -1461,9 +1457,7 @@
 
         // NAME optimization RTL
         else if ((parts = lastSlice.match(Optimize.name)) && (token = parts[1])) {
-          if ((!BUGGY_GEBN_WITH_NON_INPUT || (BUGGY_GEBN_WITH_NON_INPUT &&
-              lastSlice.slice(lastIndex - 5, lastIndex).toLowerCase() === 'input')) &&
-              (elements = byName(token.match(reNameValue)[2], from)).length) {
+          if ((elements = byName(token.match(reNameValue)[2], from)).length) {
             selector = selector.slice(0, lastIndex) +
               selector.slice(lastIndex).replace(token, '');
           }
@@ -1471,7 +1465,7 @@
 
         // TAG optimization RTL
         else if ((parts = lastSlice.match(Optimize.tagName)) && (token = parts[1])) {
-          if ((elements = byTag(token, from)).length) {
+          if ((elements = from.getElementsByTagName(token)).length) {
             selector = selector.slice(0, lastIndex) +
               selector.slice(lastIndex).replace(token, '*');
           }
@@ -1722,10 +1716,7 @@
     'byId': byId,
 
     // get elements by name attr
-    'byName': BUGGY_GEBN_WITH_NON_INPUT ?
-      function(name, from) {
-        return client_api(' *[name="' + name + '"]', from);
-      } :
+    'byName': BUGGY_GEBN_MATCH_ID ? byName :
       function(name, from) {
         return concatList([ ], byName(name, from));
       },

@@ -1,3 +1,5 @@
+* Tweak byId(), avoid byTag() when possible, fix minor `RE_SIMPLE_SELECTOR` regression, and simplify gEBN bug checks. [jddalton]
+
 * Remove `this` dependency from setQSA() and rename `RE_BUGGY_QSAPI` to `RE_BUGGY_QSA`. [Diego Perini, jddalton]
 
 * Add support for performing selectors on document fragments by treating them as `notHTML`. [jddalton]
