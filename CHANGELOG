@@ -1,3 +1,5 @@
+* Remove `this` dependency from setQSA() and rename `RE_BUGGY_QSAPI` to `RE_BUGGY_QSA`. [Diego Perini, jddalton]
+
 * Add support for performing selectors on document fragments by treating them as `notHTML`. [jddalton]
 
 * Tweak compiled id/tag selector code and ensure s.getAttribute() returns an empty string when getAttributeNode() is null. [jddalton]

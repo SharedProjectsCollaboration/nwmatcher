@@ -248,7 +248,7 @@
   RE_BUGGY_MUTATION = testTrue,
 
   // check Seletor API implementations
-  RE_BUGGY_QSAPI = NATIVE_QSA ?
+  RE_BUGGY_QSA = NATIVE_QSA ?
     (function() {
       var pattern = [ ];
 
@@ -825,8 +825,8 @@
           // list of whitespace-separated values, see section 6.4 Class selectors
           // and notes at the bottom; explicitly non-normative in this specification.
           return (
-            't = x ? s.getAttribute(e,"class") : e.className;' +
-            'if(t && (" "+t+" ")' +
+            't=x?s.getAttribute(e,"class") : e.className;' +
+            'if(t&&(" "+t+" ")' +
             (isQuirks ? '.toLowerCase()' : '') +
             '.replace(/' + strEdgeSpace + '/g," ").indexOf(" ' +
             (isQuirks ? match[1].toLowerCase() : match[1]) +
@@ -1295,7 +1295,7 @@
         return select_simple(selector, from, callback);
       }
       if (!compiledSelectors[selector] &&
-          !notHTML && !RE_BUGGY_QSAPI.test(selector) &&
+          !notHTML && !RE_BUGGY_QSA.test(selector) &&
           (!from || QSA_NODE_TYPES[from.nodeType])) {
         try {
           elements = (from || doc).querySelectorAll(selector);
@@ -1549,11 +1549,20 @@
   // false = disable QSA
   // true = enable QSA
   setQSA =
-    function(enable) {
-      this.select = enable && NATIVE_QSA
-        ? select_qsa
-        : client_api;
-    },
+    (function() {
+      var backup;
+      return function(enable) {
+        if (enable && backup) {
+          // clear any compiled selectors created
+          compiledSelectors = { };
+          RE_BUGGY_QSA = backup;
+        }
+        else if (!enable && RE_BUGGY_QSA != testTrue) {
+          backup = RE_BUGGY_QSA;
+          RE_BUGGY_QSA = testTrue;
+        }
+      };
+    })(),
 
   /*-------------------------------- CACHING ---------------------------------*/
 
