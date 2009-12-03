@@ -1057,11 +1057,13 @@
           isUniversal = tag === '*';
           upperCased = tag.toUpperCase();
           do {
-            if (isUniversal || child.nodeName.toUpperCase() === upperCased) {
-              results.push(child);
-            }
-            if (child.getElementsByTagName) {
-              results = concatList(results, child.getElementsByTagName(tag));
+            if (child.nodeType == 1) {
+              if (isUniversal || child.nodeName.toUpperCase() === upperCased) {
+                results.push(child);
+              }
+              if (child.getElementsByTagName) {
+                results = concatList(results, child.getElementsByTagName(tag));
+              }
             }
           } while ((child = child.nextSibling));
         }
@@ -1202,7 +1204,7 @@
       from || (from = doc);
       if (lastContext != from) {
         root = doc.documentElement;
-        notHTML = !('body' in doc) || !('innerHTML' in root);
+        notHTML = !('body' in doc) || !('innerHTML' in root) || from.nodeType == 11;
         lastContext = from;
       }
 
@@ -1285,7 +1287,7 @@
       if (lastContext != (from || doc)) {
         from || (from = doc);
         root = (doc = from.ownerDocument || from).documentElement;
-        notHTML = !('body' in doc) || !('innerHTML' in root);
+        notHTML = !('body' in doc) || !('innerHTML' in root) || from.nodeType == 11;
         lastContext = from;
       }
 
@@ -1339,7 +1341,7 @@
         // reference context ownerDocument and document root (HTML)
         root = (doc = from.ownerDocument || from).documentElement;
         // check if context is not (X)HTML
-        notHTML = !('body' in doc) || !('innerHTML' in root);
+        notHTML = !('body' in doc) || !('innerHTML' in root)  || from.nodeType == 11;
         // save passed context
         lastContext = from;
       }

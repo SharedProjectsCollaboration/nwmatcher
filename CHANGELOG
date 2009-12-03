@@ -1,3 +1,5 @@
+* Add support for performing selectors on document fragments by treating them as `notHTML`. [jddalton]
+
 * Tweak compiled id/tag selector code and ensure s.getAttribute() returns an empty string when getAttributeNode() is null. [jddalton]
 
 * Remove registerSelector()/registerOperator() API and expose NW.Dom.Selectors/NW.Dom.Operators allowing developers to overwrite the default selectors with custom ones. [jddalton]
