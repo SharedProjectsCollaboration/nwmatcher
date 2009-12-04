@@ -19,21 +19,17 @@
 
   var version = 'nwmatcher-1.2.0',
 
+  // temporary vars
+  isSupported, isBuggy,
+
+  // persist last selector parsing data
+  div, hostId, k, lastCalled, lastContext, lastIndex, lastSelector, lastSlice, notHTML, unlikeHost,
+
   // processing context
   doc = global.document,
 
   // context root element (HTML)
   root = doc.documentElement,
-
-  // temporary vars
-  isSupported, isBuggy, k, div = doc.createElement('DiV'),
-
-  // persist last selector parsing data
-  lastCalled, lastIndex, lastSelector, lastSlice,
-
-  lastContext = doc,
-
-  notHTML = !('body' in doc) || !('innerHTML' in root),
 
   // used in the RE_BUGGY_XXXXX regexp testers
   testFalse = { 'test': function() { return false; } },
@@ -94,7 +90,7 @@
   reSplitGroup = new RegExp('(?:' + strGroups + '|(?!,)[^\\\\]|\\\\.)+', 'g'),
 
   // split last, right most, selector group token
-  reLastToken = new RegExp('(?:(?:' + strGroups + '|(?![ >+~,()[\\]])[^\\\\]|\\\\.)+|[>+~])$');
+  reLastToken = new RegExp('(?:(?:' + strGroups + '|(?![ >+~,()[\\]])[^\\\\]|\\\\.)+|[>+~])$'),
 
   // simple check to ensure the first character of a selector is valid
   // http://www.w3.org/TR/css3-syntax/#characters
@@ -110,6 +106,115 @@
   reMultiSpacesWithQuotes    = new RegExp('(' + strMultiSpace + ')|' + strSkipQuotes, 'g'),
   reLeadingSpacesWithQuotes  = new RegExp(strLeadingSpace  + '|' + strSkipQuotes, 'g'),
   reTrailingSpacesWithQuotes = new RegExp(strTrailingSpace + '|' + strSkipQuotes, 'g'),
+
+  /*----------------------------- LOOKUP OBJECTS -----------------------------*/
+
+  LINK_NODES = { 'a': 1, 'A': 1, 'area': 1, 'AREA': 1, 'link': 1, 'LINK': 1 },
+
+  QSA_NODE_TYPES = { '9': 1, '11': 1 },
+
+  // attribute referencing URI values need special treatment in IE
+  ATTRIBUTES_URI = {
+    'action': 2, 'cite': 2, 'codebase': 2, 'data': 2, 'href': 2,
+    'longdesc': 2, 'lowsrc': 2, 'src': 2, 'usemap': 2
+  },
+
+  // HTML 5 draft specifications
+  // http://www.whatwg.org/specs/web-apps/current-work/#selectors
+  HTML_TABLE = {
+    // initialized by default to Standard Mode (case-sensitive),
+    // it will be set dynamically by getAttributeCaseMap
+    'class': 0,
+    'accept': 1, 'accept-charset': 1, 'align': 1, 'alink': 1, 'axis': 1,
+    'bgcolor': 1, 'charset': 1, 'checked': 1, 'clear': 1, 'codetype': 1, 'color': 1,
+    'compact': 1, 'declare': 1, 'defer': 1, 'dir': 1, 'direction': 1, 'disabled': 1,
+    'enctype': 1, 'face': 1, 'frame': 1, 'hreflang': 1, 'http-equiv': 1, 'lang': 1,
+    'language': 1, 'link': 1, 'media': 1, 'method': 1, 'multiple': 1, 'nohref': 1,
+    'noresize': 1, 'noshade': 1, 'nowrap': 1, 'readonly': 1, 'rel': 1, 'rev': 1,
+    'rules': 1, 'scope': 1, 'scrolling': 1, 'selected': 1, 'shape': 1, 'target': 1,
+    'text': 1, 'type': 1, 'valign': 1, 'valuetype': 1, 'vlink': 1
+  },
+
+  // The following attributes must be treated case insensitive in XHTML
+  // See Niels Leenheer blog
+  // http://rakaz.nl/item/css_selector_bugs_case_sensitivity
+  XHTML_TABLE = {
+    'accept': 1, 'accept-charset': 1, 'alink': 1, 'axis': 1,
+    'bgcolor': 1, 'charset': 1, 'codetype': 1, 'color': 1,
+    'enctype': 1, 'face': 1, 'hreflang': 1, 'http-equiv': 1,
+    'lang': 1, 'language': 1, 'link': 1, 'media': 1, 'rel': 1,
+    'rev': 1, 'target': 1, 'text': 1, 'type': 1, 'vlink': 1
+  },
+
+  /*--------------------------- INITAILIZE CONTEXT ---------------------------*/
+
+  // attribute case-insensitivity map for (X)HTML
+  INSENSITIVE_TABLE,
+
+  // boolean if current `doc` is in quirks mode
+  IS_QUIRKS,
+
+  // checks if nodeName comparisons need to be upperCased
+  TO_UPPER_CASE,
+
+  // Safari 2 missing document.compatMode property
+  // makes it harder to detect Quirks vs. Strict
+  isQuirks = doc.compatMode ?
+    function() {
+      return doc.compatMode === 'BackCompat';
+    } :
+    function() {
+      return div.style && (div.style.width = 1) && (div.style.width == '1px');
+    },
+
+  // change persisted private vars depending on context
+  changeContext =
+    (function() {
+      function changeContext(from) {
+        from || (from = doc);
+        var sensitive, isFrag = from.nodeType == 11;
+
+        // reference context ownerDocument and document root (HTML)
+        root = (doc = from.ownerDocument || from).documentElement;
+
+        // check if context is not (X)HTML
+        notHTML = !('body' in doc) || !('innerHTML' in root)  || isFrag;
+
+        // save passed context
+        lastContext = from;
+
+        // create dummy div used in feature tests
+        div = doc.createElement('DiV');
+
+        // detect if nodeName is case sensitive (xhtml, xml, svg)
+        sensitive = div.nodeName === 'DiV';
+
+        // set compiler variables
+        IS_QUIRKS = (!notHTML || isFrag) && isQuirks();
+
+        HTML_TABLE['class'] = IS_QUIRKS ? 1 : 0;
+
+        INSENSITIVE_TABLE = sensitive ? XHTML_TABLE : HTML_TABLE;
+
+        TO_UPPER_CASE = sensitive || typeof doc.createElementNS == 'function' ?
+          '.toUpperCase()' : '';
+
+        // check if new context is similar to host context
+        unlikeHost = hostId !=
+          ((IS_QUIRKS ? 'q' : '') + (notHTML ? 'n' : '') + (sensitive ? 's' : ''));
+
+        return from;
+      }
+
+      // init
+      changeContext();
+
+      // persist host feature id
+      unlikeHost = false;
+      hostId = ((IS_QUIRKS ? 'q' : '') + (notHTML ? 'n' : '') + (div.nodeName === 'DiV' ? 's' : ''));
+
+      return changeContext;
+    })(),
 
   /*----------------------------- UTILITY METHODS ----------------------------*/
 
@@ -224,16 +329,6 @@
     };
   })(),
 
-  // Safari 2 missing document.compatMode property
-  // makes it harder to detect Quirks vs. Strict
-  isQuirks = doc.compatMode ?
-    doc.compatMode === 'BackCompat' :
-    (function() {
-      return div.style && (div.style.width = 1) &&
-        div.style.width == '1px';
-    })(),
-
-
   // NOTE: NATIVE_XXXXX check for existance of method only
   // so through the code read it as "supported", maybe BUGGY
 
@@ -269,7 +364,7 @@
 
       div.appendChild(createElement('p')).className = 'xxx';
 
-      if (isQuirks &&
+      if (IS_QUIRKS &&
          (div.querySelectorAll('[class~=xxx]').length != 2 ||
           div.querySelectorAll('.xXx').length != 2)) {
         pattern.push('(?:\\[[\\x20\\t\\n\\r\\f]*class\\b|\\.' + strIdentifier + ')');
@@ -429,46 +524,7 @@
     strIdentifier + '|\\*?' + strNameAttr +
   ')$'),
 
-  /*----------------------------- LOOKUP OBJECTS -----------------------------*/
-
-  LINK_NODES = { 'a': 1, 'A': 1, 'area': 1, 'AREA': 1, 'link': 1, 'LINK': 1 },
-
-  QSA_NODE_TYPES = { '9': 1, '11': 1 },
-
-  // attribute referencing URI values need special treatment in IE
-  ATTRIBUTES_URI = {
-    'action': 2, 'cite': 2, 'codebase': 2, 'data': 2, 'href': 2,
-    'longdesc': 2, 'lowsrc': 2, 'src': 2, 'usemap': 2
-  },
-
-  // HTML 5 draft specifications
-  // http://www.whatwg.org/specs/web-apps/current-work/#selectors
-  HTML_TABLE = {
-    // class attribute must be treated case-insensitive in HTML quirks mode
-    'class': isQuirks ? 1 : 0,
-    'accept': 1, 'accept-charset': 1, 'align': 1, 'alink': 1, 'axis': 1,
-    'bgcolor': 1, 'charset': 1, 'checked': 1, 'clear': 1, 'codetype': 1, 'color': 1,
-    'compact': 1, 'declare': 1, 'defer': 1, 'dir': 1, 'direction': 1, 'disabled': 1,
-    'enctype': 1, 'face': 1, 'frame': 1, 'hreflang': 1, 'http-equiv': 1, 'lang': 1,
-    'language': 1, 'link': 1, 'media': 1, 'method': 1, 'multiple': 1, 'nohref': 1,
-    'noresize': 1, 'noshade': 1, 'nowrap': 1, 'readonly': 1, 'rel': 1, 'rev': 1,
-    'rules': 1, 'scope': 1, 'scrolling': 1, 'selected': 1, 'shape': 1, 'target': 1,
-    'text': 1, 'type': 1, 'valign': 1, 'valuetype': 1, 'vlink': 1
-  },
-
-  // The following attributes must be treated case insensitive in XHTML
-  // See Niels Leenheer blog
-  // http://rakaz.nl/item/css_selector_bugs_case_sensitivity
-  XHTML_TABLE = {
-    'accept': 1, 'accept-charset': 1, 'alink': 1, 'axis': 1,
-    'bgcolor': 1, 'charset': 1, 'codetype': 1, 'color': 1,
-    'enctype': 1, 'face': 1, 'hreflang': 1, 'http-equiv': 1,
-    'lang': 1, 'language': 1, 'link': 1, 'media': 1, 'rel': 1,
-    'rev': 1, 'target': 1, 'text': 1, 'type': 1, 'vlink': 1
-  },
-
-  INSENSITIVE_TABLE = div.nodeName === 'DiV' ?
-    XHTML_TABLE : HTML_TABLE,
+  /*------------------------------- SELECTORS --------------------------------*/
 
   // attribute operators
   Operators = {
@@ -482,7 +538,7 @@
     // sensitivity handled by compiler
     // NOTE: working alternative
     // '|=': "/%m-/i.test(n+'-')",
-    '|=': "(n+'-').indexOf('%m-')==0",
+    '|=': "(n+'-').lastIndexOf('%m-',0)==0",
     '~=': "(' '+n+' ').indexOf(' %m ')>-1",
 
     // precompile in '%m' string length to optimize
@@ -656,7 +712,8 @@
 
             /* CSS3 target pseudo-class */
             case 'target':
-              return 'if(e.id=="' + global.location.hash + '"&&e.href!=void 0){' + source + '}';
+              // doc.location is *not* technically standard, but it might as well be.
+              return 'if(e.id=="' + (doc.location ? doc.location.hash : '') + '"&&e.href!=void 0){' + source + '}';
 
             /* CSS3 dynamic pseudo-classes */
             case 'link':
@@ -669,15 +726,15 @@
             // IE & FF3 have native support
             // these capabilities may be emulated by some event managers
             case 'active':
-              return 'if(e===d.activeElement){' + source + '}';
+              return !notHTML && 'if(e===d.activeElement){' + source + '}';
 
             case 'hover':
-              return 'if(e===d.hoverElement){' + source + '}';
+              return !notHTML && 'if(e===d.hoverElement){' + source + '}';
 
             case 'focus':
-              return NATIVE_HAS_FOCUS ?
+              return !notHTML && (NATIVE_HAS_FOCUS ?
                 'if(e===d.activeElement&&d.hasFocus()){' + source + '}' :
-                'if(e===d.activeElement){' + source + '}';
+                'if(e===d.activeElement){' + source + '}');
 
             /* CSS2 :contains and :selected pseudo-classes */
             // not currently part of CSS3 drafts
@@ -777,11 +834,9 @@
         function(match, source) {
           // document can contain conflicting elements (id/name)
           // prototype selector unit need this method to recover bad HTML forms
-          return 'if((x||e.submit?' +
-            (NATIVE_HAS_ATTRIBUTE ?
-              '(e.getAttribute("id")+"")' :
-              '(t=e.getAttributeNode("id"))&&(t.value+"")') +
-            ':e.id)=="' + match[1] + '"){' + source + '}';
+          return notHTML
+            ? 'if(s.getAttribute(e, "id")=="' + match[1] + '"){' + source + '}'
+            : 'if((e.submit?s.getAttribute(e, "id"):e.id)=="' + match[1] + '"){' + source + '}';
         }
     },
 
@@ -793,11 +848,8 @@
         function(match, source) {
           // both tagName and nodeName properties may be upper or lower case
           // depending on their creation NAMESPACE in createElementNS()
-          return 'if(' +
-            (TO_UPPER_CASE ?
-              'e.nodeName' + TO_UPPER_CASE :
-              '(x&&e.nodeName.toUpperCase()||e.nodeName)') +
-            '=="' + match[1].toUpperCase() + '"){' + source + '}';
+          return 'if(e.nodeName' + TO_UPPER_CASE + '=="' +
+            match[1].toUpperCase() + '"){' + source + '}';
         }
     },
 
@@ -812,11 +864,11 @@
           // list of whitespace-separated values, see section 6.4 Class selectors
           // and notes at the bottom; explicitly non-normative in this specification.
           return (
-            't=x?s.getAttribute(e,"class") : e.className;' +
-            'if(t&&(" "+t+" ")' +
-            (isQuirks ? '.toLowerCase()' : '') +
+            't=' + (notHTML ? 's.getAttribute(e,"class")' : 'e.className') +
+            ';if(t&&(" "+t+" ")' +
+            (IS_QUIRKS ? '.toLowerCase()' : '') +
             '.replace(/' + strEdgeSpace + '/g," ").indexOf(" ' +
-            (isQuirks ? match[1].toLowerCase() : match[1]) +
+            (IS_QUIRKS ? match[1].toLowerCase() : match[1]) +
             ' ")>-1){' + source + '}');
         }
     }
@@ -952,12 +1004,12 @@
       if (BUGGY_GEBCN) {
         var element, i = -1, j = i, results = [ ],
          elements = (from || doc).getElementsByTagName('*'),
-         n = isQuirks ? className.toLowerCase() : className;
+         n = IS_QUIRKS ? className.toLowerCase() : className;
 
         className = ' ' + n.replace(/\\/g, '') + ' ';
         while ((element = elements[++i])) {
           if ((n = element.className) &&
-              (' ' + (isQuirks ? n.toLowerCase() : n) + ' ')
+              (' ' + (IS_QUIRKS ? n.toLowerCase() : n) + ' ')
               .replace(reEdgeSpaces, ' ').indexOf(className) > -1) {
             results[++j] = element;
           }
@@ -1075,10 +1127,7 @@
   // a common chunk of code used a couple times in compiled functions
   ACCEPT_NODE = 'f&&f(N);r[r.length]=N;continue main;',
 
-  // conditionals optimizers for the compiler
-
-  // checks if nodeName comparisons need to be upperCased
-  TO_UPPER_CASE = typeof doc.createElementNS == 'function' ? '.toUpperCase()' : '',
+  /* static compiler variables */
 
   // filter IE gEBTN('*') results containing non-elements like comments and `/video`
   ELEMENTS_ONLY = BUGGY_GEBTN ? 'e.nodeName.charCodeAt(0)>64' : 'e',
@@ -1128,14 +1177,14 @@
 
       // for select method
       if (mode) {
-        // (c-ollection, s-napshot, d-ocument, h-root, g-from, f-callback, x-notHTML)
-        return new Function('c,s,d,h,g,f,x',
+        // (c-ollection, s-napshot, d-ocument, h-root, g-from, f-callback)
+        return new Function('c,s,d,h,g,f',
           'var e,n,N,t,i=-1,j=-1,r=[];main:while(N=e=c[++i]){' + source + '}return r;');
       }
       // for match method
       else {
-        // (e-element, s-napshot, d-ocument, h-root, g-from, f-callback, x-notHTML)
-        return new Function('e,s,d,h,g,f,x',
+        // (e-element, s-napshot, d-ocument, h-root, g-from, f-callback)
+        return new Function('e,s,d,h,g,f',
           'var n,t,N=e;' + source + 'return false;');
       }
     },
@@ -1145,7 +1194,7 @@
   compileSingle =
     function(selector) {
       var source = compileSelector(selector, ACCEPT_NODE, true);
-      return new Function('c,s,d,h,g,f,x',
+      return new Function('c,s,d,h,g,f',
         'var e,n,N,t,i=-1,j=-1,r=[];main:while(N=e=c[++i]){' + source + '}return r;');
     },
 
@@ -1196,13 +1245,12 @@
       // make sure an element node was passed
       var compiled, origSelector = selector;
       doc = element.ownerDocument;
-      if (!doc && (doc = element)) return false;
 
-      from || (from = doc);
+      if (!doc && (doc = element)) {
+        return false;
+      }
       if (lastContext != from) {
-        root = doc.documentElement;
-        notHTML = !('body' in doc) || !('innerHTML' in root) || from.nodeType == 11;
-        lastContext = from;
+        from = changeContext(from);
       }
 
       if (!(compiled = compiledMatchers[origSelector])) {
@@ -1211,8 +1259,12 @@
           if (reUnnormalized.test(selector))
             selector = normalize(selector);
 
-          // save compiled matchers
-          if (!(compiled = compiledMatchers[selector])) {
+          // only save compiled matchers for contexts
+          // that are the same type of document as the host
+          // (new context xhtml B is like host xhtml A)
+          if (unlikeHost) {
+            compiled = compileGroup(selector, '', false);
+          } else if (!(compiled = compiledMatchers[selector])) {
             compiled =
             compiledMatchers[selector] =
             compiledMatchers[origSelector] = compileGroup(selector, '', false);
@@ -1230,7 +1282,7 @@
       childIndexes = { };
       childIndexesByTag = { };
 
-      return compiled(element, snap, doc, root, from, callback, notHTML);
+      return compiled(element, snap, doc, root, from, callback);
     },
 
   // select elements matching simple
@@ -1267,11 +1319,11 @@
           }
       }
 
-      if (data.item) {
-        return callback ? concatCall([ ], data, callback) : concatList([ ], data);
+      if (data.push) {
+        callback && forEachCall(data, callback);
+        return data;
       }
-      callback && forEachCall(data, callback);
-      return data;
+      return callback ? concatCall([ ], data, callback) : concatList([ ], data);
     },
 
   // select elements matching selector
@@ -1281,10 +1333,7 @@
     function (selector, from, callback) {
       var element, elements;
       if (lastContext != (from || doc)) {
-        from || (from = doc);
-        root = (doc = from.ownerDocument || from).documentElement;
-        notHTML = !('body' in doc) || !('innerHTML' in root) || from.nodeType == 11;
-        lastContext = from;
+        from = changeContext(from);
       }
 
       if (RE_SIMPLE_SELECTOR.test(selector)) {
@@ -1333,13 +1382,7 @@
       // extract context if changed
       // avoid setting `from` before calling select_simple()
       if (lastContext != (from || doc)) {
-        from || (from = doc);
-        // reference context ownerDocument and document root (HTML)
-        root = (doc = from.ownerDocument || from).documentElement;
-        // check if context is not (X)HTML
-        notHTML = !('body' in doc) || !('innerHTML' in root)  || from.nodeType == 11;
-        // save passed context
-        lastContext = from;
+        from = changeContext(from);
       }
 
       if (RE_SIMPLE_SELECTOR.test(selector)) {
@@ -1494,8 +1537,10 @@
       childIndexes = { };
       childIndexesByTag = { };
 
-      // save compiled selectors
-      if ((compiled = compiledSelectors[normSelector])) {
+      // only save if context is similar to host
+      if (unlikeHost) {
+        compiled = compileGroup(selector, '', true);
+      } else if ((compiled = compiledSelectors[normSelector])) {
         compiledSelectors[origSelector] = compiled;
       } else {
         compiled =
@@ -1505,7 +1550,7 @@
           : compileGroup(selector, '', true);
       }
 
-      data = compiled(elements, snap, doc, root, from, callback, notHTML);
+      data = compiled(elements, snap, doc, root, from, callback);
 
       if (isCacheable) {
         // a cached result set for the requested selector
@@ -1690,7 +1735,7 @@
   snap = new Snapshot;
 
   // clear temp variables
-  div = isSupported = isBuggy = null;
+  isSupported = isBuggy = null;
 
   /*------------------------------- PUBLIC API -------------------------------*/
 
