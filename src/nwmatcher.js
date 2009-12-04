@@ -762,7 +762,7 @@
           if (match[0] == origSelector) {
             source = 'if(e===g){' + source + '}';
           }
-          return 'if(e!==g&&(e=e.parentNode)&&e.nodeType==1){' + source + '}';
+          return 'if(e!==g&&e!==h&&(e=e.parentNode)){' + source + '}';
         }
     },
 
@@ -811,7 +811,7 @@
       'expression': /^\x20(.*)/,
       'callback':
         function(match, source) {
-          return 'while(e!==g&&(e=e.parentNode)&&e.nodeType==1){' + source + '}';
+          return 'while(e!==g&&e!==h&&(e=e.parentNode)){' + source + '}';
         }
     },
 

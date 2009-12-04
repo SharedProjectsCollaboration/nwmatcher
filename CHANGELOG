@@ -1,3 +1,5 @@
+* Tweak compiled source for ancestor and child combinators. [Diego Perini, jddalton]
+
 * Make compileSelector() compile context specific functions, but only cache those from contexts that match the host document type. [Diego Perini, jddalton]
 
 * Tweak byId(), avoid byTag() when possible, fix minor `RE_SIMPLE_SELECTOR` regression, and simplify gEBN bug checks. [jddalton]
