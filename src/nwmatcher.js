@@ -1348,7 +1348,7 @@
               return [ element ];
 
             default:
-              callback ?
+              return callback ?
                 concatCall([ ], elements, callback) :
                 (NATIVE_SLICE_PROTO ? slice.call(elements, 0) : concatList([ ], elements));
           }
