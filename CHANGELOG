@@ -1,3 +1,5 @@
+* Escape quotes when compiling attribute, `:not`, and `:contains` selectors. [jddalton]
+
 * Standardize variable names with prefixes:
   `ctx` for context vars, `str` for string, `re` for regexps, `cpl` for compiler constants, `test` for simulated regexp tests, and `cache`. [jddalton]
 

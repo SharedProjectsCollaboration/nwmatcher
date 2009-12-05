@@ -527,7 +527,7 @@
     // sensitivity handled by compiler
     // NOTE: working alternative
     // '|=': "/%m-/i.test(n+'-')",
-    '|=': "(n+'-').lastIndexOf('%m-',0)==0",
+    '|=': "(n+'-').indexOf('%m-')==0",
     '~=': "(' '+n+' ').indexOf(' %m ')>-1",
 
     // precompile in '%m' string length to optimize
@@ -551,16 +551,16 @@
         function(match, source) {
           // check case treatment from ctx_attrCaseTable
           if (match[2]) {
-            // xml namespaced attribute ?
-            var test, expr = match[1].split(':');
-            expr = expr.length == 2 ? expr[1] : expr[0];
-            test = ctx_attrCaseTable[expr.toLowerCase()];
+            // split by `:` to allow xml namespaced attributes
+            var test = ctx_attrCaseTable[match[1].split(':').pop().toLowerCase()],
+            // adjust case, remove backslashes, and escape double quotes
+            value = (test ? match[4].toLowerCase() : match[4]).replace(/\\/g, '').replace(/\x22/g, '\\"');
 
             return (
               'n=e.nodeType==1&&s.getAttribute(e,"' + match[1] + '")' +
                 (test ? '.toLowerCase()' : '') + '||"";' +
               'if(' +
-                Operators[match[2]].replace(/\%m/g, test ? match[4].toLowerCase() : match[4]) +
+                Operators[match[2]].replace(/\%m/g, value) +
               '){' + source + '}');
           }
           return 'if(e.nodeType==1&&s.hasAttribute(e,"' + match[1] + '")){' + source + '}';
@@ -668,13 +668,15 @@
       'expression': /^\:((?:active|checked|disabled|enabled|focus|hover|link|selected|target|visited)(?!\()|(?:contains|not)(?=\())(?:\((["']?)(.*?(?:\(.*\))?[^'"()]*?)\2\))?(.*)/,
       'callback':
         function(match, source, selector) {
+          // escape double quotes if not already
+          var value = match[3] && match[3].replace(/([^\\]?)\x22/g, '$1\\"');
+
           switch (match[1]) {
             /* CSS3 negation pseudo-class */
             case 'not':
-              // compile nested selectors, need to escape double quotes characters
-              // since the string we are inserting into already uses double quotes
+              // compile nested selectors
               return 'if(' + CPL_ELEMENTS_ONLY_AND +
-                '!s.match(e, "' + match[3].replace(/\x22/g, '\\"') + '")){' + source +'}';
+                '!s.match(e,"' + value + '")){' + source +'}';
 
             /* CSS3 UI element states */
             case 'checked':
@@ -700,7 +702,7 @@
               return 'if(s.isLink(e)&&!e.visited){' + source + '}';
 
             case 'visited':
-              return 'if(s.isLink(e)&&!!e.visited){' + source + '}';
+              return 'if(s.isLink(e)&&e.visited){' + source + '}';
 
             /* CSS3 user action pseudo-classes */
             // IE & FF3 have native support
@@ -719,7 +721,7 @@
             /* CSS2 :contains and :selected pseudo-classes */
             // not currently part of CSS3 drafts
             case 'contains':
-              return 'if(' + CPL_CONTAINS_TEXT + '.indexOf("' + match[3] + '")>-1){' + source + '}';
+              return 'if(' + CPL_CONTAINS_TEXT + '.indexOf("' + value + '")>-1){' + source + '}';
 
             case 'selected':
               // fix Safari selectedIndex property bug
