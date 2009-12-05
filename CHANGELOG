@@ -1,3 +1,5 @@
+* Add support for the CSS3 lang pseudo-class. [Diego Perini, jddalton]
+
 * Escape quotes when compiling attribute, `:not`, and `:contains` selectors. [jddalton]
 
 * Standardize variable names with prefixes:

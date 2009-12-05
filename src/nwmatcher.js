@@ -663,9 +663,9 @@
     // CSS2 :contains, :selected (deprecated)
     // http://www.w3.org/TR/2001/CR-css3-selectors-20011113/#content-selectors
     //
-    // TODO: :indeterminate, :lang
+    // TODO: :indeterminate
     'dpseudos': {
-      'expression': /^\:((?:active|checked|disabled|enabled|focus|hover|link|selected|target|visited)(?!\()|(?:contains|not)(?=\())(?:\((["']?)(.*?(?:\(.*\))?[^'"()]*?)\2\))?(.*)/,
+      'expression': /^\:((?:active|checked|disabled|enabled|focus|hover|link|selected|target|visited)(?!\()|(?:contains|lang|not)(?=\())(?:\((["']?)(.*?(?:\(.*\))?[^'"()]*?)\2\))?(.*)/,
       'callback':
         function(match, source, selector) {
           // escape double quotes if not already
@@ -691,6 +691,15 @@
             case 'disabled':
               // does not consider hidden input fields
               return 'if(e.type&&"form" in e&&e.type.toLowerCase()!=="hidden"&&e.disabled){' + source + '}';
+
+            /* CSS3 lang pseudo-class */
+            case 'lang':
+              return (
+                'if(h.lang=="' + value + '"||h.lang&&(h.lang+"").indexOf("' +
+                value + '-")==0){' + source + '}else{' +
+                'do{if(e.lang=="' + value + '"||e.lang&&(e.lang+"").indexOf("' +
+                value + '-")==0){' + source + 'break;}' +
+                '}while((e=e.parentNode)&&e!==g)}');
 
             /* CSS3 target pseudo-class */
             case 'target':
