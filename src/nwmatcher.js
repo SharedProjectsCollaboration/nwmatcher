@@ -17,38 +17,52 @@
 
 (function(global) {
 
-  var version = 'nwmatcher-1.2.0',
+  var VERSION = 'nwmatcher-1.2.0',
+
+  // host documents feature signature
+  HOST_SIGNATURE,
 
   // temporary vars
-  isSupported, isBuggy,
+  isSupported, isBuggy, k,
 
   // persist last selector parsing data
-  div, hostId, k, lastCalled, lastContext, lastIndex, lastSelector, lastSlice, notHTML, unlikeHost,
+  lastCalled, lastIndex, lastSelector, lastSlice,
+
+  // context specific variables
+  ctx_div, ctx_last, ctx_notHTML, ctx_nocache,
+
+  // attribute case-insensitivity map for (X)HTML
+  ctx_attrCaseTable,
+
+  // boolean if current `doc` is in quirks mode
+  ctx_quirks,
+
+  // checks if nodeName comparisons need to be upperCased
+  ctx_cplUpperCase,
 
   // processing context
-  doc = global.document,
+  ctx_doc = global.document,
 
   // context root element (HTML)
-  root = doc.documentElement,
+  ctx_root = ctx_doc.documentElement,
 
-  // used in the RE_BUGGY_XXXXX regexp testers
-  testFalse = { 'test': function() { return false; } },
-
-  testTrue  = { 'test': function() { return true;  } },
+  // used in the RE_BUGGY_XXXXX testers
+  test_false = { 'test': function() { return false; } },
+  test_true  = { 'test': function() { return true;  } },
 
   // http://www.w3.org/TR/css3-syntax/#characters
   // Unicode/ISO 10646 characters 161 and higher
   // NOTE: Safari 2.0.x crashes with escaped (\\)
   // Unicode ranges in regular expressions so we
   // use a negated character range class instead.
-
-  // More correct but slower alternative:
+  //
+  // A more correct but slower alternative:
   // '-?(?:[a-zA-Z_]|[^\\x00-\\xa0]|\\\\.)(?:[-\\w]|[^\\x00-\\xa0]|\\\\.)*'
-  strIdentifier = '(?:[-\\w]|[^\\x00-\\xa0]|\\\\.)+',
+  str_identifier = '(?:[-\\w]|[^\\x00-\\xa0]|\\\\.)+',
 
   // used to match [ ] or ( ) groups
   // http://blog.stevenlevithan.com/archives/match-quoted-string/
-  strGroups =
+  str_groups =
     '(?:' +
     '\\[(?:[-\\w]+:)?[-\\w]+(?:[~*^$|!]?=(["\']?)(?:(?!\\1)[^\\\\]|[^\\\\]|\\\\.)*?\\1)?\\]' +
     '|' +
@@ -57,55 +71,54 @@
 
   // used to skip [ ] or ( ) groups
   // we use \2 and \3 because we assume \1 will be the captured group not being skipped
-  strSkipGroups = strGroups.replace('\\2', '\\3').replace(/\\1/g, '\\2'),
+  str_skipGroups = str_groups.replace('\\2', '\\3').replace(/\\1/g, '\\2'),
 
   // used to skip "..." or '...' quoted attribute values
   // we use \2 because we assume \1 will be the captured group not being skipped
-  strSkipQuotes = '(["\'])(?:(?!\\2)[^\\\\]|\\\\.)*\\2',
+  str_skipQuotes = '(["\'])(?:(?!\\2)[^\\\\]|\\\\.)*\\2',
 
-  strEdgeSpace = '[\\t\\n\\r\\f]',
+  // pattern to match the name attribute selector `[name=value]`
+  str_nameAttr = '\\[name=(["\']?)(?:(?!\\1)[^\\\\]|[^\\\\]|\\\\.)*?\\1\\]',
 
-  strLeadingSpace = '\\x20+([\\])=>+~,^$|!]|\\*=)',
+  // whitespace related patterns
+  str_edgeSpace     = '[\\t\\n\\r\\f]',
+  str_leadingSpace  = '\\x20+([\\])=>+~,^$|!]|\\*=)',
+  str_multiSpace    = '\\x20{2,}',
+  str_trailingSpace = '([[(=>+~,^$|!]|\\*=)\\x20+',
 
-  strMultiSpace = '\\x20{2,}',
+  /*-------------------------------- REGEXPS ---------------------------------*/
 
-  strTrailingSpace = '([[(=>+~,^$|!]|\\*=)\\x20+',
+  // parse name value from name selector `[name=value]`
+  re_nameValue = /=(['"]?)((?:(?!\1)[^\\]|[^\\]|\\.)*?)\1\]$/,
 
-  strNameAttr = '\\[name=(["\']?)(?:(?!\\1)[^\\\\]|[^\\\\]|\\\\.)*?\\1\\]',
-
-  // regexps used throughout nwmatcher
-  reIdentifier = new RegExp(strIdentifier),
-
-  reNameValue = /=(['"]?)((?:(?!\1)[^\\]|[^\\]|\\.)*?)\1\]$/,
-
-  reSiblings = new RegExp('^(?:\\*|[.#]?' + strIdentifier + ')?[+~]'),
-
-  reUseSafeNormalize = /[[(]/,
-
-  reUnnormalized = /^\x20|[\t\n\r\f]|\x20{2,}|\x20(?:[\]\)=>+~,^$|!]|\*=)|(?:[\[\(=>+~,^$|!]|\*=)\x20|\x20$/,
+  // detect sibling selectors + and ~
+  re_siblings = new RegExp('^(?:\\*|[.#]?' + str_identifier + ')?[+~]'),
 
   // split comma separated selector groups
   // exclude escaped commas and those inside '', "", (), []
   // example: `#div a, ul > li a` group 1 is `#div a`, group 2 is `ul > li a`
-  reSplitGroup = new RegExp('(?:' + strGroups + '|(?!,)[^\\\\]|\\\\.)+', 'g'),
+  re_splitGroup = new RegExp('(?:' + str_groups + '|(?!,)[^\\\\]|\\\\.)+', 'g'),
 
   // split last, right most, selector group token
-  reLastToken = new RegExp('(?:(?:' + strGroups + '|(?![ >+~,()[\\]])[^\\\\]|\\\\.)+|[>+~])$'),
+  re_lastToken = new RegExp('(?:(?:' + str_groups + '|(?![ >+~,()[\\]])[^\\\\]|\\\\.)+|[>+~])$'),
 
   // simple check to ensure the first character of a selector is valid
   // http://www.w3.org/TR/css3-syntax/#characters
-  reValidator = /^[\x20\t\n\r]*(?:[*>+~a-zA-Za-zA-Z]|\[[\x20\t\n\r\fa-zA-Z]|[.:#_]?(?!-?\d)-?(?:[a-zA-Z_]|[^\x00-\xa0]|\\.))/,
+  re_validator = /^[\x20\t\n\r]*(?:[*>+~a-zA-Za-zA-Z]|\[[\x20\t\n\r\fa-zA-Z]|[.:#_]?(?!-?\d)-?(?:[a-zA-Z_]|[^\x00-\xa0]|\\.))/,
 
   // for use with the normilize method
-  reEdgeSpaces     = new RegExp(strEdgeSpace, 'g'),
-  reMultiSpaces    = new RegExp(strMultiSpace, 'g'),
-  reLeadingSpaces  = new RegExp(strLeadingSpace, 'g'),
-  reTrailingSpaces = new RegExp(strTrailingSpace, 'g'),
+  re_attrNormalize = /[[(]/,
+  re_unnormalized = /^\x20|[\t\n\r\f]|\x20{2,}|\x20(?:[\]\)=>+~,^$|!]|\*=)|(?:[\[\(=>+~,^$|!]|\*=)\x20|\x20$/,
 
-  reEdgeSpacesWithQuotes     = new RegExp('(' + strEdgeSpace  + ')|' + strSkipQuotes, 'g'),
-  reMultiSpacesWithQuotes    = new RegExp('(' + strMultiSpace + ')|' + strSkipQuotes, 'g'),
-  reLeadingSpacesWithQuotes  = new RegExp(strLeadingSpace  + '|' + strSkipQuotes, 'g'),
-  reTrailingSpacesWithQuotes = new RegExp(strTrailingSpace + '|' + strSkipQuotes, 'g'),
+  re_edgeSpaces     = new RegExp(str_edgeSpace, 'g'),
+  re_multiSpaces    = new RegExp(str_multiSpace, 'g'),
+  re_leadingSpaces  = new RegExp(str_leadingSpace, 'g'),
+  re_trailingSpaces = new RegExp(str_trailingSpace, 'g'),
+
+  re_edgeSpacesWithQuotes     = new RegExp('(' + str_edgeSpace  + ')|' + str_skipQuotes, 'g'),
+  re_multiSpacesWithQuotes    = new RegExp('(' + str_multiSpace + ')|' + str_skipQuotes, 'g'),
+  re_leadingSpacesWithQuotes  = new RegExp(str_leadingSpace  + '|' + str_skipQuotes, 'g'),
+  re_trailingSpacesWithQuotes = new RegExp(str_trailingSpace + '|' + str_skipQuotes, 'g'),
 
   /*----------------------------- LOOKUP OBJECTS -----------------------------*/
 
@@ -146,89 +159,77 @@
     'rev': 1, 'target': 1, 'text': 1, 'type': 1, 'vlink': 1
   },
 
-  /*--------------------------- INITAILIZE CONTEXT ---------------------------*/
-
-  // attribute case-insensitivity map for (X)HTML
-  INSENSITIVE_TABLE,
-
-  // boolean if current `doc` is in quirks mode
-  IS_QUIRKS,
-
-  // checks if nodeName comparisons need to be upperCased
-  TO_UPPER_CASE,
-
-  // Safari 2 missing document.compatMode property
-  // makes it harder to detect Quirks vs. Strict
-  isQuirks = doc.compatMode ?
-    function() {
-      return doc.compatMode === 'BackCompat';
-    } :
-    function() {
-      return div.style && (div.style.width = 1) && (div.style.width == '1px');
-    },
+  /*----------------------------- UTILITY METHODS ----------------------------*/
 
   // change persisted private vars depending on context
   changeContext =
     (function() {
       function changeContext(from) {
-        from || (from = doc);
-        var sensitive, isFrag = from.nodeType == 11;
+        from || (from = ctx_doc);
+        var isSensitive, isFragment = from.nodeType == 11;
 
         // reference context ownerDocument and document root (HTML)
-        root = (doc = from.ownerDocument || from).documentElement;
+        ctx_root = (ctx_doc = from.ownerDocument || from).documentElement;
 
         // check if context is not (X)HTML
-        notHTML = !('body' in doc) || !('innerHTML' in root)  || isFrag;
+        ctx_notHTML = !('body' in ctx_doc) || !('innerHTML' in ctx_root)  || isFragment;
 
         // save passed context
-        lastContext = from;
+        ctx_last = from;
 
         // create dummy div used in feature tests
-        div = doc.createElement('DiV');
+        ctx_div = ctx_doc.createElement('DiV');
+
+        // Safari 2 missing document.compatMode property
+        // makes it harder to detect Quirks vs. Strict
+        ctx_quirks = (!ctx_notHTML || isFragment) &&
+          (ctx_doc.compatMode ? ctx_doc.compatMode === 'BackCompat' :
+           ctx_div.style && (ctx_div.style.width = 1) && (ctx_div.style.width == '1px'));
 
         // detect if nodeName is case sensitive (xhtml, xml, svg)
-        sensitive = div.nodeName === 'DiV';
+        isSensitive = ctx_div.nodeName === 'DiV';
+        ctx_attrCaseTable = isSensitive ? XHTML_TABLE : HTML_TABLE;
+        if (!isSensitive) ctx_attrCaseTable['class'] = ctx_quirks ? 1 : 0;
 
-        // set compiler variables
-        IS_QUIRKS = (!notHTML || isFrag) && isQuirks();
-
-        HTML_TABLE['class'] = IS_QUIRKS ? 1 : 0;
-
-        INSENSITIVE_TABLE = sensitive ? XHTML_TABLE : HTML_TABLE;
-
-        TO_UPPER_CASE = sensitive || typeof doc.createElementNS == 'function' ?
+        // compiler string used to set nodeName case
+        ctx_cpl_upperCase = isSensitive || typeof ctx_doc.createElementNS == 'function' ?
           '.toUpperCase()' : '';
 
-        // check if new context is similar to host context
-        unlikeHost = hostId !=
-          ((IS_QUIRKS ? 'q' : '') + (notHTML ? 'n' : '') + (sensitive ? 's' : ''));
+        // don't cache compiled selectors if context's
+        // feature signature doesn't match the host's
+        ctx_nocache = HOST_SIGNATURE != ((ctx_quirks ? 'q' : '') +
+          (ctx_notHTML ? 'n' : '') + (isSensitive ? 's' : ''));
 
         return from;
       }
 
-      // init
+      // init context variables
       changeContext();
 
-      // persist host feature id
-      unlikeHost = false;
-      hostId = ((IS_QUIRKS ? 'q' : '') + (notHTML ? 'n' : '') + (div.nodeName === 'DiV' ? 's' : ''));
+      // define host signature
+      ctx_nocache = false;
+      HOST_SIGNATURE = ((ctx_quirks ? 'q' : '') + (ctx_notHTML ? 'n' : '') +
+        (ctx_div.nodeName === 'DiV' ? 's' : ''));
 
       return changeContext;
     })(),
 
-  /*----------------------------- UTILITY METHODS ----------------------------*/
-
   clearElement =
     function(element) {
-      while (element.lastChild) {
-        element.removeChild(element.lastChild);
+      if ('innerHTML' in element) {
+        // avoid IE leaks associated with removeChild()
+        element.innerHTML = '';
+      } else {
+        while (element.lastChild) {
+          element.removeChild(element.lastChild);
+        }
       }
       return element;
     },
 
   createElement =
     function(tagName) {
-      return document.createElement(tagName);
+      return ctx_doc.createElement(tagName);
     },
 
   createInput =
@@ -247,13 +248,13 @@
   normalize =
     function(selector) {
       var index, match, origSelector, pattern, sequence, token, i = -1,
-       cached = normalizedSelectors[selector];
+       cached = cache_normalized[selector];
       if (cached) return cached;
 
       origSelector = selector;
-      if (reUseSafeNormalize.test(selector)) {
-        sequence = [reLeadingSpacesWithQuotes, reTrailingSpacesWithQuotes, reMultiSpacesWithQuotes];
-        while (match = reEdgeSpacesWithQuotes.exec(selector)) {
+      if (re_attrNormalize.test(selector)) {
+        sequence = [re_leadingSpacesWithQuotes, re_trailingSpacesWithQuotes, re_multiSpacesWithQuotes];
+        while (match = re_edgeSpacesWithQuotes.exec(selector)) {
           if ((token = match[1])) {
             selector = selector.replace(token, ' ');
           }
@@ -273,14 +274,14 @@
       }
       else {
         // do the same thing, without worrying about attribute values
-        selector = trim.call(selector.replace(reEdgeSpaces, ' '))
-          .replace(reLeadingSpaces, '$1').replace(reTrailingSpaces, '$1')
-            .replace(reMultiSpaces, ' ');
+        selector = trim.call(selector.replace(re_edgeSpaces, ' '))
+          .replace(re_leadingSpaces, '$1').replace(re_trailingSpaces, '$1')
+            .replace(re_multiSpaces, ' ');
       }
 
       return (
-        normalizedSelectors[origSelector] =
-        normalizedSelectors[selector] = selector);
+        cache_normalized[origSelector] =
+        cache_normalized[selector] = selector);
     },
 
   slice = [].slice,
@@ -295,29 +296,6 @@
   trim = ''.trim && !' '.trim() ? ''.trim :
     function() { return this.replace(/^\x20+|\x20+$/g, ''); },
 
-  /*------------------------------- DEBUGGING --------------------------------*/
-
-  // enable/disable notifications
-  VERBOSE = false,
-
-  // a way to control user notification
-  emit =
-    function(message) {
-      if (VERBOSE) {
-        var console = global.console;
-        if (console && console.log) {
-          console.log(message);
-        } else {
-          if (/exception/i.test(message)) {
-            global.status = message;
-            global.defaultStatus = message;
-          } else {
-            global.status += message;
-          }
-        }
-      }
-    },
-
   /*----------------------------- FEATURE TESTING ----------------------------*/
 
   // detect native methods
@@ -329,20 +307,19 @@
     };
   })(),
 
-  // NOTE: NATIVE_XXXXX check for existance of method only
-  // so through the code read it as "supported", maybe BUGGY
+  // NOTE: NATIVE_XXXXX checks for the existance of method only
+  // even though it is supported it may still be buggy
 
-  // detect if DOM methods are native in browsers
-  NATIVE_GEBID     = isNative(doc, 'getElementById'),
-  NATIVE_GEBCN     = isNative(root, 'getElementsByClassName'),
-  NATIVE_GEBN      = isNative(doc, 'getElementsByName'),
-  NATIVE_GEBTN     = isNative(root, 'getElementsByTagName'),
-  NATIVE_HAS_FOCUS = isNative(doc, 'hasFocus'),
-  NATIVE_QSA       = isNative(doc, 'querySelectorAll'),
+  // detect DOM methods
+  NATIVE_GEBID     = isNative(ctx_doc,  'getElementById'),
+  NATIVE_GEBCN     = isNative(ctx_root, 'getElementsByClassName'),
+  NATIVE_GEBN      = isNative(ctx_doc,  'getElementsByName'),
+  NATIVE_GEBTN     = isNative(ctx_root, 'getElementsByTagName'),
+  NATIVE_HAS_FOCUS = isNative(ctx_doc,  'hasFocus'),
+  NATIVE_QSA       = isNative(ctx_doc,  'querySelectorAll'),
 
-  RE_BUGGY_MUTATION = testTrue,
+  RE_BUGGY_MUTATION = test_true,
 
-  // check Seletor API implementations
   RE_BUGGY_QSA = NATIVE_QSA ?
     (function() {
       var pattern = [ ];
@@ -351,23 +328,23 @@
       // obsolete bug https://bugs.webkit.org/show_bug.cgi?id=19047
       // so the bug is in all other browsers code now :-)
       // http://www.whatwg.org/specs/web-apps/current-work/#selectors
-
+      //
       // Safari 3.2 QSA doesnt work with mixedcase on quirksmode
-
+      //
       // Must test the attribute selector `[class~=xxx]`
       // before `.xXx` or else the bug may not present itself
 
       // <p class="xXx"></p><p class="xxx"></p>
-      clearElement(div)
+      clearElement(ctx_div)
         .appendChild(createElement('p'))
         .className = 'xXx';
 
-      div.appendChild(createElement('p')).className = 'xxx';
+      ctx_div.appendChild(createElement('p')).className = 'xxx';
 
-      if (IS_QUIRKS &&
-         (div.querySelectorAll('[class~=xxx]').length != 2 ||
-          div.querySelectorAll('.xXx').length != 2)) {
-        pattern.push('(?:\\[[\\x20\\t\\n\\r\\f]*class\\b|\\.' + strIdentifier + ')');
+      if (ctx_quirks &&
+         (ctx_div.querySelectorAll('[class~=xxx]').length != 2 ||
+          ctx_div.querySelectorAll('.xXx').length != 2)) {
+        pattern.push('(?:\\[[\\x20\\t\\n\\r\\f]*class\\b|\\.' + str_identifier + ')');
       }
 
       // :enabled :disabled bugs with hidden fields (Firefox 3.5 QSA bug)
@@ -375,68 +352,72 @@
       // IE8 throws error with these pseudos
 
       // <input type="hidden">
-      clearElement(div)
+      clearElement(ctx_div)
         .appendChild(createInput('hidden'));
 
       isBuggy = true;
       try {
-        isBuggy = div.querySelectorAll(':enabled').length === 1;
+        isBuggy = ctx_div.querySelectorAll(':enabled').length === 1;
       } catch(e) { }
 
       isBuggy && pattern.push(':enabled', ':disabled');
 
       // :checked bugs whith checkbox fields (Opera 10beta3 bug)
       // <input type="checkbox" checked>
-      clearElement(div)
+      clearElement(ctx_div)
         .appendChild(createInput('checkbox'))
         .checked = true;
 
       isBuggy = true;
       try {
-        isBuggy = div.querySelectorAll(':checked').length !== 1;
+        isBuggy = ctx_div.querySelectorAll(':checked').length !== 1;
       } catch(e) { }
 
       isBuggy && pattern.push(':checked');
 
       // :link bugs with hyperlinks matching (Firefox/Safari)
       // <a href="x"></a>
-      clearElement(div)
+      clearElement(ctx_div)
         .appendChild(createElement('a'))
         .href = 'x';
 
-      div.querySelectorAll(':link').length !== 1 && pattern.push(':link');
+      ctx_div.querySelectorAll(':link').length !== 1 &&
+        pattern.push(':link');
 
       return pattern.length ?
         new RegExp(pattern.join('|')) :
-        testFalse;
+        test_false;
     })() :
-    testTrue,
+    test_true,
 
 
   // detect native getAttribute/hasAttribute methods,
   // frameworks extend these to elements, but it seems
   // this does not work for XML namespaced attributes,
   // used to check both getAttribute/hasAttribute in IE
-  NATIVE_HAS_ATTRIBUTE = isNative(root, 'hasAttribute'),
+  NATIVE_HAS_ATTRIBUTE = isNative(ctx_root, 'hasAttribute'),
 
   // check for Mutation Events, DOMAttrModified should be
   // enough to ensure DOMNodeInserted/DOMNodeRemoved exist
-  NATIVE_MUTATION_EVENTS = root.addEventListener ?
+  NATIVE_MUTATION_EVENTS = ctx_root.addEventListener ?
     (function() {
       function testSupport(attr, value) {
         // add listener and modify attribute
-        var result, handler = function() { result = true; };
+        var count = 0, handler = function() { count++; };
         input.addEventListener('DOMAttrModified', handler, false);
-        input[attr] = value;
+        input.setAttribute(attr, value || attr);
+        input.removeAttribute(attr, value || attr);
+        input[attr] = value || true;
+
         // cleanup
         input.removeEventListener('DOMAttrModified', handler, false);
         handler = null;
-        return !!result;
+        return count === 3;
       }
 
-      var input = document.createElement('input');
+      var input = clearElement(ctx_div).appendChild(createInput('input'));
       if ((isSupported = testSupport('id', 'x'))) {
-        RE_BUGGY_MUTATION = testSupport('disabled', true) ? testFalse :
+        RE_BUGGY_MUTATION = testSupport('disabled') ? test_false :
           /(?:\[[\x20\t\n\r\f]*|:)(?:checked|disabled)/i;
       }
       return isSupported;
@@ -448,7 +429,7 @@
   NATIVE_SLICE_PROTO =
     (function() {
       try {
-        return slice.call(doc.childNodes, 0) instanceof Array;
+        return slice.call(ctx_doc.childNodes, 0) instanceof Array;
       } catch(e) {
         return false;
       }
@@ -456,8 +437,8 @@
 
   // supports the new traversal API
   NATIVE_TRAVERSAL_API =
-    'nextElementSibling' in root &&
-    'previousElementSibling' in root,
+    'nextElementSibling' in ctx_root &&
+    'previousElementSibling' in ctx_root,
 
 
   // NOTE: BUGGY_XXXXX check both for existance and no known bugs.
@@ -466,30 +447,30 @@
 
   BUGGY_GEBID =
     (function() {
-      // <a id="x"></p><a name="y"></p><input name="z">
+      // <a id="x"></p>
       var x = 'x' + String(+new Date);
-      clearElement(div).appendChild(createElement('a')).id = x;
-      root.insertBefore(div, root.firstChild);
+      clearElement(ctx_div).appendChild(createElement('a')).id = x;
+      ctx_root.insertBefore(ctx_div, ctx_root.firstChild);
 
-      isBuggy = !NATIVE_GEBID || !doc.getElementById(x);
+      isBuggy = !NATIVE_GEBID || !ctx_doc.getElementById(x);
 
       // reuse test div for BUGGY_GEBN
       if (NATIVE_GEBN) {
         // check for a buggy GEBN with id, because unlike GEBID, it will
         // present the bug before the document has finished loading
-        BUGGY_GEBN_MATCH_ID = !!doc.getElementsByName(x)[0];
+        BUGGY_GEBN_MATCH_ID = !!ctx_doc.getElementsByName(x)[0];
         if (!isBuggy) isBuggy = BUGGY_GEBN_MATCH_ID;
       }
 
-      root.removeChild(div);
+      ctx_root.removeChild(ctx_div);
       return isBuggy;
     })(),
 
   // detect IE gEBTN comment nodes bug
   BUGGY_GEBTN = NATIVE_GEBTN ?
     (function() {
-      clearElement(div).appendChild(doc.createComment(''));
-      return !!div.getElementsByTagName('*')[0];
+      clearElement(ctx_div).appendChild(ctx_doc.createComment(''));
+      return !!ctx_div.getElementsByTagName('*')[0];
     })() :
     true,
 
@@ -502,17 +483,17 @@
       var method = 'getElementsByClassName', test = '\u53f0\u5317';
 
       // <p class="' + test + 'abc ' + test + '"></p><p class="x"></p>
-      clearElement(div)
+      clearElement(ctx_div)
         .appendChild(createElement('p'))
         .className = test + 'abc ' + test;
 
-      div.appendChild(createElement('p')).className = 'x';
+      ctx_div.appendChild(createElement('p')).className = 'x';
 
-      isBuggy = !div[method](test)[0];
+      isBuggy = !ctx_div[method](test)[0];
 
       // Safari test
-      div.lastChild.className = test;
-      if (!isBuggy) isBuggy = div[method](test).length !== 2;
+      ctx_div.lastChild.className = test;
+      if (!isBuggy) isBuggy = ctx_div[method](test).length !== 2;
       return isBuggy;
     })() :
     true,
@@ -521,10 +502,18 @@
   RE_SIMPLE_SELECTOR = new RegExp('^(?:' +
     (BUGGY_GEBTN ? ''  : '\\*|') +
     (BUGGY_GEBCN ? '#' : '[.#]') + '?' +
-    strIdentifier + '|\\*?' + strNameAttr +
+    str_identifier + '|\\*?' + str_nameAttr +
   ')$'),
 
   /*------------------------------- SELECTORS --------------------------------*/
+
+  // optimization expressions
+  Optimize = {
+    'id':        new RegExp("#("   + str_identifier + ")|" + str_skipGroups),
+    'className': new RegExp("\\.(" + str_identifier + ")|" + str_skipGroups),
+    'name':      new RegExp("(" + str_nameAttr.replace(/\\1/g, '\\2') + ")|" + str_skipGroups, 'i'),
+    'tagName':   new RegExp("(?:^|[>+~\\x20])(" + str_identifier + ")|" + str_skipGroups)
+  },
 
   // attribute operators
   Operators = {
@@ -547,14 +536,6 @@
     '$=': "n.substr(n.length - '%m'.length) === '%m'"
   },
 
-  // optimization expressions
-  Optimize = {
-    'id':        new RegExp("#("   + strIdentifier + ")|" + strSkipGroups),
-    'className': new RegExp("\\.(" + strIdentifier + ")|" + strSkipGroups),
-    'name':      new RegExp("(" + strNameAttr.replace(/\\1/g, '\\2') + ")|" + strSkipGroups, 'i'),
-    'tagName':   new RegExp("(?:^|[>+~\\x20])(" + strIdentifier + ")|" + strSkipGroups)
-  },
-
   // default supported selectors
   Selectors = {
     // Each type of selector has an expression and callback.
@@ -568,12 +549,12 @@
       'expression': /^\[((?:[-\w]+\:)?[-\w]+)(?:([~*^$|!]?=)(["']?)((?:(?!\3)[^\\]|[^\\]|\\.)*?)\3)?\](.*)/,
       'callback':
         function(match, source) {
-          // check case treatment from INSENSITIVE_TABLE
+          // check case treatment from ctx_attrCaseTable
           if (match[2]) {
             // xml namespaced attribute ?
             var test, expr = match[1].split(':');
             expr = expr.length == 2 ? expr[1] : expr[0];
-            test = INSENSITIVE_TABLE[expr.toLowerCase()];
+            test = ctx_attrCaseTable[expr.toLowerCase()];
 
             return (
               'n=e.nodeType==1&&s.getAttribute(e,"' + match[1] + '")' +
@@ -582,7 +563,6 @@
                 Operators[match[2]].replace(/\%m/g, test ? match[4].toLowerCase() : match[4]) +
               '){' + source + '}');
           }
-
           return 'if(e.nodeType==1&&s.hasAttribute(e,"' + match[1] + '")){' + source + '}';
         }
     },
@@ -611,7 +591,7 @@
 
             case 'empty':
               // element that has no children
-              return 'if(' + ELEMENTS_ONLY_AND + '!e.firstChild){' + source + '}';
+              return 'if(' + CPL_ELEMENTS_ONLY_AND + '!e.firstChild){' + source + '}';
 
             default:
               if (formula) {
@@ -644,8 +624,8 @@
 
                 // 4 cases: 1 (nth) x 4 (child, of-type, last-child, last-of-type)
                 return (
-                  'if(e!==h' + AND_ELEMENTS_ONLY + '){' +
-                    't=e.nodeName' + TO_UPPER_CASE +
+                  'if(e!==h' + CPL_AND_ELEMENTS_ONLY + '){' +
+                    't=e.nodeName' + ctx_cpl_upperCase +
                     ';n=s.getChildIndexes' + (ofType ? 'ByTag' : '') +
                     '(e.parentNode' + (ofType ? ',t' : '') + ');' +
                     'if(' + test + '){' + source + '}' +
@@ -666,7 +646,7 @@
               }
 
               return (
-                'if(e!==h' + AND_ELEMENTS_ONLY + '){' +
+                'if(e!==h' + CPL_AND_ELEMENTS_ONLY + '){' +
                   ( 'n=e;while((n=n.' + a + 'Sibling)' + type + ');if(!n){' + (b ? source :
                     'n=e;while((n=n.' + n + 'Sibling)' + type + ');if(!n){' + source + '}') + '}' ) +
                 '}');
@@ -693,7 +673,7 @@
             case 'not':
               // compile nested selectors, need to escape double quotes characters
               // since the string we are inserting into already uses double quotes
-              return 'if(' + ELEMENTS_ONLY_AND +
+              return 'if(' + CPL_ELEMENTS_ONLY_AND +
                 '!s.match(e, "' + match[3].replace(/\x22/g, '\\"') + '")){' + source +'}';
 
             /* CSS3 UI element states */
@@ -713,7 +693,7 @@
             /* CSS3 target pseudo-class */
             case 'target':
               // doc.location is *not* technically standard, but it might as well be.
-              return 'if(e.id=="' + (doc.location ? doc.location.hash : '') + '"&&e.href!=void 0){' + source + '}';
+              return 'if(e.id=="' + (ctx_doc.location ? ctx_doc.location.hash : '') + '"&&e.href!=void 0){' + source + '}';
 
             /* CSS3 dynamic pseudo-classes */
             case 'link':
@@ -726,25 +706,25 @@
             // IE & FF3 have native support
             // these capabilities may be emulated by some event managers
             case 'active':
-              return !notHTML && 'if(e===d.activeElement){' + source + '}';
+              return !ctx_notHTML && 'if(e===d.activeElement){' + source + '}';
 
             case 'hover':
-              return !notHTML && 'if(e===d.hoverElement){' + source + '}';
+              return !ctx_notHTML && 'if(e===d.hoverElement){' + source + '}';
 
             case 'focus':
-              return !notHTML && (NATIVE_HAS_FOCUS ?
+              return !ctx_notHTML && (NATIVE_HAS_FOCUS ?
                 'if(e===d.activeElement&&d.hasFocus()){' + source + '}' :
                 'if(e===d.activeElement){' + source + '}');
 
             /* CSS2 :contains and :selected pseudo-classes */
             // not currently part of CSS3 drafts
             case 'contains':
-              return 'if(' + CONTAINS_TEXT + '.indexOf("' + match[3] + '")>-1){' + source + '}';
+              return 'if(' + CPL_CONTAINS_TEXT + '.indexOf("' + match[3] + '")>-1){' + source + '}';
 
             case 'selected':
               // fix Safari selectedIndex property bug
-              if (typeof doc.getElementsByTagName !== 'undefined') {
-                var i = 0, n = doc.getElementsByTagName('select');
+              if (typeof ctx_doc.getElementsByTagName !== 'undefined') {
+                var i = 0, n = ctx_doc.getElementsByTagName('select');
                 while (n[i]) { n[i++].selectedIndex; }
               }
               return 'if(e.selected){' + source + '}';
@@ -822,33 +802,33 @@
       'callback':
         function(match, source) {
           // BUGGY_GEBTN return comment nodes (ex: IE)
-          return 'if(' + ELEMENTS_ONLY + '){' + source + '}';
+          return 'if(' + CPL_ELEMENTS_ONLY + '){' + source + '}';
         }
     },
 
     // *** ID selector
     // #Foo Id case sensitive
     'id': {
-      'expression': new RegExp("^#(" + strIdentifier + ")(.*)"),
+      'expression': new RegExp("^#(" + str_identifier + ")(.*)"),
       'callback':
         function(match, source) {
           // document can contain conflicting elements (id/name)
           // prototype selector unit need this method to recover bad HTML forms
-          return notHTML
-            ? 'if(s.getAttribute(e, "id")=="' + match[1] + '"){' + source + '}'
-            : 'if((e.submit?s.getAttribute(e, "id"):e.id)=="' + match[1] + '"){' + source + '}';
+          return ctx_notHTML ?
+            'if(s.getAttribute(e, "id")=="' + match[1] + '"){' + source + '}' :
+            'if((e.submit?s.getAttribute(e, "id"):e.id)=="' + match[1] + '"){' + source + '}';
         }
     },
 
     // *** Type selector
     // Foo Tag (case insensitive)
     'tagName': {
-      'expression': new RegExp("^(?!not\\()(" + strIdentifier + ")(.*)"),
+      'expression': new RegExp("^(?!not\\()(" + str_identifier + ")(.*)"),
       'callback':
         function(match, source) {
           // both tagName and nodeName properties may be upper or lower case
           // depending on their creation NAMESPACE in createElementNS()
-          return 'if(e.nodeName' + TO_UPPER_CASE + '=="' +
+          return 'if(e.nodeName' + ctx_cpl_upperCase + '=="' +
             match[1].toUpperCase() + '"){' + source + '}';
         }
     },
@@ -857,18 +837,18 @@
     // .Foo Class
     // case sensitivity is treated differently depending on the document type (see map)
     'className': {
-      'expression': new RegExp("^\\.(" + strIdentifier + ")(.*)"),
+      'expression': new RegExp("^\\.(" + str_identifier + ")(.*)"),
       'callback':
         function(match, source) {
           // W3C CSS3 specs: element whose "class" attribute has been assigned a
           // list of whitespace-separated values, see section 6.4 Class selectors
           // and notes at the bottom; explicitly non-normative in this specification.
           return (
-            't=' + (notHTML ? 's.getAttribute(e,"class")' : 'e.className') +
+            't=' + (ctx_notHTML ? 's.getAttribute(e,"class")' : 'e.className') +
             ';if(t&&(" "+t+" ")' +
-            (IS_QUIRKS ? '.toLowerCase()' : '') +
-            '.replace(/' + strEdgeSpace + '/g," ").indexOf(" ' +
-            (IS_QUIRKS ? match[1].toLowerCase() : match[1]) +
+            (ctx_quirks ? '.toLowerCase()' : '') +
+            '.replace(/' + str_edgeSpace + '/g," ").indexOf(" ' +
+            (ctx_quirks ? match[1].toLowerCase() : match[1]) +
             ' ")>-1){' + source + '}');
         }
     }
@@ -908,9 +888,9 @@
       var indexes, i = 0,
        id = element[UID] || (element[UID] = ++UID_COUNT);
 
-      if (!(indexes = childIndexes[id])) {
+      if (!(indexes = cache_childIndexes[id])) {
         indexes =
-        childIndexes[id] = { };
+        cache_childIndexes[id] = { };
 
         if ((element = element.firstChild)) {
           do {
@@ -930,7 +910,7 @@
     function(element, name) {
       var indexes, i = 0,
        id = element[UID] || (element[UID] = ++UID_COUNT),
-       cache = childIndexesByTag[id] || (childIndexesByTag[id] = { });
+       cache = cache_childIndexesByTag[id] || (cache_childIndexesByTag[id] = { });
 
       if (!(indexes = cache[name])) {
         indexes = cache[name] = { };
@@ -972,10 +952,10 @@
       return !!(node && (node.specified || node.nodeValue));
     },
 
-  isDisconnected = 'compareDocumentPosition' in root ?
+  isDisconnected = 'compareDocumentPosition' in ctx_root ?
     function(element, container) {
       return (container.compareDocumentPosition(element) & 1) == 1;
-    } : 'contains' in root ?
+    } : 'contains' in ctx_root ?
     function(element, container) {
       return !container.contains(element);
     } :
@@ -998,39 +978,39 @@
   // @return array (non native/buggy GEBCN)
   byClass =
     function(className, from) {
-      if (notHTML) {
-        return client_api('*[class~="' + className + '"]', from || doc);
+      if (ctx_notHTML) {
+        return select_regular('*[class~="' + className + '"]', from || ctx_doc);
       }
       if (BUGGY_GEBCN) {
         var element, i = -1, j = i, results = [ ],
-         elements = (from || doc).getElementsByTagName('*'),
-         n = IS_QUIRKS ? className.toLowerCase() : className;
+         elements = (from || ctx_doc).getElementsByTagName('*'),
+         n = ctx_quirks ? className.toLowerCase() : className;
 
         className = ' ' + n.replace(/\\/g, '') + ' ';
         while ((element = elements[++i])) {
           if ((n = element.className) &&
-              (' ' + (IS_QUIRKS ? n.toLowerCase() : n) + ' ')
-              .replace(reEdgeSpaces, ' ').indexOf(className) > -1) {
+              (' ' + (ctx_quirks ? n.toLowerCase() : n) + ' ')
+              .replace(re_edgeSpaces, ' ').indexOf(className) > -1) {
             results[++j] = element;
           }
         }
         return results;
       }
 
-      return (from || doc).getElementsByClassName(className.replace(/\\/g, ''));
+      return (from || ctx_doc).getElementsByClassName(className.replace(/\\/g, ''));
     },
 
   // element by id
   // @return element reference or null
   byId =
     function(id, from) {
-      if (notHTML) {
+      if (ctx_notHTML) {
         // prefix a <space> so it isn't caught by RE_SIMPLE_SELECTOR
-        return client_api(' *[id="' + id + '"]', from || doc)[0];
+        return select_regular(' *[id="' + id + '"]', from || ctx_doc)[0];
       }
 
       var element, elements, node, i = -1;
-      from || (from = doc);
+      from || (from = ctx_doc);
       id = id.replace(/\\/g, '');
 
       if (!from.getElementById) {
@@ -1063,13 +1043,13 @@
   // @return array (non native/buggy GEBN)
   byName =
     function(name, from) {
-      if (notHTML) {
-        return client_api(' *[name="' + name + '"]', from || doc);
+      if (ctx_notHTML) {
+        return select_regular(' *[name="' + name + '"]', from || ctx_doc);
       }
 
       name = name.replace(/\\/g, '');
       if (BUGGY_GEBN_MATCH_ID) {
-        from || (from = doc);
+        from || (from = ctx_doc);
         var element, node, results = [ ], i = -1,
          elements = (from.ownerDocument || from).getElementsByName(name),
          length = elements.length;
@@ -1091,7 +1071,7 @@
         return results;
       }
 
-      return (from && (from.ownerDocument || from) || doc).getElementsByName(name);
+      return (from && (from.ownerDocument || from) || ctx_doc).getElementsByName(name);
     },
 
   // elements by tag
@@ -1100,7 +1080,7 @@
   byTag =
     function(tag, from) {
       // support document fragments
-      if (notHTML && typeof from.getElementsByTagName == 'undefined') {
+      if (ctx_notHTML && typeof from.getElementsByTagName == 'undefined') {
         var child, isUniversal, upperCased, results = [ ];
         if ((child = from.firstChild)) {
           isUniversal = tag === '*';
@@ -1119,39 +1099,38 @@
         return results;
       }
 
-      return (from || doc).getElementsByTagName(tag);
+      return (from || ctx_doc).getElementsByTagName(tag);
     },
 
   /*---------------------------- COMPILER METHODS ----------------------------*/
 
-  // a common chunk of code used a couple times in compiled functions
-  ACCEPT_NODE = 'f&&f(N);r[r.length]=N;continue main;',
-
   /* static compiler variables */
 
+  // a common chunk of code used a couple times in compiled functions
+  CPL_ACCEPT_NODE = 'f&&f(N);r[r.length]=N;continue main;',
+
   // filter IE gEBTN('*') results containing non-elements like comments and `/video`
-  ELEMENTS_ONLY = BUGGY_GEBTN ? 'e.nodeName.charCodeAt(0)>64' : 'e',
+  CPL_ELEMENTS_ONLY = BUGGY_GEBTN ? 'e.nodeName.charCodeAt(0)>64' : 'e',
 
-  ELEMENTS_ONLY_AND = BUGGY_GEBTN ? ELEMENTS_ONLY + '&&' : '',
+  CPL_ELEMENTS_ONLY_AND = BUGGY_GEBTN ? CPL_ELEMENTS_ONLY + '&&' : '',
 
-  AND_ELEMENTS_ONLY = BUGGY_GEBTN ? '&&' + ELEMENTS_ONLY : '',
-
+  CPL_AND_ELEMENTS_ONLY = BUGGY_GEBTN ? '&&' + CPL_ELEMENTS_ONLY : '',
 
   // Use the textContent or innerText property to check CSS3 :contains
   // Safari 2 has a bug with innerText and hidden content, using an
   // internal replace on the innerHTML property avoids trashing it.
   // ** This solution will not work in XML or XHTML documents **
-  CONTAINS_TEXT =
-    'textContent' in root ?
+  CPL_CONTAINS_TEXT =
+    'textContent' in ctx_root ?
     'e.textContent' :
     (function() {
       // <p>p</p>
-      clearElement(div)
+      clearElement(ctx_div)
         .appendChild(createElement('p'))
-        .appendChild(document.createTextNode('p'));
+        .appendChild(ctx_doc.createTextNode('p'));
 
-      div.style.display = 'none';
-      return div.innerText ?
+      ctx_div.style.display = 'none';
+      return ctx_div.innerText ?
         'e.innerText' :
         's.stripTags(e.innerHTML)';
     })(),
@@ -1162,7 +1141,7 @@
   compileGroup =
     function(selector, source, mode) {
       var parts, token, i = -1, seen = { };
-      if ((parts = selector.match(reSplitGroup))) {
+      if ((parts = selector.match(re_splitGroup))) {
         // for each selector in the group
         while ((token = parts[++i])) {
           // avoid repeating the same token in comma separated group (p, p)
@@ -1170,7 +1149,7 @@
             seen[token] = true;
             // reset `e` to begin another selector
             source += (i ? 'e=N;' : '') +
-              compileSelector(token, mode ? ACCEPT_NODE : 'f&&f(N);return true;', mode);
+              compileSelector(token, mode ? CPL_ACCEPT_NODE : 'f&&f(N);return true;', mode);
           }
         }
       }
@@ -1193,7 +1172,7 @@
   // @return function (compiled)
   compileSingle =
     function(selector) {
-      var source = compileSelector(selector, ACCEPT_NODE, true);
+      var source = compileSelector(selector, CPL_ACCEPT_NODE, true);
       return new Function('c,s,d,h,g,f',
         'var e,n,N,t,i=-1,j=-1,r=[];main:while(N=e=c[++i]){' + source + '}return r;');
     },
@@ -1244,45 +1223,48 @@
     function(element, selector, from, callback) {
       // make sure an element node was passed
       var compiled, origSelector = selector;
-      doc = element.ownerDocument;
+      ctx_doc = element.ownerDocument;
 
-      if (!doc && (doc = element)) {
+      if (!ctx_doc && (ctx_doc = element)) {
         return false;
       }
-      if (lastContext != from) {
+      if (ctx_last != (from || ctx_doc)) {
         from = changeContext(from);
       }
 
-      if (!(compiled = compiledMatchers[origSelector])) {
-        if (reValidator.test(selector)) {
-          // remove extraneous whitespace
-          if (reUnnormalized.test(selector))
-            selector = normalize(selector);
-
-          // only save compiled matchers for contexts
-          // that are the same type of document as the host
-          // (new context xhtml B is like host xhtml A)
-          if (unlikeHost) {
-            compiled = compileGroup(selector, '', false);
-          } else if (!(compiled = compiledMatchers[selector])) {
-            compiled =
-            compiledMatchers[selector] =
-            compiledMatchers[origSelector] = compileGroup(selector, '', false);
-          } else {
-            compiledMatchers[origSelector] = compiled;
-          }
+      // only cache compiled matchers for contexts
+      // that are the same type of document as the host
+      // (new context xhtml B is like host xhtml A)
+      if (ctx_nocache) {
+        if (re_unnormalized.test(selector)) {
+          selector = normalize(selector);
         }
-        else {
+        compiled = compileGroup(selector, '', false);
+      }
+      else if (!(compiled = cache_compiledMatchers[origSelector])) {
+        if (re_validator.test(selector)) {
+          // remove extraneous whitespace
+          if (re_unnormalized.test(selector)) {
+            selector = normalize(selector);
+          }
+          if (!(compiled = cache_compiledMatchers[selector])) {
+            compiled =
+            cache_compiledMatchers[selector] =
+            cache_compiledMatchers[origSelector] = compileGroup(selector, '', false);
+          } else {
+            cache_compiledMatchers[origSelector] = compiled;
+          }
+        } else {
           emit('DOMException: "' + selector + '" is not a valid CSS selector.');
           return false;
         }
       }
 
       // re-initialize indexes
-      childIndexes = { };
-      childIndexesByTag = { };
+      cache_childIndexes = { };
+      cache_childIndexesByTag = { };
 
-      return compiled(element, snap, doc, root, from, callback);
+      return compiled(element, snap, ctx_doc, ctx_root, from, callback);
     },
 
   // select elements matching simple
@@ -1291,7 +1273,6 @@
   select_simple =
     function(selector, from, callback) {
       var data, element;
-
       switch (selector.charAt(0)) {
         case '#':
           if ((element = byId(selector.slice(1), from))) {
@@ -1307,12 +1288,12 @@
           break;
 
         case '[':
-          data = byName(selector.match(reNameValue)[2], from);
+          data = byName(selector.match(re_nameValue)[2], from);
           break;
 
         default:
           if (selector.charAt(1) == '[') {
-            data = byName(selector.match(reNameValue)[2], from);
+            data = byName(selector.match(re_nameValue)[2], from);
           } else {
             // only ran if not BUGGY_GEBTN
             data = byTag(selector, from);
@@ -1332,18 +1313,17 @@
   select_qsa =
     function (selector, from, callback) {
       var element, elements;
-      if (lastContext != (from || doc)) {
+      if (ctx_last != (from || ctx_doc)) {
         from = changeContext(from);
       }
-
       if (RE_SIMPLE_SELECTOR.test(selector)) {
         return select_simple(selector, from, callback);
       }
-      if (!compiledSelectors[selector] &&
-          !notHTML && !RE_BUGGY_QSA.test(selector) &&
+      if (!cache_compiledSelectors[selector] &&
+          !ctx_notHTML && !RE_BUGGY_QSA.test(selector) &&
           (!from || QSA_NODE_TYPES[from.nodeType])) {
         try {
-          elements = (from || doc).querySelectorAll(selector);
+          elements = (from || ctx_doc).querySelectorAll(selector);
         } catch(e) { }
 
         if (elements) {
@@ -1357,23 +1337,21 @@
               return [ element ];
 
             default:
-              if (callback)
-                return concatCall([ ], elements, callback);
-              return NATIVE_SLICE_PROTO ?
-                slice.call(elements, 0) :
-                concatList([ ], elements);
+              callback ?
+                concatCall([ ], elements, callback) :
+                (NATIVE_SLICE_PROTO ? slice.call(elements, 0) : concatList([ ], elements));
           }
         }
       }
 
       // fall back to NWMatcher select
-      return client_api(selector, from, callback);
+      return select_regular(selector, from, callback);
     },
 
   // select elements matching selector
   // using cross-browser client APIs
   // @return array
-  client_api =
+  select_regular =
     function (selector, from, callback) {
       var Contexts, Results, className, compiled, data,
        element, elements, hasChanged, isCacheable, isSingle,
@@ -1381,23 +1359,22 @@
 
       // extract context if changed
       // avoid setting `from` before calling select_simple()
-      if (lastContext != (from || doc)) {
+      if (ctx_last != (from || ctx_doc)) {
         from = changeContext(from);
       }
-
       if (RE_SIMPLE_SELECTOR.test(selector)) {
         return select_simple(selector, from, callback);
       }
 
-      from || (from = doc);
+      from || (from = ctx_doc);
 
       // avoid caching disconnected nodes
-      isCacheable = isCachingEnabled && !isCachingPaused &&
+      isCacheable = cache_enabled && !ctx_nocache && !cache_paused &&
         !RE_BUGGY_MUTATION.test(selector) &&
-        !(from.nodeType != 9 && isDisconnected(from, root));
+        !(from != ctx_doc && isDisconnected(from, ctx_root));
 
       if (isCacheable) {
-        snap = doc.snapshot;
+        snap = ctx_doc.snapshot;
         // valid base context storage
         if (snap && !snap.isExpired) {
           if ((elements = snap.Results[selector]) &&
@@ -1408,13 +1385,13 @@
         } else {
           // temporarily pause caching while we are getting hammered with dom mutations (jdalton)
           now = new Date;
-          if ((now - lastCalled) < minCacheRest) {
+          if ((now - lastCalled) < cache_minRest) {
             isCacheable = false;
-            isCachingPaused =
-              (doc.snapshot = new Snapshot).isExpired = true;
-            setTimeout(function() { isCachingPaused = false; }, minCacheRest);
-          } else setCache(true, doc);
-          snap = doc.snapshot;
+            cache_paused =
+              (ctx_doc.snapshot = new Snapshot).isExpired = true;
+            setTimeout(function() { cache_paused = false; }, cache_minRest);
+          } else setCache(true, ctx_doc);
+          snap = ctx_doc.snapshot;
           lastCalled = now;
         }
 
@@ -1426,13 +1403,13 @@
       normSelector = origSelector = selector;
       if ((hasChanged = lastSelector != selector)) {
         // process valid selector strings
-        if (reValidator.test(selector)) {
+        if (re_validator.test(selector)) {
 
           // save passed selector
           lastSelector = selector;
 
           // remove extraneous whitespace
-          if (reUnnormalized.test(selector))
+          if (re_unnormalized.test(selector))
             normSelector = selector = normalize(selector);
         }
         else {
@@ -1444,11 +1421,11 @@
       /* pre-filtering pass allow to scale proportionally with big DOM trees */
 
       // commas separators are treated sequentially to maintain order
-      if ((isSingle = selector.match(reSplitGroup).length < 2) && !notHTML) {
+      if ((isSingle = selector.match(re_splitGroup).length < 2) && !ctx_notHTML) {
 
         if (hasChanged) {
           // get right most selector token
-          token = selector.match(reLastToken)[0];
+          token = selector.match(re_lastToken)[0];
 
           // index where the last token was found
           // (avoids non-standard/deprecated RegExp.leftContext)
@@ -1500,7 +1477,7 @@
 
         // NAME optimization RTL
         else if ((parts = lastSlice.match(Optimize.name)) && (token = parts[1])) {
-          if ((elements = byName(token.match(reNameValue)[2], from)).length) {
+          if ((elements = byName(token.match(re_nameValue)[2], from)).length) {
             selector = selector.slice(0, lastIndex) +
               selector.slice(lastIndex).replace(token, '');
           }
@@ -1517,7 +1494,7 @@
 
       if (!elements) {
         // grab elements from parentNode to cover sibling and adjacent selectors
-        elements = byTag('*', reSiblings.test(selector) && from.parentNode || from);
+        elements = byTag('*', re_siblings.test(selector) && from.parentNode || from);
       }
 
       if (!elements.length) {
@@ -1534,23 +1511,23 @@
       /* end of prefiltering pass */
 
       // re-initialize indexes
-      childIndexes = { };
-      childIndexesByTag = { };
+      cache_childIndexes = { };
+      cache_childIndexesByTag = { };
 
-      // only save if context is similar to host
-      if (unlikeHost) {
+      // only cache if context is similar to host
+      if (ctx_nocache) {
         compiled = compileGroup(selector, '', true);
-      } else if ((compiled = compiledSelectors[normSelector])) {
-        compiledSelectors[origSelector] = compiled;
+      } else if ((compiled = cache_compiledSelectors[normSelector])) {
+        cache_compiledSelectors[origSelector] = compiled;
       } else {
         compiled =
-        compiledSelectors[normSelector] =
-        compiledSelectors[origSelector] = isSingle
-          ? compileSingle(selector)
-          : compileGroup(selector, '', true);
+        cache_compiledSelectors[normSelector] =
+        cache_compiledSelectors[origSelector] = isSingle ?
+          compileSingle(selector) :
+          compileGroup(selector, '', true);
       }
 
-      data = compiled(elements, snap, doc, root, from, callback);
+      data = compiled(elements, snap, ctx_doc, ctx_root, from, callback);
 
       if (isCacheable) {
         // a cached result set for the requested selector
@@ -1569,7 +1546,7 @@
   // @return array
   select = NATIVE_QSA ?
     select_qsa :
-    client_api,
+    select_regular,
 
   /*------------------------------- DEBUG API --------------------------------*/
 
@@ -1583,7 +1560,26 @@
       return String(compileGroup(normalize(selector), '', mode));
     },
 
-  // use client_api() or select_qsa() for select()
+  // a way to control user notification
+  // @message string
+  emit =
+    function(message) {
+      if (global.NW.Dom.debug) {
+        var console = global.console;
+        if (console && console.log) {
+          console.log(message);
+        } else {
+          if (/exception/i.test(message)) {
+            global.status = message;
+            global.defaultStatus = message;
+          } else {
+            global.status += message;
+          }
+        }
+      }
+    },
+
+  // use select_regular() or select_qsa() for select()
   // @enable boolean
   // false = disable QSA
   // true = enable QSA
@@ -1593,12 +1589,12 @@
       return function(enable) {
         if (enable && backup) {
           // clear any compiled selectors created
-          compiledSelectors = { };
+          cache_compiledSelectors = { };
           RE_BUGGY_QSA = backup;
         }
-        else if (!enable && RE_BUGGY_QSA != testTrue) {
+        else if (!enable && RE_BUGGY_QSA != test_true) {
           backup = RE_BUGGY_QSA;
-          RE_BUGGY_QSA = testTrue;
+          RE_BUGGY_QSA = test_true;
         }
       };
     })(),
@@ -1608,29 +1604,24 @@
   // UID expando on elements,
   // used to keep child indexes
   // during a selection session
+  UID = 'uniqueID' in ctx_root ? 'uniqueID' : 'NWID_' + String(+new Date),
   UID_COUNT = 1,
 
-  UID = 'uniqueID' in root ? 'uniqueID' : 'NWID_' + String(+new Date),
-
-  isCachingEnabled = NATIVE_MUTATION_EVENTS,
-
-  isCachingPaused = false,
-
   // minimum time allowed between calls to the cache initialization
-  minCacheRest = 15, //ms
+  cache_minRest = 15, // ms
+  cache_enabled = NATIVE_MUTATION_EVENTS,
+  cache_paused  = false,
 
   // ordinal position by nodeType or nodeName
-  childIndexes = { },
+  cache_childIndexes      = { },
+  cache_childIndexesByTag = { },
 
-  childIndexesByTag = { },
+  // compiled select/match functions returning collections/booleans
+  cache_compiledSelectors = { },
+  cache_compiledMatchers  = { },
 
-  // compiled select functions returning collections
-  compiledSelectors = { },
-
-  // compiled match functions returning booleans
-  compiledMatchers  = { },
-
-  normalizedSelectors = { },
+  // normalized selectors (extranious spaces removed)
+  cache_normalized = { },
 
   // Keep caching states for each context document
   // set manually by using setCache(true, context)
@@ -1638,8 +1629,8 @@
   Snapshot = (function() {
     function Snapshot() {
       // result sets and related root contexts
-      this.Results  = [ ];
-      this.Contexts = [ ];
+      this.Results  = { };
+      this.Contexts = { };
     }
 
     // must exist for compiled functions
@@ -1678,14 +1669,16 @@
   // script loading context will be used as default context
   setCache =
     function(enable, d) {
-      d || (d = doc);
-      if (!!enable) {
-        d.snapshot = new Snapshot;
-        startMutation(d);
-      } else {
+      d || (d = ctx_doc);
+      if (enable) {
+        if (!d.isCaching) {
+          d.snapshot = new Snapshot;
+          startMutation(d);
+        }
+      } else if (d.isCaching) {
         stopMutation(d);
       }
-      isCachingEnabled = !!enable;
+      cache_enabled = !!enable;
     },
 
   // invoked by mutation events to expire cached parts
@@ -1699,35 +1692,29 @@
   // append mutation events
   startMutation =
     function(d) {
-      if (!d.isCaching) {
-        // FireFox/Opera/Safari/KHTML have support for Mutation Events
-        d.addEventListener('DOMAttrModified', mutationWrapper, false);
-        d.addEventListener('DOMNodeInserted', mutationWrapper, false);
-        d.addEventListener('DOMNodeRemoved',  mutationWrapper, false);
-        d.isCaching = true;
-      }
+      // FireFox/Opera/Safari/KHTML have support for Mutation Events
+      d.addEventListener('DOMAttrModified', mutationWrapper, false);
+      d.addEventListener('DOMNodeInserted', mutationWrapper, false);
+      d.addEventListener('DOMNodeRemoved',  mutationWrapper, false);
+      d.isCaching = true;
     },
 
   // remove mutation events
   stopMutation =
     function(d) {
-      if (d.isCaching) {
-        d.removeEventListener('DOMAttrModified', mutationWrapper, false);
-        d.removeEventListener('DOMNodeInserted', mutationWrapper, false);
-        d.removeEventListener('DOMNodeRemoved',  mutationWrapper, false);
-        d.isCaching = false;
-      }
+      d.removeEventListener('DOMAttrModified', mutationWrapper, false);
+      d.removeEventListener('DOMNodeInserted', mutationWrapper, false);
+      d.removeEventListener('DOMNodeRemoved',  mutationWrapper, false);
+      d.isCaching = false;
     },
 
   // expire complete cache
   // can be invoked by Mutation Events or
   // programmatically by other code/scripts
-  // document context is mandatory no checks
   expireCache =
     function(d) {
-      if (d && d.snapshot) {
-        d.snapshot.isExpired = true;
-      }
+      d.snapshot &&
+        (d.snapshot.isExpired = true);
     },
 
   // local indexes, cleared
@@ -1743,7 +1730,7 @@
 
   global.NW.Dom = {
 
-    'version': version,
+    'version': VERSION,
 
     // attribute operators
     'Operators': Operators,

@@ -1,3 +1,6 @@
+* Standardize variable names with prefixes:
+  `ctx` for context vars, `str` for string, `re` for regexps, `cpl` for compiler constants, `test` for simulated regexp tests, and `cache`. [jddalton]
+
 * Tweak compiled source for ancestor and child combinators. [Diego Perini, jddalton]
 
 * Make compileSelector() compile context specific functions, but only cache those from contexts that match the host document type. [Diego Perini, jddalton]
