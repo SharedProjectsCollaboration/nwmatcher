@@ -1062,14 +1062,24 @@
       if (BUGGY_GEBN_MATCH_ID) {
         from || (from = ctx_doc);
         var element, node, results = [ ], i = -1,
-         elements = (from.ownerDocument || from).getElementsByName(name),
+         elements = ctx_doc.getElementsByName(name),
          length = elements.length;
 
-        // use gEBTN if result of gEBN contains an element with
-        // id="length" because it will produce incorrect results
+        // use gEBTN if no results to catch elements with
+        // names that don't officially support name attributes OR
+        // if results contain an element with id="length" because
+        // it will produce incorrect results
         if (!length || length.nodeType) {
           elements = from.getElementsByTagName('*');
+        } 
+        // elements with an id equal to the name may stop
+        // other elements with the same name from being matched
+        else if (length == 1 && (element = elements.item(0)).id == name) {
+          element.id = '';
+          elements = ctx_doc.getElementsByName(name);
+          element.id = name;
         }
+
         while ((element = elements[++i])) {
           if (element.submit) {
             if ((node = element.getAttributeNode('name')) && node.value == name) {
@@ -1082,7 +1092,7 @@
         return results;
       }
 
-      return (from && (from.ownerDocument || from) || ctx_doc).getElementsByName(name);
+      return ctx_doc.getElementsByName(name);
     },
 
   // elements by tag

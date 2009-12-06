@@ -1,3 +1,5 @@
+* Tweak byName() to maintain its speed and still pass unit tests. [jddalton]
+
 * Add support for the CSS3 lang pseudo-class. [Diego Perini, jddalton]
 
 * Escape quotes when compiling attribute, `:not`, and `:contains` selectors. [jddalton]
