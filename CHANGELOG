@@ -1,3 +1,5 @@
+* Make match() return false if an element is not provided. [jddalton]
+
 * Move regexps off the `Optimize` object and ensure context is only matched in a selector where it's assumed. [jddalton]
   For example element `<div><li><em>foo</em></li></div>` would return results for select('> li em', div) but not select('div li em', div).
 

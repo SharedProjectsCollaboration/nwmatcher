@@ -1243,9 +1243,8 @@
     function(element, selector, from, callback) {
       // make sure an element node was passed
       var compiled, origSelector = selector;
-      ctx_doc = element.ownerDocument;
-
-      if (!ctx_doc && (ctx_doc = element)) {
+      if (!element || !(ctx_doc = element.ownerDocument) &&
+          (ctx_doc = element)) {
         return false;
       }
       if (ctx_last != (from || ctx_doc)) {
