@@ -106,6 +106,13 @@
   // http://www.w3.org/TR/css3-syntax/#characters
   re_validator = /^[\x20\t\n\r]*(?:[*>+~a-zA-Za-zA-Z]|\[[\x20\t\n\r\fa-zA-Z]|[.:#_]?(?!-?\d)-?(?:[a-zA-Z_]|[^\x00-\xa0]|\\.))/,
 
+  // optimization expressions
+  re_optimizeId        = new RegExp("#(" + str_identifier + ")|" + str_skipGroups),
+  re_optimizeClass     = new RegExp("\\.(" + str_identifier + ")|" + str_skipGroups),
+  re_optimizeName      = new RegExp("(" + str_nameAttr.replace(/\\1/g, '\\2') + ")|" + str_skipGroups, 'i'),
+  re_optimizeTag       = new RegExp("(?:^|[>+~\\x20])(" + str_identifier + ")|" + str_skipGroups),
+  re_optimizeByRemoval = /\w|^$/,
+
   // for use with the normilize method
   re_attrNormalize = /[[(]/,
   re_unnormalized = /^\x20|[\t\n\r\f]|\x20{2,}|\x20(?:[\]\)=>+~,^$|!]|\*=)|(?:[\[\(=>+~,^$|!]|\*=)\x20|\x20$/,
@@ -507,14 +514,6 @@
 
   /*------------------------------- SELECTORS --------------------------------*/
 
-  // optimization expressions
-  Optimize = {
-    'id':        new RegExp("#("   + str_identifier + ")|" + str_skipGroups),
-    'className': new RegExp("\\.(" + str_identifier + ")|" + str_skipGroups),
-    'name':      new RegExp("(" + str_nameAttr.replace(/\\1/g, '\\2') + ")|" + str_skipGroups, 'i'),
-    'tagName':   new RegExp("(?:^|[>+~\\x20])(" + str_identifier + ")|" + str_skipGroups)
-  },
-
   // attribute operators
   Operators = {
     // ! is not really in the specs
@@ -751,9 +750,9 @@
         function(match, source, selector, origSelector) {
           // assume matching context if E is not provided
           if (match[0] == origSelector) {
-            source = 'if(e===g){' + source + '}';
+            return 'if(e!==h&&(e=e.parentNode)==g){' + source + '}';
           }
-          return 'if(e!==g&&e!==h&&(e=e.parentNode)){' + source + '}';
+          return 'if((e=e.parentNode)&&e!==g&&e!==h){' + source + '}';
         }
     },
 
@@ -802,7 +801,7 @@
       'expression': /^\x20(.*)/,
       'callback':
         function(match, source) {
-          return 'while(e!==g&&e!==h&&(e=e.parentNode)){' + source + '}';
+          return 'while((e=e.parentNode)&&e!==g&&e!==h){' + source + '}';
         }
     },
 
@@ -1071,7 +1070,7 @@
         // it will produce incorrect results
         if (!length || length.nodeType) {
           elements = from.getElementsByTagName('*');
-        } 
+        }
         // elements with an id equal to the name may stop
         // other elements with the same name from being matched
         else if (length == 1 && (element = elements.item(0)).id == name) {
@@ -1457,7 +1456,7 @@
         }
 
         // ID optimization RTL
-        if ((parts = lastSlice.match(Optimize.id)) && (token = parts[1])) {
+        if ((parts = lastSlice.match(re_optimizeId)) && (token = parts[1])) {
           if ((element = byId(token, from))) {
             if (match(element, selector)) {
               data = [ element ];
@@ -1476,28 +1475,53 @@
         }
 
         // ID optimization LTR by reducing the selection context
-        else if ((parts = selector.match(Optimize.id)) && (token = parts[1])) {
+        else if ((parts = selector.match(re_optimizeId)) && (token = parts[1])) {
           if ((element = byId(token, from))) {
             origFrom = from;
+
             if (!/[>+~]/.test(selector)) {
-              selector = selector.replace('#' + token, '*');
-              from = element;
+              token = '#' + token;
+  
+              // convert selectors like `div#foo span` -> `div span`
+              if (re_optimizeByRemoval
+                  .test(selector.charAt(selector.indexOf(token) - 1))) {
+                selector = selector.replace(token, '');
+                from = element.parentNode;
+                elements = element.getElementsByTagName('*');
+              }
+              // convert selectors like `body #foo span` -> `body * span`
+              else {
+                selector = selector.replace(token, '*');
+                from = element;
+              }
             } else from = element.parentNode;
-            elements = from.getElementsByTagName('*');
+
+            elements || (elements = from.getElementsByTagName('*'));
           }
           else elements = 1;
         }
 
         // CLASS optimization RTL
-        else if ((parts = lastSlice.match(Optimize.className)) && (token = parts[1])) {
+        else if ((parts = lastSlice.match(re_optimizeClass)) && (token = parts[1])) {
           if ((elements = byClass(token, from)).length) {
-            selector = selector.slice(0, lastIndex) +
-              selector.slice(lastIndex).replace('.' + token, '*');
+            token = '.' + token;
+
+            // convert selectors like `body div.foo` -> `body div` OR `.foo.bar` -> `.bar`
+            if (re_optimizeByRemoval
+              .test(selector.charAt(selector.indexOf(token) - 1))) {
+              selector = selector.slice(0, lastIndex) +
+                selector.slice(lastIndex).replace(token, '');
+            }
+            // convert selectors like `body .foo` -> `body *`
+            else {
+              selector = selector.slice(0, lastIndex) +
+                selector.slice(lastIndex).replace(token, '*');
+            }
           }
         }
 
         // NAME optimization RTL
-        else if ((parts = lastSlice.match(Optimize.name)) && (token = parts[1])) {
+        else if ((parts = lastSlice.match(re_optimizeName)) && (token = parts[1])) {
           if ((elements = byName(token.match(re_nameValue)[2], from)).length) {
             selector = selector.slice(0, lastIndex) +
               selector.slice(lastIndex).replace(token, '');
@@ -1505,7 +1529,7 @@
         }
 
         // TAG optimization RTL
-        else if ((parts = lastSlice.match(Optimize.tagName)) && (token = parts[1])) {
+        else if ((parts = lastSlice.match(re_optimizeTag)) && (token = parts[1])) {
           if ((elements = from.getElementsByTagName(token)).length) {
             selector = selector.slice(0, lastIndex) +
               selector.slice(lastIndex).replace(token, '*');

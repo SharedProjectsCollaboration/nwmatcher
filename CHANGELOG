@@ -1,3 +1,6 @@
+* Move regexps off the `Optimize` object and ensure context is only matched in a selector where it's assumed. [jddalton]
+  For example element `<div><li><em>foo</em></li></div>` would return results for select('> li em', div) but not select('div li em', div).
+
 * unit test: Update Slick tests and add Slick YUI specs. [jddalton]
 
 * Tweak byName() to maintain its speed and still pass unit tests. [jddalton]
