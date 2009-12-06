@@ -11,6 +11,10 @@
     return NW.Dom.select(selector, from);
   };
 
+	global.SELECT1 = function(from, selector){
+		return NW.Dom.select(selector, from)[0];
+	};
+
   global.document.search = function(selector) {
     return NW.Dom.select(selector, global.document);
   };

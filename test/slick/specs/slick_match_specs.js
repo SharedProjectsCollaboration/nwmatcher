@@ -22,6 +22,7 @@ Describe('Slick Match',function(specs, context){
 		value_of( context.MATCH(testNode, document.createElement('div')) ).should_be_false();
 		
 	};
+	*/
 	
 	its['node should NOT match nothing'] = function(){
 		
@@ -31,7 +32,6 @@ Describe('Slick Match',function(specs, context){
 		value_of( context.MATCH(testNode, '') ).should_be_false();
 		
 	};
-	*/
 	
 	
 	

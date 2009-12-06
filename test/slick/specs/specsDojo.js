@@ -132,11 +132,10 @@ function specsDojo(specs, context){
 			"doh.is(2, (dojo.query('.subDiv .subP .subA', 't4')).length);",
 
 			// failed scope arg
+			"doh.is(0, (dojo.query('div#foo').length));",
 
 			// Removed as this is specific to Dojo API (jddalton)
 			//"doh.is(0, (dojo.query('*', 'thinger')).length);",
-
-			"doh.is(0, (dojo.query('div#foo').length));",
 
 			// sibling selectors
 			"doh.is(1, dojo.query('+', 'container').length);",

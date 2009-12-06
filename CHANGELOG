@@ -1,3 +1,5 @@
+* unit test: Update Slick tests and add Slick YUI specs. [jddalton]
+
 * Tweak byName() to maintain its speed and still pass unit tests. [jddalton]
 
 * Add support for the CSS3 lang pseudo-class. [Diego Perini, jddalton]
