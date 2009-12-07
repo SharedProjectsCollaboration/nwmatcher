@@ -1,3 +1,5 @@
+* Add persisted `lastNormalized` variable, remove `normSelector` and `origSelector` from select_regular() and match(). [jddalton]
+
 * Make match() return false if an element is not provided. [jddalton]
 
 * Move regexps off the `Optimize` object and ensure context is only matched in a selector where it's assumed. [jddalton]
