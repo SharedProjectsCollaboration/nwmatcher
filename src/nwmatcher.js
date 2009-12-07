@@ -904,7 +904,7 @@
 
         if ((element = element.firstChild)) {
           do {
-            if (element.nodeName.charCodeAt(0) > 64) {
+            if (element.nodeName > '@') {
               indexes[element[UID] || (element[UID] = ++UID_COUNT)] = ++i;
             }
           } while ((element = element.nextSibling));
@@ -1130,7 +1130,7 @@
   CPL_ACCEPT_NODE = 'f&&f(N);r[r.length]=N;continue main;',
 
   // filter IE gEBTN('*') results containing non-elements like comments and `/video`
-  CPL_ELEMENTS_ONLY = BUGGY_GEBTN ? 'e.nodeName.charCodeAt(0)>64' : 'e',
+  CPL_ELEMENTS_ONLY = BUGGY_GEBTN ? 'e.nodeName>"@"' : 'e',
 
   CPL_ELEMENTS_ONLY_AND = BUGGY_GEBTN ? CPL_ELEMENTS_ONLY + '&&' : '',
 
