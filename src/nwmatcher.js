@@ -22,6 +22,8 @@
   // host documents feature signature
   HOST_SIGNATURE,
 
+  HOST_DOC = global.document,
+
   // temporary vars
   isSupported, isBuggy, k,
 
@@ -41,10 +43,10 @@
   ctx_cplUpperCase,
 
   // processing context
-  ctx_doc = global.document,
+  ctx_doc,
 
   // context root element (HTML)
-  ctx_root = ctx_doc.documentElement,
+  ctx_root,
 
   // used in the RE_BUGGY_XXXXX testers
   test_false = { 'test': function() { return false; } },
@@ -172,7 +174,7 @@
   changeContext =
     (function() {
       function changeContext(from) {
-        from || (from = ctx_doc);
+        from || (from = HOST_DOC);
         var isSensitive, isFragment = from.nodeType == 11;
 
         // reference context ownerDocument and document root (HTML)
@@ -1247,7 +1249,7 @@
           (ctx_doc = element)) {
         return false;
       }
-      if (ctx_last != (from || ctx_doc)) {
+      if (ctx_last != (from || HOST_DOC)) {
         from = changeContext(from);
       }
 
@@ -1330,7 +1332,7 @@
   select_qsa =
     function (selector, from, callback) {
       var element, elements;
-      if (ctx_last != (from || ctx_doc)) {
+      if (ctx_last != (from || HOST_DOC)) {
         from = changeContext(from);
       }
       if (RE_SIMPLE_SELECTOR.test(selector)) {
@@ -1376,14 +1378,14 @@
 
       // extract context if changed
       // avoid setting `from` before calling select_simple()
-      if (ctx_last != (from || ctx_doc)) {
+      if (ctx_last != (from || HOST_DOC)) {
         from = changeContext(from);
       }
       if (RE_SIMPLE_SELECTOR.test(selector)) {
         return select_simple(selector, from, callback);
       }
 
-      from || (from = ctx_doc);
+      from || (from = HOST_DOC);
 
       // avoid caching disconnected nodes
       isCacheable = cache_enabled && !ctx_nocache && !cache_paused &&

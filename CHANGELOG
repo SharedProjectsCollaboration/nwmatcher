@@ -1,3 +1,5 @@
+* Add `HOST_DOC` to ensure `ctx_doc` is reset when not passing a context to match()/select(). [jddalton]
+
 * Revert to character comparisons using `@` for non-element nodes. [Diego Perini]
 
 * Add persisted `lastNormalized` variable, remove `normSelector` and `origSelector` from select_regular() and match(). [jddalton]
