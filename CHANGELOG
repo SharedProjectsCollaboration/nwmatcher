@@ -1,3 +1,5 @@
+* Revert `NATIVE_SLICE_PROTO` feature test to check first element of the array because Safari 2.0 returns an Array with undefined values in it. [Diego Perini]
+
 * Make compileSelector() pass `match, source, mode, selector` to callbacks. [jddalton]
 
 * Add `HOST_DOC` to ensure `ctx_doc` is reset when not passing a context to match()/select(). [jddalton]

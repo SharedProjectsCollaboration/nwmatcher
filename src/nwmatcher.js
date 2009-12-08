@@ -438,7 +438,7 @@
   NATIVE_SLICE_PROTO =
     (function() {
       try {
-        return slice.call(ctx_doc.childNodes, 0) instanceof Array;
+        return !!slice.call(ctx_doc.childNodes, 0)[0];
       } catch(e) {
         return false;
       }
