@@ -577,7 +577,7 @@
     'spseudos': {
       'expression': /^\:(root|empty|(?:first|last|only)-(?:child(?:-of-type)?|of-type)|nth-(?:last-)?(?:child|of-type))(?:\(([^\)]*)\))?(.*)/,
       'callback':
-        function(match, source, selector) {
+        function(match, source) {
           var a, b, n, expr, test, type,
            isLast  = match[1].indexOf('last') > -1,
            parts   = match[1].split('-'),
@@ -668,7 +668,7 @@
     'dpseudos': {
       'expression': /^\:((?:active|checked|disabled|enabled|focus|hover|link|selected|target|visited)(?!\()|(?:contains|lang|not)(?=\())(?:\((["']?)(.*?(?:\(.*\))?[^'"()]*?)\2\))?(.*)/,
       'callback':
-        function(match, source, selector) {
+        function(match, source) {
           // escape double quotes if not already
           var value = match[3] && match[3].replace(/([^\\]?)\x22/g, '$1\\"');
 
@@ -749,9 +749,9 @@
     'children': {
       'expression': /^\>(.*)/,
       'callback':
-        function(match, source, selector, origSelector) {
+        function(match, source, mode, selector) {
           // assume matching context if E is not provided
-          if (match[0] == origSelector) {
+          if (match[0] == selector) {
             return 'if(e!==h&&(e=e.parentNode)==g){' + source + '}';
           }
           return 'if((e=e.parentNode)&&e!==g&&e!==h){' + source + '}';
@@ -763,9 +763,9 @@
     'adjacent': {
       'expression': /^\+(.*)/,
       'callback':
-        function(match, source, selector, origSelector) {
+        function(match, source, mode, selector) {
           // assume matching context if E is not provided
-          if (match[0] == origSelector) {
+          if (match[0] == selector) {
             source = 'if(e===g){' + source + '}';
           }
           return NATIVE_TRAVERSAL_API ?
@@ -779,12 +779,12 @@
     'relative': {
       'expression': /^\~(.*)/,
       'callback':
-        function(match, source, selector, origSelector) {
+        function(match, source, mode, selector) {
           // increment private counter
           k++;
 
           // assume matching context if E is not provided
-          if (match[0] == origSelector) {
+          if (match[0] == selector) {
             source = 'if(e===g){' + source + '}';
           }
 
@@ -1208,28 +1208,28 @@
         selector += '*';
       }
 
-      // reset private counter
-      // used by sibling combinator
-      // E ~ F (F relative sibling of E)
-      k = 0;
+          // reset private counter
+          // used by sibling combinator
+          // E ~ F (F relative sibling of E)
+          k = 0;
 
       var expr, match, result, origSelector = selector;
-      while (selector) {
+          while (selector) {
         result = null;
-        for (expr in Selectors) {
-          if ((match = selector.match(Selectors[expr].expression))) {
-            result = Selectors[expr].callback(match, source, selector, origSelector);
+            for (expr in Selectors) {
+              if ((match = selector.match(Selectors[expr].expression))) {
+            result = Selectors[expr].callback(match, source, mode, origSelector);
             if (!result ) { break; }
-
+    
             source = result;
-            selector = match[match.length - 1];
-            if (!selector) { break; }
-          }
-        }
+                selector = match[match.length - 1];
+                if (!selector) { break; }
+              }
+            }
         if (!result) {
-          // log error but continue execution
-          emit('DOMException: unknown selector "' + selector + '"');
-          // return empty array or false depending on mode
+              // log error but continue execution
+              emit('DOMException: unknown selector "' + selector + '"');
+              // return empty array or false depending on mode
           return mode ? 'return r;' : '';
         }
       }

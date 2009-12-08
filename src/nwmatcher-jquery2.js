@@ -22,10 +22,12 @@
 // For structural pseudo-classes extensions
 NW.Dom.Selectors['jq:child'] = {
   'expression': /^\:((?:first|last|even|odd)(?![-\(])|(?:nth|eq|gt|lt)(?=\())(?:\(([^()]*)\))?(.*)/,
-  'callback': function(match, source) {
+  'callback': function(match, source, mode, selector) {
 
     // do not change this, it is searched & replaced
-    var ACCEPT_NODE = 'f&&f(N);r[r.length]=N;continue main;';
+    var ACCEPT_NODE = mode ?
+      'f&&f(N);r[r.length]=N;continue main;' :
+      'f&&f(N);return true';
 
     switch (match[1]) {
       case 'even':
@@ -58,10 +60,12 @@ NW.Dom.Selectors['jq:child'] = {
 // For element pseudo-classes extensions
 NW.Dom.Selectors['jq:pseudo'] = {
   'expression': /^\:((?:button|checkbox|file|header|hidden|image|input|parent|password|radio|reset|submit|text|visible)(?![-\(])|has(?=\())(?:\((["']*)([^'"()]*)\2\))?(.*)/,
-  'callback': function(match, source) {
- 
+  'callback': function(match, source, mode) {
+
     // do not change this, it is searched & replaced
-    var ACCEPT_NODE = 'f&&f(N);r[r.length]=N;continue main;';
+    var ACCEPT_NODE = mode ?
+      'f&&f(N);r[r.length]=N;continue main;' :
+      'f&&f(N);return true';
 
     switch (match[1]) {
       case 'has':
@@ -100,9 +104,9 @@ NW.Dom.Selectors['jq:pseudo'] = {
   // # cleaned
   var cnt = 0,
 
-  base = global.document,
+  doc = global.document,
 
-  root = base.documentElement,
+  root = doc.documentElement,
 
   // remove comment nodes and empty text nodes
   // unique child with empty text nodes are kept
@@ -129,7 +133,7 @@ NW.Dom.Selectors['jq:pseudo'] = {
 
   start = root.addEventListener ?
     function() {
-      base.removeEventListener('DOMContentLoaded', start, false);
+      doc.removeEventListener('DOMContentLoaded', start, false);
       cleanDOM(root);
       NW.Dom.select('*:nth-child(n)');
       // XML parsing ?
@@ -137,8 +141,8 @@ NW.Dom.Selectors['jq:pseudo'] = {
       top.status += 'Removed ' + cnt + ' empty text nodes.';
     } :
     function() {
-      if (base.readyState == 'complete') {
-        base.detachEvent('onreadystatechange', start);
+      if (doc.readyState == 'complete') {
+        doc.detachEvent('onreadystatechange', start);
         cleanDOM(root);
         NW.Dom.select('*:nth-child(n)');
         // will crash IE6
@@ -147,10 +151,10 @@ NW.Dom.Selectors['jq:pseudo'] = {
       }
     };
 
-  if (base.addEventListener) {
-    base.addEventListener('DOMContentLoaded', start, false);
-  } else if (base.attachEvent) {
-    base.attachEvent('onreadystatechange', start);
+  if (doc.addEventListener) {
+    doc.addEventListener('DOMContentLoaded', start, false);
+  } else if (doc.attachEvent) {
+    doc.attachEvent('onreadystatechange', start);
   } else {
     global.onload = (function(__onload) {
       return function() {
