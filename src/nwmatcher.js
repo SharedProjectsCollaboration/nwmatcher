@@ -113,7 +113,7 @@
   re_optimizeClass     = new RegExp("\\.(" + str_identifier + ")|" + str_skipGroups),
   re_optimizeName      = new RegExp("(" + str_nameAttr.replace(/\\1/g, '\\2') + ")|" + str_skipGroups, 'i'),
   re_optimizeTag       = new RegExp("(?:^|[>+~\\x20])(" + str_identifier + ")|" + str_skipGroups),
-  re_optimizeByRemoval = /\w|^$/,
+  re_optimizeByRemoval = new RegExp(str_identifier.slice(0, -1) + '|^$'),
 
   // for use with the normilize method
   re_attrNormalize = /[[(]/,
@@ -558,13 +558,13 @@
             value = (test ? match[4].toLowerCase() : match[4]).replace(/\\/g, '').replace(/\x22/g, '\\"');
 
             return (
-              'n=e.nodeType==1&&s.getAttribute(e,"' + match[1] + '")' +
+              'n=' + CPL_HAS_ATTRIBUTE_API + 's.getAttribute(e,"' + match[1] + '")' +
                 (test ? '.toLowerCase()' : '') + '||"";' +
               'if(' +
                 Operators[match[2]].replace(/\%m/g, value) +
               '){' + source + '}');
           }
-          return 'if(e.nodeType==1&&s.hasAttribute(e,"' + match[1] + '")){' + source + '}';
+          return 'if(' + CPL_HAS_ATTRIBUTE_API + 's.hasAttribute(e,"' + match[1] + '")){' + source + '}';
         }
     },
 
@@ -592,7 +592,7 @@
 
             case 'empty':
               // element that has no children
-              return 'if(' + CPL_ELEMENTS_ONLY_AND + '!e.firstChild){' + source + '}';
+              return 'if(!e.firstChild){' + source + '}';
 
             default:
               if (formula) {
@@ -625,7 +625,7 @@
 
                 // 4 cases: 1 (nth) x 4 (child, of-type, last-child, last-of-type)
                 return (
-                  'if(e!==h' + CPL_AND_ELEMENTS_ONLY + '){' +
+                  'if(e!==h){' +
                     't=e.nodeName' + ctx_cpl_upperCase +
                     ';n=s.getChildIndexes' + (ofType ? 'ByTag' : '') +
                     '(e.parentNode' + (ofType ? ',t' : '') + ');' +
@@ -647,7 +647,7 @@
               }
 
               return (
-                'if(e!==h' + CPL_AND_ELEMENTS_ONLY + '){' +
+                'if(e!==h){' +
                   ( 'n=e;while((n=n.' + a + 'Sibling)' + type + ');if(!n){' + (b ? source :
                     'n=e;while((n=n.' + n + 'Sibling)' + type + ');if(!n){' + source + '}') + '}' ) +
                 '}');
@@ -676,8 +676,7 @@
             /* CSS3 negation pseudo-class */
             case 'not':
               // compile nested selectors
-              return 'if(' + CPL_ELEMENTS_ONLY_AND +
-                '!s.match(e,"' + value + '")){' + source +'}';
+              return 'if(!s.match(e,"' + value + '")){' + source +'}';
 
             /* CSS3 UI element states */
             case 'checked':
@@ -813,8 +812,7 @@
       'expression': /^\*(.*)/,
       'callback':
         function(match, source) {
-          // BUGGY_GEBTN return comment nodes (ex: IE)
-          return 'if(' + CPL_ELEMENTS_ONLY + '){' + source + '}';
+          return source;
         }
     },
 
@@ -988,28 +986,30 @@
   // elements by class
   // @return nodeList (non buggy native GEBCN)
   // @return array (non native/buggy GEBCN)
-  byClass =
+  byClass = !BUGGY_GEBCN ?
+    function(className, from) {
+      return ctx_notHTML ?
+        select_regular('*[class~="' + className + '"]', from || ctx_doc) :
+        (from || ctx_doc).getElementsByClassName(className.replace(/\\/g, ''));
+    } :
     function(className, from) {
       if (ctx_notHTML) {
         return select_regular('*[class~="' + className + '"]', from || ctx_doc);
       }
-      if (BUGGY_GEBCN) {
-        var element, i = -1, j = i, results = [ ],
-         elements = (from || ctx_doc).getElementsByTagName('*'),
-         n = ctx_quirks ? className.toLowerCase() : className;
 
-        className = ' ' + n.replace(/\\/g, '') + ' ';
-        while ((element = elements[++i])) {
-          if ((n = element.className) &&
-              (' ' + (ctx_quirks ? n.toLowerCase() : n) + ' ')
-              .replace(re_edgeSpaces, ' ').indexOf(className) > -1) {
-            results[++j] = element;
-          }
+      var element, i = -1, j = i, results = [ ],
+       elements = (from || ctx_doc).getElementsByTagName('*'),
+       n = ctx_quirks ? className.toLowerCase() : className;
+
+      className = ' ' + n.replace(/\\/g, '') + ' ';
+      while ((element = elements[++i])) {
+        if ((n = element.className) &&
+            (' ' + (ctx_quirks ? n.toLowerCase() : n) + ' ')
+            .replace(re_edgeSpaces, ' ').indexOf(className) > -1) {
+          results[++j] = element;
         }
-        return results;
       }
-
-      return (from || ctx_doc).getElementsByClassName(className.replace(/\\/g, ''));
+      return results;
     },
 
   // element by id
@@ -1053,76 +1053,99 @@
   // elements by name
   // @return nodeList (non buggy native GEBN)
   // @return array (non native/buggy GEBN)
-  byName =
+  byName = !BUGGY_GEBN_MATCH_ID ?
+    function(name, from) {
+      return ctx_notHTML ?
+        select_regular(' *[name="' + name + '"]', from || ctx_doc) :
+        ctx_doc.getElementsByName(name);
+    } :
     function(name, from) {
       if (ctx_notHTML) {
         return select_regular(' *[name="' + name + '"]', from || ctx_doc);
       }
 
       name = name.replace(/\\/g, '');
-      if (BUGGY_GEBN_MATCH_ID) {
-        from || (from = ctx_doc);
-        var element, node, results = [ ], i = -1,
-         elements = ctx_doc.getElementsByName(name),
-         length = elements.length;
+      from || (from = ctx_doc);
 
-        // use gEBTN if no results to catch elements with
-        // names that don't officially support name attributes OR
-        // if results contain an element with id="length" because
-        // it will produce incorrect results
-        if (!length || length.nodeType) {
+      var element, node, results = [ ], i = -1, j = i,
+       elements = ctx_doc.getElementsByName(name),
+       length = elements.length;
+
+      // use gEBTN if no results to catch elements with
+      // names that don't officially support name attributes OR
+      // if results contain an element with id="length" because
+      // it will produce incorrect results
+      if (!length || length.nodeType) {
+        elements = from.getElementsByTagName('*');
+      }
+      // elements with an id equal to the name may stop
+      // other elements with the same name from being matched
+      else if (length == 1 && (element = elements.item(0)).id == name) {
+        element.id = '';
+        elements = ctx_doc.getElementsByName(name);
+        if (!(length = elements.length) || length.nodeType) {
           elements = from.getElementsByTagName('*');
         }
-        // elements with an id equal to the name may stop
-        // other elements with the same name from being matched
-        else if (length == 1 && (element = elements.item(0)).id == name) {
-          element.id = '';
-          elements = ctx_doc.getElementsByName(name);
-          element.id = name;
-        }
-
-        while ((element = elements[++i])) {
-          if (element.submit) {
-            if ((node = element.getAttributeNode('name')) && node.value == name) {
-              results.push(element);
-            }
-          } else if (element.name == name) {
-            results.push(element);
-          }
-        }
-        return results;
+        element.id = name;
       }
 
-      return ctx_doc.getElementsByName(name);
+      while ((element = elements[++i])) {
+        if (element.submit) {
+          if ((node = element.getAttributeNode('name')) && node.value == name) {
+            results[++j] = element;
+          }
+        } else if (element.name == name) {
+          results[++j] = element;
+        }
+      }
+      return results;
     },
 
   // elements by tag
   // @return nodeList (native GEBTN)
   // @return array (document fragments)
-  byTag =
+  byTag = !BUGGY_GEBTN ?
+    function(tag, from) {
+      return ctx_notHTML && typeof from.getElementsByTagName == 'undefined' ?
+        byTagInFragments(tag, from) :
+        (from || ctx_doc).getElementsByTagName(tag);
+    } :
     function(tag, from) {
       // support document fragments
       if (ctx_notHTML && typeof from.getElementsByTagName == 'undefined') {
-        var child, isUniversal, upperCased, results = [ ];
-        if ((child = from.firstChild)) {
-          isUniversal = tag === '*';
-          upperCased = tag.toUpperCase();
-          do {
-            if (child.nodeType == 1) {
-              if (isUniversal || child.nodeName.toUpperCase() === upperCased) {
-                results.push(child);
-              }
-              if (child.getElementsByTagName) {
-                results = concatList(results, child.getElementsByTagName(tag));
-              }
-            }
-          } while ((child = child.nextSibling));
+        return byTagInFragments(tag, from);
+      }
+      if (tag == '*') {
+        var element, i = -1, j = i, results = [ ],
+         elements = (from || ctx_doc).getElementsByTagName(tag);
+        while (element = elements[++i]) {
+          if (element.nodeName > '@') results[++j] = element;
         }
         return results;
       }
-
       return (from || ctx_doc).getElementsByTagName(tag);
     },
+
+  // elements in document fragments by tag
+  // @return array
+  byTagInFragments = function(tag, from) {
+    var child, isUniversal, upperCased, results = [ ];
+    if ((child = from.firstChild)) {
+      isUniversal = tag === '*';
+      upperCased = tag.toUpperCase();
+      do {
+        if (child.nodeType == 1) {
+          if (isUniversal || child.nodeName.toUpperCase() === upperCased) {
+            results.push(child);
+          }
+          if (child.getElementsByTagName) {
+            results = concatList(results, child.getElementsByTagName(tag));
+          }
+        }
+      } while ((child = child.nextSibling));
+    }
+    return results;
+  },
 
   /*---------------------------- COMPILER METHODS ----------------------------*/
 
@@ -1131,12 +1154,11 @@
   // a common chunk of code used a couple times in compiled functions
   CPL_ACCEPT_NODE = 'f&&f(N);r[r.length]=N;continue main;',
 
-  // filter IE gEBTN('*') results containing non-elements like comments and `/video`
-  CPL_ELEMENTS_ONLY = BUGGY_GEBTN ? 'e.nodeName>"@"' : 'e',
-
-  CPL_ELEMENTS_ONLY_AND = BUGGY_GEBTN ? CPL_ELEMENTS_ONLY + '&&' : '',
-
-  CPL_AND_ELEMENTS_ONLY = BUGGY_GEBTN ? '&&' + CPL_ELEMENTS_ONLY : '',
+  // IE can get attributes from comment nodes and
+  // Opera 9.25 textNodes don't have the getAttribute method
+  CPL_HAS_ATTRIBUTE_API = BUGGY_GEBTN ||
+    !isNative(ctx_div.appendChild(ctx_doc.createTextNode('p')), 'getAttribute') ?
+      'e.nodeType==1&&' : '',
 
   // Use the textContent or innerText property to check CSS3 :contains
   // Safari 2 has a bug with innerText and hidden content, using an
@@ -1207,29 +1229,35 @@
       if (/[>+~]$/.test(selector)) {
         selector += '*';
       }
+      // exit earlier if something like `* *`
+      if (/^[\x20*]+$/.test(selector)) {
+        return BUGGY_GEBTN ?
+          'if(e.nodeName>"@"){' + source + '}' :
+          source;
+      }
 
-          // reset private counter
-          // used by sibling combinator
-          // E ~ F (F relative sibling of E)
-          k = 0;
+      // reset private counter
+      // used by sibling combinator
+      // E ~ F (F relative sibling of E)
+      k = 0;
 
       var expr, match, result, origSelector = selector;
-          while (selector) {
+      while (selector) {
         result = null;
-            for (expr in Selectors) {
-              if ((match = selector.match(Selectors[expr].expression))) {
-            result = Selectors[expr].callback(match, source, mode, origSelector);
-            if (!result ) { break; }
-    
-            source = result;
-                selector = match[match.length - 1];
-                if (!selector) { break; }
-              }
-            }
+        for (expr in Selectors) {
+          if ((match = selector.match(Selectors[expr].expression))) {
+        result = Selectors[expr].callback(match, source, mode, origSelector);
+        if (!result ) { break; }
+
+        source = result;
+            selector = match[match.length - 1];
+            if (!selector) { break; }
+          }
+        }
         if (!result) {
-              // log error but continue execution
-              emit('DOMException: unknown selector "' + selector + '"');
-              // return empty array or false depending on mode
+          // log error but continue execution
+          emit('DOMException: unknown selector "' + selector + '"');
+          // return empty array or false depending on mode
           return mode ? 'return r;' : '';
         }
       }
@@ -1490,10 +1518,9 @@
               else {
                 lastNormalized = selector.replace(token, '*');
                 from = element;
+                elements = from.getElementsByTagName('*');
               }
             } else from = element.parentNode;
-
-            elements || (elements = from.getElementsByTagName('*'));
           }
           else elements = 1;
         }
@@ -1527,7 +1554,7 @@
 
         // TAG optimization RTL
         else if ((parts = lastSlice.match(re_optimizeTag)) && (token = parts[1])) {
-          if ((elements = from.getElementsByTagName(token)).length) {
+          if ((elements = byTag(token, from)).length) {
             lastNormalized = lastNormalized.slice(0, lastIndex) +
               lastNormalized.slice(lastIndex).replace(token, '*');
           }
