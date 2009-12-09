@@ -1,3 +1,5 @@
+* Ensure `lastNormalized` isn't modifed by selector optimizations in select_regular(). [jddalton]
+
 * Make `re_optimizeByRemoval` use `str_identifier`, fork byClass()/byName()/byTag() based on feature tests, and remove compiled nodeType checks by making byTag() filter non-elements. [Diego Perini, jddalton]
 
 * Revert `NATIVE_SLICE_PROTO` feature test to check first element of the array because Safari 2.0 returns an Array with undefined values in it. [Diego Perini]

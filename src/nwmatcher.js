@@ -1402,7 +1402,7 @@
     function (selector, from, callback) {
       var Contexts, Results, className, compiled, data,
        element, elements, hasChanged, isCacheable, isSingle,
-       now, origFrom, parts, token;
+       normalized, now, origFrom, parts, token;
 
       // extract context if changed
       // avoid setting `from` before calling select_simple()
@@ -1454,6 +1454,7 @@
           lastSelector = selector;
 
           // remove extraneous whitespace
+          normalized =
           lastNormalized = re_unnormalized.test(selector) ?
             normalize(selector) : selector;
         }
@@ -1461,20 +1462,22 @@
           emit('DOMException: "' + selector + '" is not a valid CSS selector.');
           return [ ];
         }
+      } else {
+        normalized = lastNormalized;
       }
 
       /* pre-filtering pass allow to scale proportionally with big DOM trees */
 
       // commas separators are treated sequentially to maintain order
-      if ((isSingle = lastNormalized.match(re_splitGroup).length < 2) && !ctx_notHTML) {
+      if ((isSingle = normalized.match(re_splitGroup).length < 2) && !ctx_notHTML) {
 
         if (hasChanged) {
           // get right most selector token
-          token = lastNormalized.match(re_lastToken)[0];
+          token = normalized.match(re_lastToken)[0];
 
           // index where the last token was found
           // (avoids non-standard/deprecated RegExp.leftContext)
-          lastIndex = lastNormalized.length - token.length;
+          lastIndex = normalized.length - token.length;
 
           // only last slice before :not rules
           lastSlice = token.split(':not')[0];
@@ -1491,32 +1494,32 @@
 
           if (isCacheable) {
             Contexts[selector] =
-            Contexts[lastNormalized] = from;
+            Contexts[normalized] = from;
             return (
               Results[selector] =
-              Results[lastNormalized] = data || [ ]);
+              Results[normalized] = data || [ ]);
           }
           return data || [ ];
         }
 
         // ID optimization LTR by reducing the selection context
-        else if ((parts = lastNormalized.match(re_optimizeId)) && (token = parts[1])) {
+        else if ((parts = normalized.match(re_optimizeId)) && (token = parts[1])) {
           if ((element = byId(token, from))) {
             origFrom = from;
 
-            if (!/[>+~]/.test(lastNormalized)) {
+            if (!/[>+~]/.test(normalized)) {
               token = '#' + token;
   
               // convert selectors like `div#foo span` -> `div span`
               if (re_optimizeByRemoval
-                  .test(lastNormalized.charAt(lastNormalized.indexOf(token) - 1))) {
-                lastNormalized = lastNormalized.replace(token, '');
+                  .test(normalized.charAt(normalized.indexOf(token) - 1))) {
+                normalized = normalized.replace(token, '');
                 from = element.parentNode;
                 elements = element.getElementsByTagName('*');
               }
               // convert selectors like `body #foo span` -> `body * span`
               else {
-                lastNormalized = selector.replace(token, '*');
+                normalized = selector.replace(token, '*');
                 from = element;
                 elements = from.getElementsByTagName('*');
               }
@@ -1532,14 +1535,14 @@
 
             // convert selectors like `body div.foo` -> `body div` OR `.foo.bar` -> `.bar`
             if (re_optimizeByRemoval
-              .test(lastNormalized.charAt(lastNormalized.indexOf(token) - 1))) {
-              lastNormalized = lastNormalized.slice(0, lastIndex) +
-                lastNormalized.slice(lastIndex).replace(token, '');
+              .test(normalized.charAt(normalized.indexOf(token) - 1))) {
+              normalized = normalized.slice(0, lastIndex) +
+                normalized.slice(lastIndex).replace(token, '');
             }
             // convert selectors like `body .foo` -> `body *`
             else {
-              lastNormalized = lastNormalized.slice(0, lastIndex) +
-                lastNormalized.slice(lastIndex).replace(token, '*');
+              normalized = normalized.slice(0, lastIndex) +
+                normalized.slice(lastIndex).replace(token, '*');
             }
           }
         }
@@ -1547,16 +1550,16 @@
         // NAME optimization RTL
         else if ((parts = lastSlice.match(re_optimizeName)) && (token = parts[1])) {
           if ((elements = byName(token.match(re_nameValue)[2], from)).length) {
-            lastNormalized = lastNormalized.slice(0, lastIndex) +
-              lastNormalized.slice(lastIndex).replace(token, '');
+            normalized = normalized.slice(0, lastIndex) +
+              normalized.slice(lastIndex).replace(token, '');
           }
         }
 
         // TAG optimization RTL
         else if ((parts = lastSlice.match(re_optimizeTag)) && (token = parts[1])) {
           if ((elements = byTag(token, from)).length) {
-            lastNormalized = lastNormalized.slice(0, lastIndex) +
-              lastNormalized.slice(lastIndex).replace(token, '*');
+            normalized = normalized.slice(0, lastIndex) +
+              normalized.slice(lastIndex).replace(token, '*');
           }
         }
       }
@@ -1569,10 +1572,10 @@
       if (!elements.length) {
         if (isCacheable) {
           Contexts[selector] =
-          Contexts[lastNormalized] = origFrom || from;
+          Contexts[normalized] = origFrom || from;
           return (
             Results[selector] =
-            Results[lastNormalized] = [ ]);
+            Results[normalized] = [ ]);
         }
         return [ ];
       }
@@ -1585,15 +1588,15 @@
 
       // only cache if context is similar to host
       if (ctx_nocache) {
-        compiled = compileGroup(lastNormalized, '', true);
-      } else if ((compiled = cache_compiledSelectors[lastNormalized])) {
+        compiled = compileGroup(normalized, '', true);
+      } else if ((compiled = cache_compiledSelectors[normalized])) {
         cache_compiledSelectors[selector] = compiled;
       } else {
         compiled =
         cache_compiledSelectors[selector] =
-        cache_compiledSelectors[lastNormalized] = isSingle ?
-          compileSingle(lastNormalized) :
-          compileGroup(lastNormalized, '', true);
+        cache_compiledSelectors[normalized] = isSingle ?
+          compileSingle(normalized) :
+          compileGroup(normalized, '', true);
       }
 
       data = compiled(elements, snap, ctx_doc, ctx_root, from, callback);
@@ -1601,10 +1604,10 @@
       if (isCacheable) {
         // a cached result set for the requested selector
         Contexts[selector] =
-        Contexts[lastNormalized] = origFrom || from;
+        Contexts[normalized] = origFrom || from;
         return (
           Results[selector] =
-          Results[lastNormalized] = data);
+          Results[normalized] = data);
       }
 
       return data;
