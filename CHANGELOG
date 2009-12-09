@@ -1,3 +1,5 @@
+* Merge compileGroup() and compileSingle() into compileSelector(). [jddalton]
+
 * Ensure `lastNormalized` isn't modifed by selector optimizations in select_regular(). [jddalton]
 
 * Make `re_optimizeByRemoval` use `str_identifier`, fork byClass()/byName()/byTag() based on feature tests, and remove compiled nodeType checks by making byTag() filter non-elements. [Diego Perini, jddalton]

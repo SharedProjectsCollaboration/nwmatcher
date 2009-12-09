@@ -1179,90 +1179,83 @@
         's.stripTags(e.innerHTML)';
     })(),
 
-  // compile a comma separated selector
-  // @mode boolean true for select, false for match
-  // @return function (compiled)
-  compileGroup =
-    function(selector, source, mode) {
-      var parts, token, i = -1, seen = { };
-      if ((parts = selector.match(re_splitGroup))) {
-        // for each selector in the group
-        while ((token = parts[++i])) {
-          // avoid repeating the same token in comma separated group (p, p)
-          if (!seen[token]) {
-            seen[token] = true;
-            // reset `e` to begin another selector
-            source += (i ? 'e=N;' : '') +
-              compileSelector(token, mode ? CPL_ACCEPT_NODE : 'f&&f(N);return true;', mode);
-          }
-        }
-      }
-
-      // for select method
-      if (mode) {
-        // (c-ollection, s-napshot, d-ocument, h-root, g-from, f-callback)
-        return new Function('c,s,d,h,g,f',
-          'var e,n,N,t,i=-1,j=-1,r=[];main:while(N=e=c[++i]){' + source + '}return r;');
-      }
-      // for match method
-      else {
-        // (e-element, s-napshot, d-ocument, h-root, g-from, f-callback)
-        return new Function('e,s,d,h,g,f',
-          'var n,t,N=e;' + source + 'return false;');
-      }
-    },
-
-  // compile a single selector for use with select()
-  // @return function (compiled)
-  compileSingle =
-    function(selector) {
-      var source = compileSelector(selector, CPL_ACCEPT_NODE, true);
-      return new Function('c,s,d,h,g,f',
-        'var e,n,N,t,i=-1,j=-1,r=[];main:while(N=e=c[++i]){' + source + '}return r;');
-    },
-
   // compile a CSS3 string selector into ad-hoc javascript matching function
-  // @return string (to be compiled)
+  // @selector string
+  // @mode boolean true for select, false for match
+  // @single boolean true for single, false for group selector
+  // @return function (compiled)
   compileSelector =
-    function(selector, source, mode) {
-      // assume matching `*` if F is not provided
-      if (/[>+~]$/.test(selector)) {
-        selector += '*';
-      }
-      // exit earlier if something like `* *`
-      if (/^[\x20*]+$/.test(selector)) {
-        return BUGGY_GEBTN ?
-          'if(e.nodeName>"@"){' + source + '}' :
-          source;
-      }
+    function(selector, mode, single) {
+      var expr, filter, inner, match, output, remaining, source = '',
+       filters = [ ], seen = { }, i = -1,
+       parts = single ? [selector] : selector.match(re_splitGroup);
 
-      // reset private counter
-      // used by sibling combinator
-      // E ~ F (F relative sibling of E)
-      k = 0;
+      // for each selector in the group
+      while ((selector = parts[++i])) {
 
-      var expr, match, result, origSelector = selector;
-      while (selector) {
-        result = null;
-        for (expr in Selectors) {
-          if ((match = selector.match(Selectors[expr].expression))) {
-        result = Selectors[expr].callback(match, source, mode, origSelector);
-        if (!result ) { break; }
+        if (/[>+~]$/.test(selector)) {
+          // assume matching `*` if F is not provided
+          selector += '*';
+        } else if (/^[\x20*]+$/.test(selector)) {
+          // convert something like `* * *` to `*`
+          selector = '*';
+        }
 
-        source = result;
-            selector = match[match.length - 1];
-            if (!selector) { break; }
+        // avoid repeating the same selector in comma separated groups (p, p)
+        if (seen[selector]) { continue; }
+
+        seen[selector] = true;
+
+        // reset `e` to begin another selector
+        source += i ? 'e=N;' : '';
+
+        // begin building inner source for current selector
+        inner = mode ? CPL_ACCEPT_NODE : 'f&&f(N);return true;';
+
+        // quickly process `*` selectors
+        if (selector == '*') {
+          source += BUGGY_GEBTN ? 'if(e.nodeName>"@"){' + inner + '}' : inner;
+          continue;
+        }
+
+        // reset private counter
+        // used by sibling combinator
+        // E ~ F (F relative sibling of E)
+        k = 0;
+
+        // the selector is whittled down match by match
+        remaining = selector;
+
+        while (remaining) {
+          output = null;
+          for (expr in Selectors) {
+            if ((match = remaining.match(Selectors[expr].expression))) {
+              output = Selectors[expr].callback(match, inner, mode, selector);
+              if (!output) { break; }
+
+              inner = output;
+              remaining = match[match.length - 1];
+              if (!remaining) { break; }
+            }
+          }
+          if (!output) {
+            // log error but continue execution
+            emit('DOMException: unknown selector "' + remaining + '"');
+            // return empty array or false depending on mode
+            inner = mode ? 'return r;' : '';
+            break;
           }
         }
-        if (!result) {
-          // log error but continue execution
-          emit('DOMException: unknown selector "' + selector + '"');
-          // return empty array or false depending on mode
-          return mode ? 'return r;' : '';
-        }
+        source += inner;
       }
 
-      return source;
+      // finish source body
+      source = mode ?
+        'var e,n,N,t,i=-1,j=-1,r=[];main:while(N=e=c[++i]){' + source + '}return r;' :
+        'var n,r,t,j=-1,N=e;' + source + 'return false;';
+
+      // (c-ollection OR e-element, s-napshot, d-ocument, h-root, g-from, f-callback)
+      return new Function((mode ? 'c' : 'e') + ',s,d,h,g,f', source);
     },
 
   /*----------------------------- QUERY METHODS ------------------------------*/
@@ -1301,7 +1294,7 @@
         } else if (!(compiled = cache_compiledMatchers[lastNormalized])) {
           compiled =
           cache_compiledMatchers[selector] =
-          cache_compiledMatchers[lastNormalized] = compileGroup(lastNormalized, '', false);
+          cache_compiledMatchers[lastNormalized] = compileSelector(lastNormalized);
         } else {
           cache_compiledMatchers[lastNormalized] = compiled;
         }
@@ -1509,7 +1502,7 @@
 
             if (!/[>+~]/.test(normalized)) {
               token = '#' + token;
-  
+
               // convert selectors like `div#foo span` -> `div span`
               if (re_optimizeByRemoval
                   .test(normalized.charAt(normalized.indexOf(token) - 1))) {
@@ -1588,15 +1581,13 @@
 
       // only cache if context is similar to host
       if (ctx_nocache) {
-        compiled = compileGroup(normalized, '', true);
+        compiled = compileSelector(normalized, true);
       } else if ((compiled = cache_compiledSelectors[normalized])) {
         cache_compiledSelectors[selector] = compiled;
       } else {
         compiled =
         cache_compiledSelectors[selector] =
-        cache_compiledSelectors[normalized] = isSingle ?
-          compileSingle(normalized) :
-          compileGroup(normalized, '', true);
+        cache_compiledSelectors[normalized] = compileSelector(normalized, true, isSingle);
       }
 
       data = compiled(elements, snap, ctx_doc, ctx_root, from, callback);
@@ -1629,7 +1620,7 @@
   // true = match resolvers
   compile =
     function(selector, mode) {
-      return String(compileGroup(normalize(selector), '', mode));
+      return String(compileSelector(normalize(selector), mode));
     },
 
   // a way to control user notification
