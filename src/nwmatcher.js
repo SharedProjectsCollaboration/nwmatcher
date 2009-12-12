@@ -110,6 +110,7 @@
 
   // optimization expressions
   re_optimizeId        = new RegExp("#(" + str_identifier + ")|" + str_skipGroups),
+  re_optimizeIdAtEnd   = new RegExp("#(" + str_identifier + ")$|" + str_skipGroups),
   re_optimizeClass     = new RegExp("\\.(" + str_identifier + ")|" + str_skipGroups),
   re_optimizeName      = new RegExp("(" + str_nameAttr.replace(/\\1/g, '\\2') + ")|" + str_skipGroups, 'i'),
   re_optimizeTag       = new RegExp("(?:^|[>+~\\x20])(" + str_identifier + ")|" + str_skipGroups),
@@ -1509,9 +1510,11 @@
         }
 
         // ID optimization RTL
-        if ((parts = lastSlice.match(re_optimizeId)) && (token = parts[1])) {
+        if ((parts = lastSlice.match(re_optimizeIdAtEnd)) &&
+            (token = parts[1]) && normalized.indexOf(parts[0] + ':') < 0) {
+
           if ((element = byId(token, from))) {
-            if (match(element, selector)) {
+            if (match(element, normalized)) {
               data = [ element ];
               callback && callback(element);
             }
@@ -1528,7 +1531,8 @@
         }
 
         // ID optimization LTR by reducing the selection context
-        else if ((parts = normalized.match(re_optimizeId)) && (token = parts[1])) {
+        else if ((parts = normalized.match(re_optimizeId)) &&
+            (token = parts[1]) && normalized.indexOf(parts[0] + ':') < 0 ) {
           if ((element = byId(token, from))) {
             origFrom = from;
 
@@ -1544,7 +1548,7 @@
               }
               // convert selectors like `body #foo span` -> `body * span`
               else {
-                normalized = selector.replace(token, '*');
+                normalized = normalized.replace(token, '*');
                 from = element;
                 elements = from.getElementsByTagName('*');
               }
@@ -1591,7 +1595,7 @@
 
       if (!elements) {
         // grab elements from parentNode to cover sibling and adjacent selectors
-        elements = byTag('*', re_siblings.test(selector) && from.parentNode || from);
+        elements = byTag('*', re_siblings.test(normalized) && from.parentNode || from);
       }
 
       if (!elements.length) {

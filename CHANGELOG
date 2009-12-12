@@ -1,3 +1,5 @@
+* Make select_regular() `ID optimization RTL` use `re_optimizeIdAtEnd`, replace overlooked `selector` variables with `normalized`, and ensure ID optimizations skip ID selectors with pseudos attached. [jddalton]
+
 * Revert `lastNormalized` usage in match() because of issues when match() calls select(). [jddalton]
 
 * Give compileSelector() ability to process custom code before and after the primary iterator via `header` and `footer` properties of the callbacks return object. [jddalton]
