@@ -1,3 +1,5 @@
+* Remove document check from `:lang` selector. [Diego Perini]
+
 * Make `:contains`, `:not`, and `:lang` return an empty array if nothing is passed in their parenthesis (:lang(), :not("")) . [jddalton]
 
 * Make select_regular() `ID optimization RTL` use `re_optimizeIdAtEnd`, replace overlooked `selector` variables with `normalized`, and ensure ID optimizations skip ID selectors with pseudos attached. [jddalton]

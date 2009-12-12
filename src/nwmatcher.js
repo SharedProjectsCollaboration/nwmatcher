@@ -696,11 +696,9 @@
             /* CSS3 lang pseudo-class */
             case 'lang':
               return !ctx_notHTML && value && (
-                'if(h.lang=="' + value + '"||h.lang&&(h.lang+"").indexOf("' +
-                value + '-")==0){' + source + '}else{' +
-                'do{if(e.lang=="' + value + '"||e.lang&&(e.lang+"").indexOf("' +
-                value + '-")==0){' + source + 'break;}' +
-                '}while((e=e.parentNode)&&e!==g)}');
+                'do{n=e.lang;' +
+                'if(n=="' + value + '"||n.indexOf("' + value + '-")==0)' +
+                '{' + source + 'break;}}while((e=e.parentNode)&&e!==g)');
 
             /* CSS3 target pseudo-class */
             case 'target':
