@@ -13,6 +13,18 @@
  *
  */
 
+// convert HTML Fragment (string) into a DOM Fragment (dom nodes)
+var toDOMFragment = function(html, context) {
+	var l, nodes, fragment, orphan;
+	context || (context = document);
+	orphan = context.createElement('div');
+	orphan.innerHTML = html;// write fragment
+	fragment = context.createDocumentFragment();
+	nodes = orphan.childNodes; l = nodes.length;
+	while (l--) fragment.insertBefore(nodes[l], fragment.firstChild)
+	return fragment;
+};
+
 var _config = {
 	fixture: null,
 	Test: [],

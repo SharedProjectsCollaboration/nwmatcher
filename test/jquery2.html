@@ -3,24 +3,27 @@
 <head>
   <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
   <title>jQuery Test Suite</title>
-  <link rel="Stylesheet" media="screen" href="jquery/unittest.css" />
-  <style type="text/css" media="screen">
-    ol#empty { opacity: 0; filter:Alpha(opacity=0); } /* for testing opacity set in styles in IE */
-  </style>
+  <link rel="Stylesheet" media="screen" href="jquery/qunit/qunit.css" />
   <!-- Includes -->
+  <script type="text/javascript" src="jquery/jquery.js"></script>
   <script type="text/javascript" src="../src/nwmatcher.js"></script>
   <script type="text/javascript" src="../src/nwmatcher-jquery2.js"></script>
-
-  <script type="text/javascript" src="jquery/jquery.1.4.js"></script>
-  <script type="text/javascript" src="jquery/unittest.js"></script>
+  <script type="text/javascript" src="jquery/nwmatcher-sizzle.js"></script>
+	<script type="text/javascript">
+	jQuery.find = Sizzle;
+	jQuery.expr = Sizzle.selectors;
+	jQuery.unique = Sizzle.uniqueSort;
+	</script>
+  <script type="text/javascript" src="jquery/data/testinit.js"></script>
+  <script type="text/javascript" src="jquery/qunit/qunit.js"></script>
   <script type="text/javascript" src="jquery/selector2.js"></script>
 </head>
 
 <body id="body">
-  <h1 id="header">jQuery Test Suite</h1>
-  <h2 id="banner"></h2>
-  <h2 id="userAgent"></h2>
-
+  <h1 id="qunit-header">jQuery Test Suite</h1>
+  <h2 id="qunit-banner"></h2>
+  <div id="qunit-testrunner-toolbar"></div>
+  <h2 id="qunit-userAgent"></h2>
   <!-- Test HTML -->
   <div id="nothiddendiv" style="height:1px;background:white;" class="nothiddendiv">
     <div id="nothiddendivchild"></div>
@@ -33,7 +36,7 @@
     <p id="ap">
       Here are some links in a normal paragraph: <a id="google" href="http://www.google.com/" title="Google!">Google</a>,
       <a id="groups" href="http://groups.google.com/" class="GROUPS">Google Groups (Link)</a>.
-      This link has <code><a href="http://smin" id="anchor1">class="blog"</a></code>:
+      This link has <code><a href="http://smin" id="anchor1">class="blog"</a></code>: 
       <a href="http://diveintomark.org/" class="blog" hreflang="en" id="mark">diveintomark</a>
 
     </p>
@@ -59,14 +62,10 @@
 
       <input type="hidden" name="hidden" id="hidden1"/>
       <input type="text" style="display:none;" name="foo[bar]" id="hidden2"/>
-
       <input type="text" id="name" name="name" value="name" />
       <input type="search" id="search" name="search" value="search" />
-
       <button id="button" name="button" type="button">Button</button>
-
       <textarea id="area1" maxlength="30">foobar</textarea>
-
       <select name="select1" id="select1">
         <option id="option1a" class="emptyopt" value="">Nothing</option>
         <option id="option1b" value="1">1</option>
@@ -86,19 +85,16 @@
         <option id="option3d" value="3">3</option>
         <option id="option3e">no value</option>
       </select>
-
       <object id="object1" codebase="stupid">
         <param name="p1" value="x1" />
         <param name="p2" value="x2" />
       </object>
-
       <span id="台北Táiběi"></span>
       <span id="台北" lang="中文"></span>
       <span id="utf8class1" class="台北Táiběi 台北"></span>
       <span id="utf8class2" class="台北"></span>
       <span id="foo:bar" class="foo:bar"></span>
       <span id="test.foo[5]bar" class="test.foo[5]bar"></span>
-
       <foo_bar id="foobar">test element</foo_bar>
     </form>
     <b id="floatTest">Float test.</b>
@@ -115,7 +111,6 @@
       <input name="types[]" id="types_anime" type="checkbox" value="anime" />
       <input name="types[]" id="types_movie" type="checkbox" value="movie" />
     </form>
-
 
     <form id="testForm" action="#" method="get">
       <textarea name="T3" rows="2" cols="15">?
@@ -172,16 +167,14 @@ Z</textarea>
         <div><div class="hidden">hidden</div></div>
       </div>
     </div>
-
-    <div id="tabindex-tests">
+     <div id="tabindex-tests">
       <ol id="listWithTabIndex" tabindex="5">
         <li id="foodWithNegativeTabIndex" tabindex="-1">Rice</li>
         <li id="foodNoTabIndex">Beans</li>
         <li>Blinis</li>
         <li>Tofu</li>
       </ol>
-
-      <div id="divWithNoTabIndex">I'm hungry. I should...</div>
+       <div id="divWithNoTabIndex">I'm hungry. I should...</div>
       <span>...</span><a href="#" id="linkWithNoTabIndex">Eat lots of food</a><span>...</span> |
       <span>...</span><a href="#" id="linkWithTabIndex" tabindex="2">Eat a little food</a><span>...</span> |
       <span>...</span><a href="#" id="linkWithNegativeTabIndex" tabindex="-1">Eat no food</a><span>...</span>
@@ -189,10 +182,14 @@ Z</textarea>
       <span>...</span><a id="linkWithNoHrefWithTabIndex" tabindex="1">Eat some funyuns</a><span>...</span>
       <span>...</span><a id="linkWithNoHrefWithNegativeTabIndex" tabindex="-1">Eat some funyuns</a><span>...</span>
     </div>
-
-    <div id="liveHandlerOrder">
+     <div id="liveHandlerOrder">
       <span id="liveSpan1"><a href="#" id="liveLink1"></a></span>
       <span id="liveSpan2"><a href="#" id="liveLink2"></a></span>
+    </div>
+
+    <div id="siblingTest">
+      <em id="siblingfirst">1</em>
+      <em id="siblingnext">2</em>
     </div>
   </div>
   </dl>
@@ -200,24 +197,17 @@ Z</textarea>
     <div id="fx-queue" name="test">
       <div id="fadein" class='chain test' name='div'>fadeIn<div>fadeIn</div></div>
       <div id="fadeout" class='chain test out'>fadeOut<div>fadeOut</div></div>
-
-      <div id="show" class='chain test'>show<div>show</div></div>
+       <div id="show" class='chain test'>show<div>show</div></div>
       <div id="hide" class='chain test out'>hide<div>hide</div></div>
-
-      <div id="togglein" class='chain test'>togglein<div>togglein</div></div>
+       <div id="togglein" class='chain test'>togglein<div>togglein</div></div>
       <div id="toggleout" class='chain test out'>toggleout<div>toggleout</div></div>
-
-
-      <div id="slideup" class='chain test'>slideUp<div>slideUp</div></div>
+        <div id="slideup" class='chain test'>slideUp<div>slideUp</div></div>
       <div id="slidedown" class='chain test out'>slideDown<div>slideDown</div></div>
-
-      <div id="slidetogglein" class='chain test'>slideToggleIn<div>slideToggleIn</div></div>
+       <div id="slidetogglein" class='chain test'>slideToggleIn<div>slideToggleIn</div></div>
       <div id="slidetoggleout" class='chain test out'>slideToggleOut<div>slideToggleOut</div></div>
     </div>
-
-    <div id="fx-tests"></div>
+     <div id="fx-tests"></div>
   </div>
-
-  <ol id="tests"></ol>
+   <ol id="qunit-tests"></ol>
 </body>
 </html>

@@ -1,21 +1,9 @@
 module("selector");
 
-// convert HTML Fragment (string) into a DOM Fragment (dom nodes)
-var toDOMFragment =
-	function(html, context) {
-		var i = 0, n, fragment, orphan;
-		context || (context = document);
-		orphan = context.createElement('div');
-		orphan.innerHTML = html;// write fragment
-		fragment = context.createDocumentFragment();
-		for (;n = orphan.childNodes[i++];) { fragment.appendChild(n) };
-		return fragment;
-	};
-
 test("element", function() {
 	expect(9);
-	ok( NW.Dom.select("*").length >= 30, "Select all" );
-	var all = NW.Dom.select("*"), good = true;
+	ok( Sizzle("*").length >= 30, "Select all" );
+	var all = Sizzle("*"), good = true;
 	for ( var i = 0; i < all.length; i++ )
 		if ( all[i].nodeType == 8 )
 			good = false;
@@ -24,10 +12,10 @@ test("element", function() {
 	t( "Element Selector", "body", ["body"] );
 	t( "Element Selector", "html", ["html"] );
 	t( "Parent Element", "div p", ["firstp","ap","sndp","en","sap","first"] );
-	equals( NW.Dom.select("param", document.getElementById("object1")).length, 2, "Object/param as context" );
+	equals( Sizzle("param", document.getElementById("object1")).length, 2, "Object/param as context" );
 	
-	ok( NW.Dom.select("#length").length, '&lt;input name="length"&gt; cannot be found under IE, see #945' );
-	ok( NW.Dom.select("#lengthtest input").length, '&lt;input name="length"&gt; cannot be found under IE, see #945' );
+	ok( Sizzle("#length").length, '&lt;input name="length"&gt; cannot be found under IE, see #945' );
+	ok( Sizzle("#lengthtest input").length, '&lt;input name="length"&gt; cannot be found under IE, see #945' );
 });
 /* uses jQuery API, disabled
 if ( location.protocol != "file:" ) {
@@ -35,7 +23,7 @@ if ( location.protocol != "file:" ) {
 		expect(1);
 		stop();
 		jQuery.get("data/with_fries.xml", function(xml) {
-			equals( jQuery("foo_bar", xml).length, 1, "Element Selector with underscore" );
+			equals( Sizzle("foo_bar", xml).length, 1, "Element Selector with underscore" );
 			start();
 		});
 	});
@@ -89,13 +77,13 @@ test("id", function() {
 	
     var main = document.getElementById('main');
 	main.appendChild(toDOMFragment('<a>tName1 A</a><a name="tName2">tName2 A</a><span id="tName1">tName1 Div</span>'));
-	equals( NW.Dom.select("#tName1")[0].id, 'tName1', "ID selector with same value for a name attribute" );
-	equals( NW.Dom.select("#tName2").length, 0, "ID selector non-existing but name attribute on an A tag" );
+	equals( Sizzle("#tName1")[0].id, 'tName1', "ID selector with same value for a name attribute" );
+	equals( Sizzle("#tName2").length, 0, "ID selector non-existing but name attribute on an A tag" );
 	t( "ID Selector on Form with an input that has a name of 'id'", "#lengthtest", ["lengthtest"] );
 	
 	t( "ID selector with non-existant ancestor", "#asdfasdf #foobar", [] ); // bug #986
 
-	isSet( NW.Dom.select("div#form", document.body), [], "ID selector within the context of another element" );
+	isSet( Sizzle("div#form", document.body), [], "ID selector within the context of another element" );
 });
 
 test("class", function() {
@@ -131,8 +119,8 @@ test("name", function() {
 
 	t( "Name selector for grouped input", "input[name='types[]']", ["types_all", "types_anime", "types_movie"] )
 
-	isSet( NW.Dom.select("input[name=action]", document.getElementById("form")), q("text1"), "Name selector within the context of another element" );
-	isSet( NW.Dom.select("input[name='foo[bar]']", document.getElementById("form")), q("hidden2"), "Name selector for grouped form element within the context of another element" );
+	isSet( Sizzle("input[name=action]", document.getElementById("form")), q("text1"), "Name selector within the context of another element" );
+	isSet( Sizzle("input[name='foo[bar]']", document.getElementById("form")), q("hidden2"), "Name selector for grouped form element within the context of another element" );
 });
 
 
@@ -178,30 +166,24 @@ test("child and adjacent", function() {
 	t( "Nth-child", "#main form#form > *:nth-child(2)", ["text1"] );
 	t( "Nth-child", "#main form#form > :nth-child(2)", ["text1"] );
 
-	var first = "first";
-	
-	if ( document.querySelectorAll || NW.Dom ) {
-		first = "nth-of-type(1)";
-	}
-
-	t( "Nth-child", "#form select:" + first + " option:nth-child(3)", ["option1c"] );
-	t( "Nth-child", "#form select:" + first + " option:nth-child(0n+3)", ["option1c"] );
-	t( "Nth-child", "#form select:" + first + " option:nth-child(1n+0)", ["option1a", "option1b", "option1c", "option1d"] );
-	t( "Nth-child", "#form select:" + first + " option:nth-child(1n)", ["option1a", "option1b", "option1c", "option1d"] );
-	t( "Nth-child", "#form select:" + first + " option:nth-child(n)", ["option1a", "option1b", "option1c", "option1d"] );
-	t( "Nth-child", "#form select:" + first + " option:nth-child(even)", ["option1b", "option1d"] );
-	t( "Nth-child", "#form select:" + first + " option:nth-child(odd)", ["option1a", "option1c"] );
-	t( "Nth-child", "#form select:" + first + " option:nth-child(2n)", ["option1b", "option1d"] );
-	t( "Nth-child", "#form select:" + first + " option:nth-child(2n+1)", ["option1a", "option1c"] );
-	t( "Nth-child", "#form select:" + first + " option:nth-child(3n)", ["option1c"] );
-	t( "Nth-child", "#form select:" + first + " option:nth-child(3n+1)", ["option1a", "option1d"] );
-	t( "Nth-child", "#form select:" + first + " option:nth-child(3n+2)", ["option1b"] );
-	t( "Nth-child", "#form select:" + first + " option:nth-child(3n+3)", ["option1c"] );
-	t( "Nth-child", "#form select:" + first + " option:nth-child(3n-1)", ["option1b"] );
-	t( "Nth-child", "#form select:" + first + " option:nth-child(3n-2)", ["option1a", "option1d"] );
-	t( "Nth-child", "#form select:" + first + " option:nth-child(3n-3)", ["option1c"] );
-	t( "Nth-child", "#form select:" + first + " option:nth-child(3n+0)", ["option1c"] );
-	t( "Nth-child", "#form select:" + first + " option:nth-child(-n+3)", ["option1a", "option1b", "option1c"] );
+	t( "Nth-child", "#form select:first option:nth-child(3)", ["option1c"] );
+	t( "Nth-child", "#form select:first option:nth-child(0n+3)", ["option1c"] );
+	t( "Nth-child", "#form select:first option:nth-child(1n+0)", ["option1a", "option1b", "option1c", "option1d"] );
+	t( "Nth-child", "#form select:first option:nth-child(1n)", ["option1a", "option1b", "option1c", "option1d"] );
+	t( "Nth-child", "#form select:first option:nth-child(n)", ["option1a", "option1b", "option1c", "option1d"] );
+	t( "Nth-child", "#form select:first option:nth-child(even)", ["option1b", "option1d"] );
+	t( "Nth-child", "#form select:first option:nth-child(odd)", ["option1a", "option1c"] );
+	t( "Nth-child", "#form select:first option:nth-child(2n)", ["option1b", "option1d"] );
+	t( "Nth-child", "#form select:first option:nth-child(2n+1)", ["option1a", "option1c"] );
+	t( "Nth-child", "#form select:first option:nth-child(3n)", ["option1c"] );
+	t( "Nth-child", "#form select:first option:nth-child(3n+1)", ["option1a", "option1d"] );
+	t( "Nth-child", "#form select:first option:nth-child(3n+2)", ["option1b"] );
+	t( "Nth-child", "#form select:first option:nth-child(3n+3)", ["option1c"] );
+	t( "Nth-child", "#form select:first option:nth-child(3n-1)", ["option1b"] );
+	t( "Nth-child", "#form select:first option:nth-child(3n-2)", ["option1a", "option1d"] );
+	t( "Nth-child", "#form select:first option:nth-child(3n-3)", ["option1c"] );
+	t( "Nth-child", "#form select:first option:nth-child(3n+0)", ["option1c"] );
+	t( "Nth-child", "#form select:first option:nth-child(-n+3)", ["option1a", "option1b", "option1c"] );
 });
 
 test("attributes", function() {
