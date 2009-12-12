@@ -15,90 +15,116 @@
  *
  */
 
-// The following regular expressions are taken from latest jQuery
-// /:(nth|eq|gt|lt|first|last|even|odd)(?:\((\d*)\))?(?=[^-]|$)/;
-// /:((?:[\w\u00c0-\uFFFF_-]|\\.)+)(?:\((['"]*)((?:\([^\)]+\)|[^\2\(\)]*)+)\2\))?/
+(function (global) {
+  // private var counter
+  var k = -1;
 
-// For structural pseudo-classes extensions
-NW.Dom.Selectors['jq:child'] = {
-  'expression': /^\:((?:first|last|even|odd)(?![-\(])|(?:nth|eq|gt|lt)(?=\())(?:\(([^()]*)\))?(.*)/,
-  'callback': function(match, source, mode, selector) {
+  // For structural pseudo-classes extensions
+  NW.Dom.Selectors['jq:filters'] = {
+    'expression': /^\:((?:first|last|even|odd)(?![-\(])|(?:nth|eq|gt|lt)(?=\())(?:\(([^()]*)\))?(.*)/,
+    'callback': function(match, source, mode, selector) {
 
-    // do not change this, it is searched & replaced
-    var ACCEPT_NODE = mode ?
-      'f&&f(N);r[r.length]=N;continue main;' :
-      'f&&f(N);return true';
+      // do not change this, it is searched & replaced
+      var ACCEPT_NODE = mode ?
+        'f&&f(N);r[r.length]=N;continue main;' :
+        'f&&f(N);return true;',
 
-    switch (match[1]) {
-      case 'even':
-        return source.replace(ACCEPT_NODE, '++j;if(!(j%2)){' + ACCEPT_NODE + '}');
+      MATCH =
+        'c=s.select("' + selector + '",g);i=-1;' +
+        'while(n=c[++i]){if(n==e){' + ACCEPT_NODE + '}}',
 
-      case 'odd':
-        return source.replace(ACCEPT_NODE, '++j;if(j%2){' + ACCEPT_NODE + '}');
+      MATCH_ONE =
+        'if (s.select("' + selector + '",g)[0]==e){' + ACCEPT_NODE + '}';
 
-      case 'eq':
-        return source.replace(ACCEPT_NODE, '++j;if(j==' + match[2] + '){' + ACCEPT_NODE + '}');
+      function modify(condition) {
+        return source.replace(ACCEPT_NODE, 'if(' + condition + '){f&&f(N);r[r.length]=N;}continue main;');
+      }
 
-      case 'lt':
-        return source.replace(ACCEPT_NODE, '++j;if(j<' + match[2] + '){' + ACCEPT_NODE + '}');
+      switch (match[1]) {
+        case 'even':
+            return mode ? modify('!(++j%2)') : MATCH;
 
-      case 'gt':
-        return source.replace(ACCEPT_NODE, '++j;if(j>' + match[2] + '){' + ACCEPT_NODE + '}');
+        case 'odd':
+            return mode ? modify('++j%2') : MATCH;
 
-      case 'first':
-        return 'n=s.byTag(e.nodeName, h);if(n.length&&n[0]==e){' + source + '}';
+        case 'eq':
+        case 'nth':
+            return mode ? modify('++j==' + match[2]) : MATCH;
 
-      case 'last':
-        return 'n=s.byTag(e.nodeName, h);if(n.length&&n[n.length-1]==e){' + source + '}';
+        case 'lt':
+            return mode ? modify('++j<' + match[2]) : MATCH;
 
-      case 'nth':
-        return 'n=s.byTag(e.nodeName, h);if(n.length&&n[' + match[2] + ']==e){' + source + '}';
+        case 'gt':
+            return mode ? modify('++j>' + match[2]) : MATCH;
+
+        case 'first':
+          if (mode) {
+            return {
+              'header':
+                'var N' + (++k) + '=function(){' +
+                'var e,N,i=-1,j=-1,r=[];main:while(N=e=c[++i]){' + source + '};' +
+                'return r[0];}();',
+              'source':
+                'if(N' + k + '==e){' + ACCEPT_NODE + '}'
+            };
+          } else {
+            return MATCH_ONE;
+          }
+
+        case 'last':
+          if (mode) {
+            return {
+              'header':
+                'var N' + (++k) + '=function(){' +
+                'var e,N,i=-1,j=-1,r=[];main:while(N=e=c[++i]){' + source + '};' +
+                'return r[r.length-1];}();',
+              'source':
+                'if(N' + k + '==e){' + ACCEPT_NODE + '}'
+            };
+          } else {
+            return MATCH_ONE;
+          }
+      }
     }
-  }
-};
+  };
 
-// For element pseudo-classes extensions
-NW.Dom.Selectors['jq:pseudo'] = {
-  'expression': /^\:((?:button|checkbox|file|header|hidden|image|input|parent|password|radio|reset|submit|text|visible)(?![-\(])|has(?=\())(?:\((["']*)([^'"()]*)\2\))?(.*)/,
-  'callback': function(match, source, mode) {
+  // For element pseudo-classes extensions
+  NW.Dom.Selectors['jq:pseudos'] = {
+    'expression': /^\:((?:button|checkbox|file|header|hidden|image|input|parent|password|radio|reset|submit|text|visible)(?![-\(])|has(?=\())(?:\((["']*)([^'"()]*)\2\))?(.*)/,
+    'callback': function(match, source, mode) {
+      switch (match[1]) {
+        case 'has':
+          return 'if(s.select("' + match[3] + '", e)[0]){' + source + '}';
 
-    // do not change this, it is searched & replaced
-    var ACCEPT_NODE = mode ?
-      'f&&f(N);r[r.length]=N;continue main;' :
-      'f&&f(N);return true';
+        case 'checkbox':
+        case 'file':
+        case 'image':
+        case 'password':
+        case 'radio':
+        case 'reset':
+        case 'submit':
+        case 'text':
+          return 'if(e.type&&e.type=="' + match[1] + '"){' + source + '}';
 
-    switch (match[1]) {
-      case 'has':
-        return source.replace(ACCEPT_NODE, 'if(s.byTag("' + match[3] + '",e)[0]){' + ACCEPT_NODE + '}');
+        case 'button':
+        case 'input':
+          return 'if(e.type||/button/i.test(e.nodeName)){' + source + '}';
 
-      case 'checkbox':
-      case 'file':
-      case 'image':
-      case 'password':
-      case 'radio':
-      case 'reset':
-      case 'submit':
-      case 'text':
-        return 'if(e.type&&e.type=="' + match[1] + '"){' + source + '}';
+        case 'header':
+          return 'if(/h[1-6]/i.test(e.nodeName)){' + source + '}';
 
-      case 'button':
-      case 'input':
-        return 'if(e.type||/button/i.test(e.nodeName)){' + source + '}';
+        case 'hidden':
+          return 'if(!e.offsetWidth&&!e.offsetHeight){' + source + '}';
 
-      case 'header':
-        return 'if(/h[1-6]/i.test(e.nodeName)){' + source + '}';
+        case 'visible':
+          return 'if(e.offsetWidth||e.offsetHeight){' + source + '}';
 
-      case 'hidden':
-        return 'if(!e.offsetWidth&&!e.offsetHeight){' + source + '}';
-
-      case 'visible':
-        return 'if(e.offsetWidth||e.offsetHeight){' + source + '}';
-
-      case 'parent':
-        return source += 'if(e.firstChild){' + source + '}';
+        case 'parent':
+          return 'if(e.firstChild){' + source + '}';
+      }
     }
-  }
-};
+  };
+})(this);
 
 (function(global) {
   // # cleaned
@@ -149,7 +175,7 @@ NW.Dom.Selectors['jq:pseudo'] = {
         //root.normalize();
         top.status += 'Removed ' + cnt + ' empty text nodes.';
       }
-    };
+  };
 
   if (doc.addEventListener) {
     doc.addEventListener('DOMContentLoaded', start, false);

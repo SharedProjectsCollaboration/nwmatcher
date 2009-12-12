@@ -1,3 +1,5 @@
+* Update jQuery adapters to support the `header/footer` properties and make `:has`, `:first`, and `:last` work with non tagName selectors. [jddalton]
+
 * Remove document check from `:lang` selector. [Diego Perini]
 
 * Make `:contains`, `:not`, and `:lang` return an empty array if nothing is passed in their parenthesis (:lang(), :not("")) . [jddalton]
