@@ -117,7 +117,7 @@
 
   // for use with the normilize method
   re_attrNormalize = /[[(]/,
-  re_unnormalized = /^\x20|[\t\n\r\f]|\x20{2,}|\x20(?:[\]\)=>+~,^$|!]|\*=)|(?:[\[\(=>+~,^$|!]|\*=)\x20|\x20$/,
+  re_unnormalized  = /^\x20|[\t\n\r\f]|\x20{2,}|\x20(?:[\]\)=>+~,^$|!]|\*=)|(?:[\[\(=>+~,^$|!]|\*=)\x20|\x20$/,
 
   re_edgeSpaces     = new RegExp(str_edgeSpace, 'g'),
   re_multiSpaces    = new RegExp(str_multiSpace, 'g'),
@@ -792,7 +792,7 @@
             ('var N' + k + '=e;e=e==h?h:e.parentNode.firstElementChild;' +
              'while(e&&e!=N' + k +'){' + source + 'e=e.nextElementSibling;}') :
             ('var N' + k + '=e;e=e.parentNode.firstChild;' +
-            'while(e&&e!=N' + k +'){' + source + 'e=e.nextSibling;}');
+             'while(e&&e!=N' + k +'){' + source + 'e=e.nextSibling;}');
         }
     },
 
@@ -1186,9 +1186,14 @@
   // @return function (compiled)
   compileSelector =
     function(selector, mode, single) {
-      var expr, filter, inner, match, output, remaining, source = '',
-       filters = [ ], seen = { }, i = -1,
-       parts = single ? [selector] : selector.match(re_splitGroup);
+      var expr, inner, match, output, remaining, token, i = -1,
+       seen    = { },
+       footer  = '',
+       header  = '',
+       source  = '',
+       footers = [ ],
+       headers = [mode ? 'var e,n,N,t,i=-1,j=-1,r=[];' : 'var c,i,j,n,r,t,N=e;'],
+       parts   = single ? [selector] : selector.match(re_splitGroup);
 
       // for each selector in the group
       while ((selector = parts[++i])) {
@@ -1207,7 +1212,7 @@
         seen[selector] = true;
 
         // reset `e` to begin another selector
-        source += i ? 'e=N;' : '';
+        source += source ? 'e=N;' : '';
 
         // begin building inner source for current selector
         inner = mode ? CPL_ACCEPT_NODE : 'f&&f(N);return true;';
@@ -1231,9 +1236,16 @@
           for (expr in Selectors) {
             if ((match = remaining.match(Selectors[expr].expression))) {
               output = Selectors[expr].callback(match, inner, mode, selector);
-              if (!output) { break; }
+              if (!output) {
+                break;
+              } else if (typeof output === 'object') {
+                output.header && headers.push(output.header);
+                output.footer && footers.push(output.footer);
+                inner = output.source;
+              } else {
+                inner = output;
+              }
 
-              inner = output;
               remaining = match[match.length - 1];
               if (!remaining) { break; }
             }
@@ -1249,13 +1261,35 @@
         source += inner;
       }
 
-      // finish source body
-      source = mode ?
-        'var e,n,N,t,i=-1,j=-1,r=[];main:while(N=e=c[++i]){' + source + '}return r;' :
-        'var n,r,t,j=-1,N=e;' + source + 'return false;';
+      // append default footer
+      footers.push(mode ? 'return r;' : 'return false;');
+
+      // insert before primary iterator
+      i = -1;
+      while ((token = headers[++i])) {
+        if (!seen[token]) {
+          header += token;
+          seen[token] = true;
+        }
+      }
+
+      // insert after primary iterator
+      i = -1;
+      while ((token = footers[++i])) {
+        if (!seen[token]) {
+          footer += token;
+          seen[token] = true;
+        }
+      }
+
+      // create primary iterator if there is source
+      if (mode && source) {
+        source = 'main:while(N=e=c[++i]){' + source + '}';
+      }
 
       // (c-ollection OR e-element, s-napshot, d-ocument, h-root, g-from, f-callback)
-      return new Function((mode ? 'c' : 'e') + ',s,d,h,g,f', source);
+      return new Function((mode ? 'c' : 'e') + ',s,d,h,g,f',
+        header + source + footer);
     },
 
   /*----------------------------- QUERY METHODS ------------------------------*/
