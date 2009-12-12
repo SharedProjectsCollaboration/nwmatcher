@@ -1299,7 +1299,7 @@
   match =
     function(element, selector, from, callback) {
       // make sure an element node was passed
-      var compiled;
+      var compiled, normalized;
       if (!element || !(ctx_doc = element.ownerDocument) &&
           (ctx_doc = element)) {
         return false;
@@ -1309,28 +1309,26 @@
       }
 
       if (ctx_nocache || !(compiled = cache_compiledMatchers[selector])) {
-        if (lastSelector != selector) {
-          if (re_validator.test(selector)) {
-            lastSelector = selector;
-            lastNormalized = re_unnormalized.test(selector) ?
-              normalize(selector) : selector;
-          } else {
-            emit('DOMException: "' + selector + '" is not a valid CSS selector.');
-            return false;
-          }
+
+        if (re_validator.test(selector)) {
+          normalized = re_unnormalized.test(selector) ?
+            normalize(selector) : selector;
+        } else {
+          emit('DOMException: "' + selector + '" is not a valid CSS selector.');
+          return false;
         }
 
         // only cache compiled matchers for contexts
         // that are the same type of document as the host
         // (new context xhtml B is like host xhtml A)
         if (ctx_nocache) {
-          compiled = compileGroup(lastNormalized, '', false);
-        } else if (!(compiled = cache_compiledMatchers[lastNormalized])) {
+          compiled = compileGroup(normalized, '', false);
+        } else if (!(compiled = cache_compiledMatchers[normalized])) {
           compiled =
           cache_compiledMatchers[selector] =
-          cache_compiledMatchers[lastNormalized] = compileSelector(lastNormalized);
+          cache_compiledMatchers[normalized] = compileSelector(normalized);
         } else {
-          cache_compiledMatchers[lastNormalized] = compiled;
+          cache_compiledMatchers[normalized] = compiled;
         }
       }
 

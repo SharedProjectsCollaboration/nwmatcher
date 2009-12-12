@@ -1,3 +1,5 @@
+* Revert `lastNormalized` usage in match() because of issues when match() calls select(). [jddalton]
+
 * Give compileSelector() ability to process custom code before and after the primary iterator via `header` and `footer` properties of the callbacks return object. [jddalton]
 
 * Merge compileGroup() and compileSingle() into compileSelector(). [jddalton]
