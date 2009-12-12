@@ -677,7 +677,7 @@
             /* CSS3 negation pseudo-class */
             case 'not':
               // compile nested selectors
-              return 'if(!s.match(e,"' + value + '")){' + source +'}';
+              return value && 'if(!s.match(e,"' + value + '",g)){' + source +'}';
 
             /* CSS3 UI element states */
             case 'checked':
@@ -695,7 +695,7 @@
 
             /* CSS3 lang pseudo-class */
             case 'lang':
-              return (
+              return !ctx_notHTML && value && (
                 'if(h.lang=="' + value + '"||h.lang&&(h.lang+"").indexOf("' +
                 value + '-")==0){' + source + '}else{' +
                 'do{if(e.lang=="' + value + '"||e.lang&&(e.lang+"").indexOf("' +
@@ -731,7 +731,7 @@
             /* CSS2 :contains and :selected pseudo-classes */
             // not currently part of CSS3 drafts
             case 'contains':
-              return 'if(' + CPL_CONTAINS_TEXT + '.indexOf("' + value + '")>-1){' + source + '}';
+              return value && 'if(' + CPL_CONTAINS_TEXT + '.indexOf("' + value + '")>-1){' + source + '}';
 
             case 'selected':
               // fix Safari selectedIndex property bug
