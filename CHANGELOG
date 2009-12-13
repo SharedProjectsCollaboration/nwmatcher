@@ -1,3 +1,5 @@
+* Ensure select_regular() doesn't cache an optimized selector. [jddalton]
+
 * Ensure the `selector` argument of select()/match() is not undefined/null. [jddalton]
 
 * Update jQuery adapters to support the `header/footer` properties and make `:has`, `:first`, and `:last` work with non tagName selectors. [jddalton]

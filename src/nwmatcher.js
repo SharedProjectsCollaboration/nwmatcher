@@ -257,26 +257,26 @@
   // http://www.w3.org/TR/css3-selectors/#selector-syntax
   normalize =
     function(selector) {
-      var index, match, origSelector, pattern, sequence, token, i = -1,
+      var index, match, normalized, pattern, sequence, token, i = -1,
        cached = cache_normalized[selector];
       if (cached) return cached;
 
-      origSelector = selector;
-      if (re_attrNormalize.test(selector)) {
+      normalized = selector;
+      if (re_attrNormalize.test(normalized)) {
         sequence = [re_leadingSpacesWithQuotes, re_trailingSpacesWithQuotes, re_multiSpacesWithQuotes];
-        while (match = re_edgeSpacesWithQuotes.exec(selector)) {
+        while (match = re_edgeSpacesWithQuotes.exec(normalized)) {
           if ((token = match[1])) {
-            selector = selector.replace(token, ' ');
+            normalized = normalized.replace(token, ' ');
           }
         }
 
-        selector = trim.call(selector);
+        normalized = trim.call(normalized);
         while (pattern = sequence[++i]) {
-          while (match = pattern.exec(selector)) {
+          while (match = pattern.exec(normalized)) {
             if ((token = match[1])) {
               index = match.index;
-              selector = selector.slice(0, index) +
-                selector.slice(index).replace(match[0], token);
+              normalized = normalized.slice(0, index) +
+                normalized.slice(index).replace(match[0], token);
               pattern.lastIndex = index + 1;
             }
           }
@@ -284,14 +284,14 @@
       }
       else {
         // do the same thing, without worrying about attribute values
-        selector = trim.call(selector.replace(re_edgeSpaces, ' '))
+        normalized = trim.call(normalized.replace(re_edgeSpaces, ' '))
           .replace(re_leadingSpaces, '$1').replace(re_trailingSpaces, '$1')
             .replace(re_multiSpaces, ' ');
       }
 
       return (
-        cache_normalized[origSelector] =
-        cache_normalized[selector] = selector);
+        cache_normalized[selector] =
+        cache_normalized[normalized] = normalized);
     },
 
   slice = [].slice,
@@ -1426,9 +1426,9 @@
   // @return array
   select_regular =
     function (selector, from, callback) {
-      var Contexts, Results, className, compiled, data,
-       element, elements, hasChanged, isCacheable, isSingle,
-       normalized, now, origFrom, parts, token;
+      var Contexts, Results, backupFrom, backupSelector, className,
+       compiled, data, element, elements, hasChanged, isCacheable,
+       isSingle, normalized, now, parts, token;
 
       // extract context if changed
       // avoid setting `from` before calling select_simple()
@@ -1536,10 +1536,11 @@
         else if ((parts = normalized.match(re_optimizeId)) &&
             (token = parts[1]) && normalized.indexOf(parts[0] + ':') < 0 ) {
           if ((element = byId(token, from))) {
-            origFrom = from;
+            backupFrom = from;
 
             if (!/[>+~]/.test(normalized)) {
               token = '#' + token;
+              backupSelector = normalize;
 
               // convert selectors like `div#foo span` -> `div span`
               if (re_optimizeByRemoval
@@ -1563,6 +1564,7 @@
         else if ((parts = lastSlice.match(re_optimizeClass)) && (token = parts[1])) {
           if ((elements = byClass(token, from)).length) {
             token = '.' + token;
+            backupSelector = normalize;
 
             // convert selectors like `body div.foo` -> `body div` OR `.foo.bar` -> `.bar`
             if (re_optimizeByRemoval
@@ -1581,6 +1583,7 @@
         // NAME optimization RTL
         else if ((parts = lastSlice.match(re_optimizeName)) && (token = parts[1])) {
           if ((elements = byName(token.match(re_nameValue)[2], from)).length) {
+            backupSelector = normalize;
             normalized = normalized.slice(0, lastIndex) +
               normalized.slice(lastIndex).replace(token, '');
           }
@@ -1589,6 +1592,7 @@
         // TAG optimization RTL
         else if ((parts = lastSlice.match(re_optimizeTag)) && (token = parts[1])) {
           if ((elements = byTag(token, from)).length) {
+            backupSelector = normalize;
             normalized = normalized.slice(0, lastIndex) +
               normalized.slice(lastIndex).replace(token, '*');
           }
@@ -1602,8 +1606,10 @@
 
       if (!elements.length) {
         if (isCacheable) {
+          // restore backup values before caching
+          backupSelector && (normalized = backupSelector);
           Contexts[selector] =
-          Contexts[normalized] = origFrom || from;
+          Contexts[normalized] = backupFrom || from;
           return (
             Results[selector] =
             Results[normalized] = [ ]);
@@ -1631,9 +1637,9 @@
       data = compiled(elements, snap, ctx_doc, ctx_root, from, callback);
 
       if (isCacheable) {
-        // a cached result set for the requested selector
+        backupSelector && (normalized = backupSelector);
         Contexts[selector] =
-        Contexts[normalized] = origFrom || from;
+        Contexts[normalized] = backupFrom || from;
         return (
           Results[selector] =
           Results[normalized] = data);
