@@ -1303,12 +1303,13 @@
           (ctx_doc = element)) {
         return false;
       }
+
+      selector || (selector = '');
       if (ctx_last != (from || HOST_DOC)) {
         from = changeContext(from);
       }
 
       if (ctx_nocache || !(compiled = cache_compiledMatchers[selector])) {
-
         if (re_validator.test(selector)) {
           normalized = re_unnormalized.test(selector) ?
             normalize(selector) : selector;
@@ -1384,6 +1385,7 @@
   select_qsa =
     function (selector, from, callback) {
       var element, elements;
+      selector || (selector = '');
       if (ctx_last != (from || HOST_DOC)) {
         from = changeContext(from);
       }
@@ -1433,6 +1435,8 @@
       if (ctx_last != (from || HOST_DOC)) {
         from = changeContext(from);
       }
+
+      selector || (selector = '');
       if (RE_SIMPLE_SELECTOR.test(selector)) {
         return select_simple(selector, from, callback);
       }
