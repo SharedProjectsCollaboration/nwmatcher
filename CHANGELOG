@@ -1,3 +1,5 @@
+* Make compileSelector() add element node checks for selectors like `* + *` or `* ~ *`. [jddalton]
+
 * Ensure select_regular() doesn't cache an optimized selector. [jddalton]
 
 * Ensure the `selector` argument of select()/match() is not undefined/null. [jddalton]

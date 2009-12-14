@@ -1222,6 +1222,11 @@
           continue;
         }
 
+        // add element node checks for selectors like `* + *` or `* ~ *`
+        if (/^\W+$/.test(selector)) {
+          inner = 'if(e.nodeName>"@"){' + inner + '}';
+        }
+
         // reset private counter
         // used by sibling combinator
         // E ~ F (F relative sibling of E)
