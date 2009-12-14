@@ -394,6 +394,16 @@
       ctx_div.querySelectorAll(':link').length !== 1 &&
         pattern.push(':link');
 
+      // [valign=TOP] case insensitivity bug wih valign values in HTML (Opera)
+      // <table><tbody valign="top"></tbody></table>
+      clearElement(ctx_div)
+        .appendChild(createElement('table'))
+        .appendChild(createElement('tbody'))
+        .setAttribute('valign', 'top');
+
+      ctx_div.querySelectorAll('[valign=TOP]').length !== 1 &&
+        pattern.push('\\[[\\x20\\t\\n\\r\\f]*valign[\\x20\\t\\n\\r\\f]*=');
+
       return pattern.length ?
         new RegExp(pattern.join('|')) :
         test_false;

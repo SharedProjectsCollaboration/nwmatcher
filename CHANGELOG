@@ -1,3 +1,5 @@
+* Add check to `RE_BUGGY_QSA` for Opera not respecting `valign` attribute value insensitivity in HTML. [jddalton]
+
 * Make compileSelector() add element node checks for selectors like `* + *` or `* ~ *`. [jddalton]
 
 * Ensure select_regular() doesn't cache an optimized selector. [jddalton]
