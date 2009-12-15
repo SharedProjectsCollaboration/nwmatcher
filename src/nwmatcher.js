@@ -519,8 +519,11 @@
     true,
 
   // matches simple id, tagName & className selectors
-  RE_SIMPLE_SELECTOR =
-    new RegExp('^(?:\\*|[.#]?' + str_identifier + '|\\*?' + str_nameAttr + ')$'),
+  RE_SIMPLE_SELECTOR = new RegExp('^(?:\\*|' +
+    // IE8 QSA is faster than shortcut
+    (BUGGY_GEBCN && NATIVE_QSA ? '#' : '[.#]') + '?' +
+    str_identifier + '|\\*?' + str_nameAttr +
+  ')$'),
 
   /*------------------------------- SELECTORS --------------------------------*/
 
