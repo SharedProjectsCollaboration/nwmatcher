@@ -1576,6 +1576,24 @@
           else elements = 1;
         }
 
+        // NAME optimization RTL
+        else if ((parts = lastSlice.match(re_optimizeName)) && (token = parts[1])) {
+          if ((elements = byName(token.match(re_nameValue)[2], from)).length) {
+            backupSelector = normalize;
+            normalized = normalized.slice(0, lastIndex) +
+              normalized.slice(lastIndex).replace(token, '');
+          }
+        }
+
+        // TAG optimization RTL (check TAG first when GEBCN doesn't exist)
+        else if (!NATIVE_GEBCN && (parts = lastSlice.match(re_optimizeTag)) && (token = parts[1])) {
+          if ((elements = byTag(token, from)).length) {
+            backupSelector = normalize;
+            normalized = normalized.slice(0, lastIndex) +
+              normalized.slice(lastIndex).replace(token, '*');
+          }
+        }
+
         // CLASS optimization RTL
         else if ((parts = lastSlice.match(re_optimizeClass)) && (token = parts[1])) {
           if ((elements = byClass(token, from)).length) {
@@ -1596,17 +1614,8 @@
           }
         }
 
-        // NAME optimization RTL
-        else if ((parts = lastSlice.match(re_optimizeName)) && (token = parts[1])) {
-          if ((elements = byName(token.match(re_nameValue)[2], from)).length) {
-            backupSelector = normalize;
-            normalized = normalized.slice(0, lastIndex) +
-              normalized.slice(lastIndex).replace(token, '');
-          }
-        }
-
-        // TAG optimization RTL
-        else if ((parts = lastSlice.match(re_optimizeTag)) && (token = parts[1])) {
+        // TAG optimization RTL (check TAG last when GEBCN exists)
+        else if (NATIVE_GEBCN && (parts = lastSlice.match(re_optimizeTag)) && (token = parts[1])) {
           if ((elements = byTag(token, from)).length) {
             backupSelector = normalize;
             normalized = normalized.slice(0, lastIndex) +

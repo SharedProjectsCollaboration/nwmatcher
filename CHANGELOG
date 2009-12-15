@@ -1,3 +1,5 @@
+* Make select_regular() swap `TAG optimization RTL` and `CLASS optimization RTL` checks if `NATIVE_GEBCN` is false to give IE a performance boost. [Diego Perini, jddalton]
+
 * Simplify `RE_SIMPLE_SELECTOR` removing checks for buggy API. [Diego Perini, jddalton]
 
 * Make byClass(), byName(), and byTag() convert nodeLists to arrays to improve element access times. [jddalton]
