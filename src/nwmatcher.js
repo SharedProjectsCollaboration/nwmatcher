@@ -1512,9 +1512,12 @@
       /* pre-filtering pass allow to scale proportionally with big DOM trees */
 
       // commas separators are treated sequentially to maintain order
-      if ((isSingle = normalized.match(re_splitGroup).length < 2) && !ctx_notHTML) {
+      if ((isSingle = (parts = normalized.match(re_splitGroup)).length < 2) && !ctx_notHTML) {
 
         if (hasChanged) {
+          // to avoid critical error with trailing commas (div,)
+          normalized = parts[0];
+
           // get right most selector token
           token = normalized.match(re_lastToken)[0];
 
@@ -1549,7 +1552,7 @@
 
         // ID optimization LTR by reducing the selection context
         else if ((parts = normalized.match(re_optimizeId)) &&
-            (token = parts[1]) && normalized.indexOf(parts[0] + ':') < 0 ) {
+            (token = parts[1]) && normalized.indexOf(parts[0] + ':') < 0) {
           if ((element = byId(token, from))) {
             backupFrom = from;
 
