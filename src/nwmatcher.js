@@ -518,12 +518,9 @@
     })() :
     true,
 
-  // matches simple id, tagname & classname selectors
-  RE_SIMPLE_SELECTOR = new RegExp('^(?:' +
-    (BUGGY_GEBTN ? ''  : '\\*|') +
-    (BUGGY_GEBCN ? '#' : '[.#]') + '?' +
-    str_identifier + '|\\*?' + str_nameAttr +
-  ')$'),
+  // matches simple id, tagName & className selectors
+  RE_SIMPLE_SELECTOR =
+    new RegExp('^(?:\\*|[.#]?' + str_identifier + '|\\*?' + str_nameAttr + ')$'),
 
   /*------------------------------- SELECTORS --------------------------------*/
 
