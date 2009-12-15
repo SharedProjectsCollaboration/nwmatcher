@@ -1,3 +1,5 @@
+* Make byClass(), byName(), and byTag() convert nodeLists to arrays to improve element access times. [jddalton]
+
 * Avoid critical error in select_regular() if selector contains trailing commas like `div,`. [jddalton]
 
 * Add check to `RE_BUGGY_QSA` for Opera not respecting `valign` attribute value insensitivity in HTML. [jddalton]

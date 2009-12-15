@@ -995,11 +995,12 @@
   // elements by class
   // @return nodeList (non buggy native GEBCN)
   // @return array (non native/buggy GEBCN)
-  byClass = !BUGGY_GEBCN ?
+  byClass = NATIVE_SLICE_PROTO && !BUGGY_GEBCN ?
     function(className, from) {
       return ctx_notHTML ?
         select_regular('*[class~="' + className + '"]', from || ctx_doc) :
-        (from || ctx_doc).getElementsByClassName(className.replace(/\\/g, ''));
+        // convert to array because accessing elements is faster with arrays
+        slice.call((from || ctx_doc).getElementsByClassName(className.replace(/\\/g, '')), 0);
     } :
     function(className, from) {
       if (ctx_notHTML) {
@@ -1062,11 +1063,11 @@
   // elements by name
   // @return nodeList (non buggy native GEBN)
   // @return array (non native/buggy GEBN)
-  byName = !BUGGY_GEBN_MATCH_ID ?
+  byName = NATIVE_SLICE_PROTO && !BUGGY_GEBN_MATCH_ID ?
     function(name, from) {
       return ctx_notHTML ?
         select_regular(' *[name="' + name + '"]', from || ctx_doc) :
-        ctx_doc.getElementsByName(name);
+        slice.call(ctx_doc.getElementsByName(name), 0);
     } :
     function(name, from) {
       if (ctx_notHTML) {
@@ -1113,11 +1114,11 @@
   // elements by tag
   // @return nodeList (native GEBTN)
   // @return array (document fragments)
-  byTag = !BUGGY_GEBTN ?
+  byTag = NATIVE_SLICE_PROTO && !BUGGY_GEBTN ?
     function(tag, from) {
       return ctx_notHTML && typeof from.getElementsByTagName == 'undefined' ?
         byTagInFragments(tag, from) :
-        (from || ctx_doc).getElementsByTagName(tag);
+        slice.call((from || ctx_doc).getElementsByTagName(tag), 0);
     } :
     function(tag, from) {
       // support document fragments
@@ -1864,19 +1865,13 @@
     'Selectors': Selectors,
 
     // get elements by class name
-    'byClass': BUGGY_GEBCN ? byClass :
-      function(className, from) {
-        return concatList([ ], byClass(className, from));
-      },
+    'byClass': byClass,
 
     // get element by id attr
     'byId': byId,
 
     // get elements by name attr
-    'byName': BUGGY_GEBN_MATCH_ID ? byName :
-      function(name, from) {
-        return concatList([ ], byName(name, from));
-      },
+    'byName': byName,
 
     // get elements by tag name
     'byTag':
