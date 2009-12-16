@@ -259,13 +259,14 @@
   /*----------------------------- FEATURE TESTING ----------------------------*/
 
   // detect native methods
-  isNative = (function() {
-    var s = (global.open + '').replace(/open/g, '');
-    return function(object, method) {
-      var m = object ? object[method] : false, r = new RegExp(method, 'g');
-      return !!(m && typeof m != 'string' && s === (m + '').replace(r, ''));
-    };
-  })(),
+  isNative =
+    (function() {
+      var s = (global.open + '').replace(/open/g, '');
+      return function(object, method) {
+        var m = object ? object[method] : false, r = new RegExp(method, 'g');
+        return !!(m && typeof m != 'string' && s === (m + '').replace(r, ''));
+      };
+    })(),
 
   // NOTE: NATIVE_XXXXX checks for the existance of method only
   // even though it is supported it may still be buggy
@@ -277,6 +278,10 @@
   NATIVE_GEBTN     = isNative(ctx_root, 'getElementsByTagName'),
   NATIVE_HAS_FOCUS = isNative(ctx_doc,  'hasFocus'),
   NATIVE_QSA       = isNative(ctx_doc,  'querySelectorAll'),
+
+  CLASS_ATTRIBUTE_NAME =
+    (ctx_div.className = 'x') && ctx_div.getAttribute('className') === 'x' ?
+    'className' : 'class',
 
   RE_BUGGY_MUTATION = test_true,
 
@@ -813,7 +818,9 @@
           // list of whitespace-separated values, see section 6.4 Class selectors
           // and notes at the bottom; explicitly non-normative in this specification.
           return (
-            't=' + (ctx_notHTML ? 's.getAttribute(e,"class")' : 'e.className') +
+            't=' + (ctx_notHTML ?
+              's.getAttribute(e,"class")' :
+              '(e.submit?s.getAttribute(e,"' + CLASS_ATTRIBUTE_NAME + '"):e.className)') +
             ';if(t&&(" "+t+" ")' +
             (ctx_quirks ? '.toLowerCase()' : '') +
             '.replace(/' + str_edgeSpace + '/g," ").indexOf(" ' +
@@ -963,7 +970,8 @@
 
       className = ' ' + n.replace(/\\/g, '') + ' ';
       while ((element = elements[++i])) {
-        if ((n = element.className) &&
+        // use getAttribute() with forms to avoid issues with children that have name="className"
+        if ((n = element.submit ? element.getAttribute(CLASS_ATTRIBUTE_NAME) : element.className) &&
             (' ' + (ctx_quirks ? n.toLowerCase() : n) + ' ')
             .replace(re_edgeSpaces, ' ').indexOf(className) > -1) {
           results[++j] = element;

@@ -1,3 +1,5 @@
+* Make sure classNames resolve correctly for forms that have children with name="className". [jddalton, pdanpdan]
+
 * Ensure public byClass(), byId(), byName(), byTag(), expireCache(), and setCache() call changeContext() when needed. [jddalton]
 
 * Reduce the number of expandos set on context documents for result caching. [jddalton]
