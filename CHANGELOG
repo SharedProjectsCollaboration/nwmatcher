@@ -1,3 +1,5 @@
+* Reduce the number of expandos set on context documents for result caching. [jddalton]
+
 * Optimize IE8 by skipping `RE_SIMPLE_SELECTOR` for classNames and allowing it to use QSA. [jddalton]
 
 * Make select_regular() swap `TAG optimization RTL` and `CLASS optimization RTL` checks if `NATIVE_GEBCN` is false to give IE a performance boost. [Diego Perini, jddalton]

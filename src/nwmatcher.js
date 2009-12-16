@@ -31,7 +31,7 @@
   lastCalled, lastIndex, lastNormalized, lastSelector, lastSlice,
 
   // context specific variables
-  ctx_div, ctx_last, ctx_notHTML, ctx_nocache,
+  ctx_data, ctx_last, ctx_notHTML, ctx_nocache, ctx_snap,
 
   // attribute case-insensitivity map for (X)HTML
   ctx_attrCaseTable,
@@ -43,10 +43,13 @@
   ctx_cplUpperCase,
 
   // processing context
-  ctx_doc,
+  ctx_doc = global.document,
 
   // context root element (HTML)
-  ctx_root,
+  ctx_root = ctx_doc.documentElement,
+
+  // dummy div used in feature tests
+  ctx_div = ctx_doc.createElement('DiV'),
 
   // used in the RE_BUGGY_XXXXX testers
   test_false = { 'test': function() { return false; } },
@@ -170,59 +173,6 @@
   },
 
   /*----------------------------- UTILITY METHODS ----------------------------*/
-
-  // change persisted private vars depending on context
-  changeContext =
-    (function() {
-      function changeContext(from) {
-        from || (from = HOST_DOC);
-        var isSensitive, isFragment = from.nodeType == 11;
-
-        // reference context ownerDocument and document root (HTML)
-        ctx_root = (ctx_doc = from.ownerDocument || from).documentElement;
-
-        // check if context is not (X)HTML
-        ctx_notHTML = !('body' in ctx_doc) || !('innerHTML' in ctx_root)  || isFragment;
-
-        // save passed context
-        ctx_last = from;
-
-        // create dummy div used in feature tests
-        ctx_div = ctx_doc.createElement('DiV');
-
-        // Safari 2 missing document.compatMode property
-        // makes it harder to detect Quirks vs. Strict
-        ctx_quirks = (!ctx_notHTML || isFragment) &&
-          (ctx_doc.compatMode ? ctx_doc.compatMode === 'BackCompat' :
-           ctx_div.style && (ctx_div.style.width = 1) && (ctx_div.style.width == '1px'));
-
-        // detect if nodeName is case sensitive (xhtml, xml, svg)
-        isSensitive = ctx_div.nodeName === 'DiV';
-        ctx_attrCaseTable = isSensitive ? XHTML_TABLE : HTML_TABLE;
-        if (!isSensitive) ctx_attrCaseTable['class'] = ctx_quirks ? 1 : 0;
-
-        // compiler string used to set nodeName case
-        ctx_cpl_upperCase = isSensitive || typeof ctx_doc.createElementNS == 'function' ?
-          '.toUpperCase()' : '';
-
-        // don't cache compiled selectors if context's
-        // feature signature doesn't match the host's
-        ctx_nocache = HOST_SIGNATURE != ((ctx_quirks ? 'q' : '') +
-          (ctx_notHTML ? 'n' : '') + (isSensitive ? 's' : ''));
-
-        return from;
-      }
-
-      // init context variables
-      changeContext();
-
-      // define host signature
-      ctx_nocache = false;
-      HOST_SIGNATURE = ((ctx_quirks ? 'q' : '') + (ctx_notHTML ? 'n' : '') +
-        (ctx_div.nodeName === 'DiV' ? 's' : ''));
-
-      return changeContext;
-    })(),
 
   clearElement =
     function(element) {
@@ -351,7 +301,7 @@
 
       ctx_div.appendChild(createElement('p')).className = 'xxx';
 
-      if (ctx_quirks &&
+      if (ctx_doc.compatMode == 'BackCompat' &&
          (ctx_div.querySelectorAll('[class~=xxx]').length != 2 ||
           ctx_div.querySelectorAll('.xXx').length != 2)) {
         pattern.push('(?:\\[[\\x20\\t\\n\\r\\f]*class\\b|\\.' + str_identifier + ')');
@@ -1352,7 +1302,7 @@
       cache_childIndexes = { };
       cache_childIndexesByTag = { };
 
-      return compiled(element, snap, ctx_doc, ctx_root, from, callback);
+      return compiled(element, Util, ctx_doc, ctx_root, from, callback);
     },
 
   // select elements matching simple
@@ -1465,11 +1415,10 @@
         !(from != ctx_doc && isDisconnected(from, ctx_root));
 
       if (isCacheable) {
-        snap = ctx_doc.snapshot;
         // valid base context storage
-        if (snap && !snap.isExpired) {
-          if ((elements = snap.Results[selector]) &&
-            snap.Contexts[selector] == from) {
+        if (ctx_snap && !ctx_snap.isExpired) {
+          if ((elements = ctx_snap.Results[selector]) &&
+            ctx_snap.Contexts[selector] == from) {
             callback && forEachCall(elements, callback);
             return elements;
           }
@@ -1478,16 +1427,17 @@
           now = new Date;
           if ((now - lastCalled) < cache_minRest) {
             isCacheable = false;
-            cache_paused =
-              (ctx_doc.snapshot = new Snapshot).isExpired = true;
-            setTimeout(function() { cache_paused = false; }, cache_minRest);
-          } else setCache(true, ctx_doc);
-          snap = ctx_doc.snapshot;
+            cache_paused = (ctx_data.snapshot = new Snapshot).isExpired = true;
+            global.setTimeout(function() { cache_paused = false; }, cache_minRest);
+          }
+          else setCache(true, ctx_doc);
+
+          ctx_snap = ctx_data.snapshot;
           lastCalled = now;
         }
 
-        Contexts = snap.Contexts;
-        Results  = snap.Results;
+        Contexts = ctx_snap.Contexts;
+        Results  = ctx_snap.Results;
       }
 
       // normalize and validate selector
@@ -1662,7 +1612,7 @@
         cache_compiledSelectors[normalized] = compileSelector(normalized, true, isSingle);
       }
 
-      data = compiled(elements, snap, ctx_doc, ctx_root, from, callback);
+      data = compiled(elements, Util, ctx_doc, ctx_root, from, callback);
 
       if (isCacheable) {
         backupSelector && (normalized = backupSelector);
@@ -1682,6 +1632,32 @@
   select = NATIVE_QSA ?
     select_qsa :
     select_regular,
+
+  /*----------------------------- UTILITY OBJECT -----------------------------*/
+
+  // passed to the compiled selector/matcher functions
+  Util = {
+    'isLink':    isLink,
+    'stripTags': stripTags,
+
+    // element inspection methods
+    'getAttribute': getAttribute,
+    'hasAttribute': hasAttribute,
+
+    // element indexing methods
+    'getChildIndexes':      getChildIndexes,
+    'getChildIndexesByTag': getChildIndexesByTag,
+
+     // retrieval methods
+    'byClass': byClass,
+    'byId':    byId,
+    'byName':  byName,
+    'byTag':   byTag,
+
+    // selection/matching
+    'select': select,
+    'match':  match
+  },
 
   /*------------------------------- DEBUG API --------------------------------*/
 
@@ -1739,13 +1715,17 @@
   // UID expando on elements,
   // used to keep child indexes
   // during a selection session
-  UID = 'uniqueID' in ctx_root ? 'uniqueID' : 'NWID_' + String(+new Date),
+  NWID = 'NWID' + String(+new Date).slice(-6),
+  UID  = 'uniqueID' in ctx_root ? 'uniqueID' : NWID,
   UID_COUNT = 1,
 
   // minimum time allowed between calls to the cache initialization
   cache_minRest = 15, // ms
   cache_enabled = NATIVE_MUTATION_EVENTS,
   cache_paused  = false,
+
+  // stores cached data and snapshots per context
+  cache_data = { },
 
   // ordinal position by nodeType or nodeName
   cache_childIndexes      = { },
@@ -1768,32 +1748,10 @@
       this.Contexts = { };
     }
 
-    // must exist for compiled functions
     Snapshot.prototype = {
-      // validation flag, creating if already expired,
-      // code validation will set it valid first time
-      'isExpired': false,
-
-      'isLink':    isLink,
-      'stripTags': stripTags,
-
-      // element inspection methods
-      'getAttribute': getAttribute,
-      'hasAttribute': hasAttribute,
-
-      // element indexing methods
-      'getChildIndexes':      getChildIndexes,
-      'getChildIndexesByTag': getChildIndexesByTag,
-
-       // retrieval methods
-      'byClass': byClass,
-      'byId':    byId,
-      'byName':  byName,
-      'byTag':   byTag,
-
-      // selection/matching
-      'select': select,
-      'match':  match
+      // flag to indicate current snapshot
+      // has expired and a new one is needed
+      'isExpired': false
     };
 
     return Snapshot;
@@ -1803,15 +1761,14 @@
   // @d optional document context (iframe, xml document)
   // script loading context will be used as default context
   setCache =
-    function(enable, d) {
-      d || (d = ctx_doc);
+    function(enable) {
       if (enable) {
-        if (!d.isCaching) {
-          d.snapshot = new Snapshot;
-          startMutation(d);
+        if (!ctx_data.isCaching) {
+          ctx_data.snapshot = new Snapshot;
+          startMutation(ctx_doc, ctx_data);
         }
-      } else if (d.isCaching) {
-        stopMutation(d);
+      } else if (ctx_data.isCaching) {
+        stopMutation(ctx_doc, ctx_data);
       }
       cache_enabled = !!enable;
     },
@@ -1819,42 +1776,105 @@
   // invoked by mutation events to expire cached parts
   mutationWrapper =
     function(event) {
-      var d = event.target.ownerDocument || event.target;
-      stopMutation(d);
-      expireCache(d);
+      var doc = event.target.ownerDocument || event.target,
+       data = cache_data[doc[NWID]];
+
+      stopMutation(doc, data);
+      expireCache(data);
     },
 
   // append mutation events
   startMutation =
-    function(d) {
+    function(doc, data) {
       // FireFox/Opera/Safari/KHTML have support for Mutation Events
-      d.addEventListener('DOMAttrModified', mutationWrapper, false);
-      d.addEventListener('DOMNodeInserted', mutationWrapper, false);
-      d.addEventListener('DOMNodeRemoved',  mutationWrapper, false);
-      d.isCaching = true;
+      doc.addEventListener('DOMAttrModified', mutationWrapper, false);
+      doc.addEventListener('DOMNodeInserted', mutationWrapper, false);
+      doc.addEventListener('DOMNodeRemoved',  mutationWrapper, false);
+      data.isCaching = true;
     },
 
   // remove mutation events
   stopMutation =
-    function(d) {
-      d.removeEventListener('DOMAttrModified', mutationWrapper, false);
-      d.removeEventListener('DOMNodeInserted', mutationWrapper, false);
-      d.removeEventListener('DOMNodeRemoved',  mutationWrapper, false);
-      d.isCaching = false;
+    function(doc, data) {
+      doc.removeEventListener('DOMAttrModified', mutationWrapper, false);
+      doc.removeEventListener('DOMNodeInserted', mutationWrapper, false);
+      doc.removeEventListener('DOMNodeRemoved',  mutationWrapper, false);
+      data.isCaching = false;
     },
 
   // expire complete cache
   // can be invoked by Mutation Events or
   // programmatically by other code/scripts
   expireCache =
-    function(d) {
-      d.snapshot &&
-        (d.snapshot.isExpired = true);
+    function(data) {
+      data.snapshot &&
+        (data.snapshot.isExpired = true);
     },
 
-  // local indexes, cleared
-  // between selection calls
-  snap = new Snapshot;
+  /*---------------------------- CONTEXT CHANGER -----------------------------*/
+
+  // change persisted private vars depending on context
+  changeContext =
+    (function() {
+      function changeContext(from) {
+        from || (from = HOST_DOC);
+        var uid, isSensitive, isFragment = from.nodeType == 11;
+
+        // save passed context
+        ctx_last = from;
+
+        // reference context ownerDocument and document root (HTML)
+        ctx_root = (ctx_doc = from.ownerDocument || from).documentElement;
+
+        // create dummy div used in feature tests
+        ctx_div = ctx_doc.createElement('DiV');
+
+        // check if context is not (X)HTML
+        ctx_notHTML = !('body' in ctx_doc) || !('innerHTML' in ctx_root)  || isFragment;
+
+        // Safari 2 missing document.compatMode property
+        // makes it harder to detect Quirks vs. Strict
+        ctx_quirks = (!ctx_notHTML || isFragment) &&
+          (ctx_doc.compatMode ? ctx_doc.compatMode === 'BackCompat' :
+           ctx_div.style && (ctx_div.style.width = 1) && (ctx_div.style.width == '1px'));
+
+        // nodeNames are case sensitive for xml and xhtml
+        isSensitive = ctx_div.nodeName === 'DiV';
+
+        // detect if nodeName is case sensitive (xhtml, xml, svg)
+        ctx_attrCaseTable = isSensitive ? XHTML_TABLE : HTML_TABLE;
+        if (!isSensitive) ctx_attrCaseTable['class'] = ctx_quirks ? 1 : 0;
+
+        // compiler string used to set nodeName case
+        ctx_cpl_upperCase = isSensitive || typeof ctx_doc.createElementNS == 'function' ?
+          '.toUpperCase()' : '';
+
+        // don't cache compiled selectors if context's
+        // feature signature doesn't match the host's
+        ctx_nocache = HOST_SIGNATURE && HOST_SIGNATURE !=
+          ((ctx_quirks ? 'q' : '') + (ctx_notHTML ? 'n' : '') + (isSensitive ? 's' : ''));
+
+        if (NATIVE_MUTATION_EVENTS && !ctx_nocache) {
+          // get unique id used to retrieve cache data
+          uid = ctx_doc[NWID] || (ctx_doc[NWID] = ++UID_COUNT);
+          // get/create data object per context
+          ctx_data = cache_data[uid] || (cache_data[uid] = { });
+          // reference or create snapshot if context signature matches host's
+          ctx_snap = ctx_data.snapshot || (ctx_data.snapshot = new Snapshot);
+        }
+
+        return from;
+      }
+
+      // init context variables
+      changeContext();
+
+      // define host signature
+      HOST_SIGNATURE = ((ctx_quirks ? 'q' : '') + (ctx_notHTML ? 'n' : '') +
+        (ctx_div.nodeName === 'DiV' ? 's' : ''));
+
+      return changeContext;
+    })(),
 
   // clear temp variables
   isSupported = isBuggy = null;
