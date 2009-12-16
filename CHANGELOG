@@ -1,3 +1,5 @@
+* Fix regression in ID optimizers for selectors like `#foo.bar.baz`. [jddalton]
+
 * Make sure classNames resolve correctly for forms that have children with name="className". [jddalton, pdanpdan]
 
 * Ensure public byClass(), byId(), byName(), byTag(), expireCache(), and setCache() call changeContext() when needed. [jddalton]

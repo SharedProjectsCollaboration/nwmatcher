@@ -1489,9 +1489,7 @@
         }
 
         // ID optimization RTL
-        if ((parts = lastSlice.match(re_optimizeIdAtEnd)) &&
-            (token = parts[1]) && normalized.indexOf(parts[0] + ':') < 0) {
-
+        if ((parts = lastSlice.match(re_optimizeIdAtEnd)) && (token = parts[1])) {
           if ((element = byId(token, from))) {
             if (match(element, normalized)) {
               data = [ element ];
@@ -1510,30 +1508,38 @@
         }
 
         // ID optimization LTR by reducing the selection context
-        else if ((parts = normalized.match(re_optimizeId)) &&
-            (token = parts[1]) && normalized.indexOf(parts[0] + ':') < 0) {
+        else if ((parts = normalized.match(re_optimizeId)) && (token = parts[1])) {
           if ((element = byId(token, from))) {
             backupFrom = from;
 
             if (!/[>+~]/.test(normalized)) {
+              elements = [element];
               token = '#' + token;
               backupSelector = normalize;
 
-              // convert selectors like `div#foo span` -> `div span`
-              if (re_optimizeByRemoval
-                  .test(normalized.charAt(normalized.indexOf(token) - 1))) {
-                normalized = normalized.replace(token, '');
-                from = element.parentNode;
-                elements = element.getElementsByTagName('*');
-              }
-              // convert selectors like `body #foo span` -> `body * span`
-              else {
-                normalized = normalized.replace(token, '*');
+              if (lastSlice.indexOf(token) > -1) {
+                // should be safe for element to be context when its in the lastSlice
                 from = element;
-                elements = from.getElementsByTagName('*');
+              } else {
+                // set context to parent of element to avoid failing
+                // when `e != g` checks in compiled code
+                from = element.parentNode;
+                elements = concatList(elements, element.getElementsByTagName('*'));
               }
-            } else from = element.parentNode;
+
+              if (re_optimizeByRemoval.test(normalized.charAt(normalized.indexOf(token) - 1))) {
+                // convert selectors like `div#foo span` -> `div span`
+                normalized = normalized.replace(token, '');
+              } else {
+                // convert selectors like `body #foo span` -> `body * span`
+                normalized = normalized.replace(token, '*');
+              }
+            }
+            // set to parentNode for sibling/ancestor selectors
+            else from = element.parentNode;
           }
+          // set elements to 1 to avoid the `if (!elements)` check and fall
+          // into the `if (!elements.length)` check below
           else elements = 1;
         }
 
@@ -1561,14 +1567,12 @@
             token = '.' + token;
             backupSelector = normalize;
 
-            // convert selectors like `body div.foo` -> `body div` OR `.foo.bar` -> `.bar`
-            if (re_optimizeByRemoval
-              .test(normalized.charAt(normalized.indexOf(token) - 1))) {
+            if (re_optimizeByRemoval.test(normalized.charAt(normalized.indexOf(token) - 1))) {
+              // convert selectors like `body div.foo` -> `body div` OR `.foo.bar` -> `.bar`
               normalized = normalized.slice(0, lastIndex) +
                 normalized.slice(lastIndex).replace(token, '');
-            }
-            // convert selectors like `body .foo` -> `body *`
-            else {
+            } else {
+              // convert selectors like `body .foo` -> `body *`
               normalized = normalized.slice(0, lastIndex) +
                 normalized.slice(lastIndex).replace(token, '*');
             }
