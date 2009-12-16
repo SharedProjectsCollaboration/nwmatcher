@@ -1894,25 +1894,43 @@
     'Selectors': Selectors,
 
     // get elements by class name
-    'byClass': byClass,
+    'byClass':
+      function(className, from) {
+        return byClass(className, ctx_last != (from || HOST_DOC) ?
+          changeContext(from) : from);
+      },
 
     // get element by id attr
-    'byId': byId,
+    'byId':
+      function(id, from) {
+        return byId(id, ctx_last != (from || HOST_DOC) ?
+          changeContext(from) : from);
+      },
 
     // get elements by name attr
-    'byName': byName,
+    'byName':
+      function(name, from) {
+        return byName(name, ctx_last != (from || HOST_DOC) ?
+          changeContext(from) : from);
+      },
 
     // get elements by tag name
     'byTag':
       function(tag, from) {
-        return concatList([ ], byTag(tag, from));
+        return concatList([ ], byTag(tag, ctx_last != (from || HOST_DOC) ?
+          changeContext(from) : from));
       },
 
     // for debug only
     'compile': compile,
 
     // forced expire of DOM tree cache
-    'expireCache': expireCache,
+    'expireCache': function(doc) {
+      if (ctx_doc != (doc || HOST_DOC)) {
+        changeContext(doc);
+      }
+      expireCache(ctx_data);
+    },
 
     // read the value of the attribute
     // as was in the original HTML code
@@ -1932,7 +1950,12 @@
     'select': select,
 
     // enable/disable cache
-    'setCache': setCache,
+    'setCache': function(enable, doc) {
+      if (ctx_doc != (doc || HOST_DOC)) {
+        changeContext(doc);
+      }
+      setCache(enable);
+    },
 
     // for debug only
     'setQSA': setQSA

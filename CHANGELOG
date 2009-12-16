@@ -1,3 +1,5 @@
+* Ensure public byClass(), byId(), byName(), byTag(), expireCache(), and setCache() call changeContext() when needed. [jddalton]
+
 * Reduce the number of expandos set on context documents for result caching. [jddalton]
 
 * Optimize IE8 by skipping `RE_SIMPLE_SELECTOR` for classNames and allowing it to use QSA. [jddalton]
