@@ -282,10 +282,6 @@
   NATIVE_HAS_FOCUS = isNative(ctx_doc,  'hasFocus'),
   NATIVE_QSA       = isNative(ctx_doc,  'querySelectorAll'),
 
-  CLASS_ATTRIBUTE_NAME =
-    (ctx_div.className = 'x') && ctx_div.getAttribute('className') === 'x' ?
-    'className' : 'class',
-
   RE_BUGGY_MUTATION = test_true,
 
   RE_BUGGY_QSA = NATIVE_QSA ?
@@ -479,6 +475,15 @@
   // matches simple id, tagName & className selectors
   RE_SIMPLE_SELECTOR = new RegExp('^(?:\\*|[.#]?' +
     str_identifier + '|\\*?' + str_nameAttr + ')$'),
+
+  // used with element.getAttribute(CLASS_ATTRIBUTE_NAME)
+  CLASS_ATTRIBUTE_NAME =
+    (ctx_div.className = 'x') && ctx_div.getAttribute('className') === 'x' ?
+    'className' : 'class',
+
+  // select_regular() uses this to determine if it optimizes by class or tag name first
+  OPTIMIZE_CLASS_FIRST =
+    (!BUGGY_GEBCN && NATIVE_SLICE_PROTO) || (BUGGY_GEBCN && NATIVE_QSA),
 
   /*------------------------------- SELECTORS --------------------------------*/
 
@@ -1607,8 +1612,8 @@
           }
         }
 
-        // TAG optimization RTL (check TAG first when GEBCN doesn't exist)
-        else if (!NATIVE_GEBCN && (parts = lastSlice.match(re_optimizeTag)) && (token = parts[1])) {
+        // TAG optimization RTL (check TAG first when byClass_regular() is used)
+        else if (!OPTIMIZE_CLASS_FIRST && (parts = lastSlice.match(re_optimizeTag)) && (token = parts[1])) {
           if ((elements = byTag(token, from)).length) {
             backupSelector = normalize;
             normalized = normalized.slice(0, lastIndex) +
@@ -1634,8 +1639,8 @@
           }
         }
 
-        // TAG optimization RTL (check TAG last when GEBCN exists)
-        else if (NATIVE_GEBCN && (parts = lastSlice.match(re_optimizeTag)) && (token = parts[1])) {
+        // TAG optimization RTL (check TAG last when byClass_regular() isn't used)
+        else if (OPTIMIZE_CLASS_FIRST && (parts = lastSlice.match(re_optimizeTag)) && (token = parts[1])) {
           if ((elements = byTag(token, from)).length) {
             backupSelector = normalize;
             normalized = normalized.slice(0, lastIndex) +

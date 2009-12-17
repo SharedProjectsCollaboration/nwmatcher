@@ -1,3 +1,5 @@
+* Add `OPTIMIZE_CLASS_FIRST` flag so IE8 will optimize by className before tagName in select_regular(). [jddalton]
+
 * Ensure select_qsa() removes non-elements from IE8 results. [jddalton]
 
 * Add QSA fork of byClass() and simply `ctx_notHTML` forks in byClass(), byId(), and byName(). [jddalton] 
