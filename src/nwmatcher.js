@@ -477,11 +477,8 @@
     true,
 
   // matches simple id, tagName & className selectors
-  RE_SIMPLE_SELECTOR = new RegExp('^(?:\\*|' +
-    // IE8 QSA is faster than shortcut
-    (BUGGY_GEBCN && NATIVE_QSA ? '#' : '[.#]') + '?' +
-    str_identifier + '|\\*?' + str_nameAttr +
-  ')$'),
+  RE_SIMPLE_SELECTOR = new RegExp('^(?:\\*|[.#]?' +
+    str_identifier + '|\\*?' + str_nameAttr + ')$'),
 
   /*------------------------------- SELECTORS --------------------------------*/
 
@@ -952,19 +949,35 @@
       return hasAttribute(element,'href') && LINK_NODES[element.nodeName];
     },
 
-  // elements by class
-  // @return nodeList (non buggy native GEBCN)
-  // @return array (non native/buggy GEBCN)
-  byClass = NATIVE_SLICE_PROTO && !BUGGY_GEBCN ?
+  // elements by class using getElementsByClassName()
+  // @return array
+  byClass_gebcn =
     function(className, from) {
       return ctx_notHTML ?
-        select_regular('*[class~="' + className + '"]', from || ctx_doc) :
+        select_regular('*[class~="' + className + '"]', from) :
         // convert to array because accessing elements is faster with arrays
         slice.call((from || ctx_doc).getElementsByClassName(className.replace(/\\/g, '')), 0);
-    } :
+    },
+
+  // elements by class using querySelectorAll()
+  // @return nodeList (qsa)
+  // @return array (non html)
+  byClass_qsa =
     function(className, from) {
       if (ctx_notHTML) {
-        return select_regular('*[class~="' + className + '"]', from || ctx_doc);
+        return select_regular('*[class~="' + className + '"]', from);
+      }
+      return from && from != ctx_doc || className.indexOf('\\') > -1 ?
+        byClass_regular(className, from) :
+        ctx_doc.querySelectorAll('.' + className);
+    },
+
+  // elements by class using attribute checks
+  // @return array
+  byClass_regular =
+    function(className, from) {
+      if (ctx_notHTML) {
+        return select_regular('*[class~="' + className + '"]', from);
       }
 
       var element, i = -1, j = i, results = [ ],
@@ -983,13 +996,21 @@
       return results;
     },
 
+  // elements by class
+  // @return nodeList (non buggy native GEBCN)
+  // @return array (non native/buggy GEBCN)
+  byClass = NATIVE_SLICE_PROTO && !BUGGY_GEBCN ?
+    byClass_gebcn : BUGGY_GEBCN && NATIVE_QSA ?
+    byClass_qsa :
+    byClass_regular,
+
   // element by id
   // @return element reference or null
   byId =
     function(id, from) {
       if (ctx_notHTML) {
         // prefix a <space> so it isn't caught by RE_SIMPLE_SELECTOR
-        return select_regular(' *[id="' + id + '"]', from || ctx_doc)[0];
+        return select_regular(' *[id="' + id + '"]', from)[0];
       }
 
       var element, elements, node, i = -1;
@@ -1026,7 +1047,7 @@
   byName_gebn =
     function(name, from) {
       if (ctx_notHTML) {
-        return select_regular(' *[name="' + name + '"]', from || ctx_doc);
+        return select_regular(' *[name="' + name + '"]', from);
       }
       return from && from != ctx_doc ?
         byName_regular(name, from) :
@@ -1038,7 +1059,7 @@
   byName_regular =
     function(name, from) {
       if (ctx_notHTML) {
-        return select_regular(' *[name="' + name + '"]', from || ctx_doc);
+        return select_regular(' *[name="' + name + '"]', from);
       }
 
       name = name.replace(/\\/g, '');
