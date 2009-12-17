@@ -932,7 +932,9 @@ QUnit.jsDump = (function() {
 				type = "document";
 			} else if (QUnit.is("HTMLCollection", obj) || QUnit.is("NodeList", obj)) {
 				type = "nodelist";
-			} else if (/^\[object HTML/.test(Object.prototype.toString.call( obj ))) {
+		  // modified to support IE (jddalton)
+			} else if (typeof obj.nodeType === "number" ||
+			    /^\[object HTML/.test(Object.prototype.toString.call( obj ))) {
 				type = "node";
 			} else {
 				type = typeof obj;
