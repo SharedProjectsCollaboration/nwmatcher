@@ -1018,15 +1018,21 @@
       return null;
     },
 
-  // elements by name
-  // @return nodeList (non buggy native GEBN)
-  // @return array (non native/buggy GEBN)
-  byName = NATIVE_SLICE_PROTO && !BUGGY_GEBN_MATCH_ID ?
+  // elements by name using getElementsByName()
+  // @return array
+  byName_gebn =
     function(name, from) {
-      return ctx_notHTML ?
-        select_regular(' *[name="' + name + '"]', from || ctx_doc) :
-        slice.call(ctx_doc.getElementsByName(name), 0);
-    } :
+      if (ctx_notHTML) {
+        return select_regular(' *[name="' + name + '"]', from || ctx_doc);
+      }
+      return from && from != ctx_doc ?
+        byName_regular(name, from) :
+        slice.call(ctx_doc.getElementsByName(name.replace(/\\/g, '')), 0);
+    },
+
+  // elements by name using attribute checks
+  // @return array
+  byName_regular =
     function(name, from) {
       if (ctx_notHTML) {
         return select_regular(' *[name="' + name + '"]', from || ctx_doc);
@@ -1035,26 +1041,33 @@
       name = name.replace(/\\/g, '');
       from || (from = ctx_doc);
 
-      var element, node, results = [ ], i = -1, j = i,
-       elements = ctx_doc.getElementsByName(name),
-       length = elements.length;
+      var element, elements, length, node,
+       results = [ ], i = -1, j = i;
 
-      // use gEBTN if no results to catch elements with
-      // names that don't officially support name attributes OR
-      // if results contain an element with id="length" because
-      // it will produce incorrect results
-      if (!length || length.nodeType) {
-        elements = from.getElementsByTagName('*');
-      }
-      // elements with an id equal to the name may stop
-      // other elements with the same name from being matched
-      else if (length == 1 && (element = elements.item(0)).id == name) {
-        element.id = '';
-        elements = ctx_doc.getElementsByName(name);
-        if (!(length = elements.length) || length.nodeType) {
+      if (from == ctx_doc) {
+        elements = from.getElementsByName(name);
+        length = elements.length;
+
+        // use gEBTN if no results as on disconnected nodes, or elements with
+        // names that don't officially support name attributes OR
+        // if results contain an element with id="length" because
+        // it will produce incorrect results
+        if (!length || length.nodeType) {
           elements = from.getElementsByTagName('*');
         }
-        element.id = name;
+        // elements with an id equal to the name may stop
+        // other elements with the same name from being matched
+        else if (length == 1 && (element = elements.item(0)).id == name) {
+          element.id = '';
+          elements = ctx_doc.getElementsByName(name);
+          if (!(length = elements.length) || length.nodeType) {
+            elements = from.getElementsByTagName('*');
+          }
+          element.id = name;
+        }
+      } else {
+        // support disconnected nodes
+        elements = from.getElementsByTagName('*');
       }
 
       while ((element = elements[++i])) {
@@ -1068,6 +1081,13 @@
       }
       return results;
     },
+
+  // elements by name
+  // @return nodeList (non buggy native GEBN)
+  // @return array (non native/buggy GEBN)
+  byName = NATIVE_SLICE_PROTO && !BUGGY_GEBN_MATCH_ID ?
+    byName_gebn :
+    byName_regular,
 
   // elements by tag
   // @return nodeList (native GEBTN)
@@ -1313,8 +1333,7 @@
       return compiled(element, Util, ctx_doc, ctx_root, from, callback);
     },
 
-  // select elements matching simple
-  // selectors using cross-browser client APIs
+  // select elements matching simple selectors
   // @return array
   select_simple =
     function(selector, from, callback) {
@@ -1354,7 +1373,7 @@
     },
 
   // select elements matching selector
-  // using the new Query Selector API
+  // using querySelectorAll()
   // @return array
   select_qsa =
     function (selector, from, callback) {
