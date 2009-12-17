@@ -1,3 +1,5 @@
+* Ensure select_qsa() removes non-elements from IE8 results. [jddalton]
+
 * Add QSA fork of byClass() and simply `ctx_notHTML` forks in byClass(), byId(), and byName(). [jddalton] 
 
 * Ensure setCache() and expireCache() don't throw errors in browsers that don't support DOM mutation events. [jddalton]

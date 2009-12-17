@@ -1401,7 +1401,7 @@
   // @return array
   select_qsa =
     function (selector, from, callback) {
-      var element, elements;
+      var element, elements, results, i = -1;
       selector || (selector = '');
       if (ctx_last != (from || HOST_DOC)) {
         from = changeContext(from);
@@ -1417,6 +1417,18 @@
         } catch(e) { }
 
         if (elements) {
+          // IE8 may have non elements in the results
+          if (BUGGY_GEBTN && selector.indexOf('*') > -1) {
+            results = [ ];
+            while (element = elements[++i]) {
+              if (element.nodeName > '@') {
+                callback && callback(element);
+                results.push(element);
+              }
+            }
+            return results;
+          }
+
           switch (elements.length) {
             case 0:
               return [ ];
