@@ -51,6 +51,9 @@
   // dummy div used in feature tests
   ctx_div = ctx_doc.createElement('DiV'),
 
+  // reusable empty function
+  emptyFunction = function() { },
+
   // used in the RE_BUGGY_XXXXX testers
   test_false = { 'test': function() { return false; } },
   test_true  = { 'test': function() { return true;  } },
@@ -1956,12 +1959,14 @@
     'compile': compile,
 
     // forced expire of DOM tree cache
-    'expireCache': function(doc) {
-      if (ctx_doc != (doc || HOST_DOC)) {
-        changeContext(doc);
-      }
-      expireCache(ctx_data);
-    },
+    'expireCache': NATIVE_MUTATION_EVENTS ?
+      function(doc) {
+        if (ctx_doc != (doc || HOST_DOC)) {
+          changeContext(doc);
+        }
+        expireCache(ctx_data);
+      } :
+      emptyFunction,
 
     // read the value of the attribute
     // as was in the original HTML code
@@ -1981,12 +1986,14 @@
     'select': select,
 
     // enable/disable cache
-    'setCache': function(enable, doc) {
-      if (ctx_doc != (doc || HOST_DOC)) {
-        changeContext(doc);
-      }
-      setCache(enable);
-    },
+    'setCache': NATIVE_MUTATION_EVENTS ?
+      function(enable, doc) {
+        if (ctx_doc != (doc || HOST_DOC)) {
+          changeContext(doc);
+        }
+        setCache(enable);
+      } :
+      emptyFunction,
 
     // for debug only
     'setQSA': setQSA

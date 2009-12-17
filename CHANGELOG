@@ -1,3 +1,5 @@
+* Ensure setCache() and expireCache() don't throw errors in browsers that don't support DOM mutation events. [jddalton]
+
 * Ensure byName() works with disconnected nodes as context. [jddalton]
 
 * Fix regression in ID optimizers for selectors like `#foo.bar.baz`. [jddalton]
