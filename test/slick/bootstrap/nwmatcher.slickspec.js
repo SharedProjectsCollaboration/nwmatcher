@@ -1,6 +1,4 @@
 (function(global) {
-  var toString = Object.prototype.toString;
-
   global.SELECT =
   global.Slick = function(from, selector, data) {
     NW.Dom.setQSA(!Slick.disableQSA);
@@ -12,11 +10,11 @@
   };
 
 	global.SELECT1 = function(from, selector){
-		return NW.Dom.select(selector, from)[0];
+		return global.Slick(from, selector)[0];
 	};
 
   global.document.search = function(selector) {
-    return NW.Dom.select(selector, global.document);
+    return global.Slick(global.document, selector);
   };
 
   global.MATCH =
