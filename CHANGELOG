@@ -1,4 +1,4 @@
-* Restrict `:focus` selector to elements that have a tabIndex greater than -1. [jddalton]
+* Improved `:focus` pseudo's resolution by adding `A` and `AREA` elements as focusable. [Diego Perini, jddalton]
 
 * Add `OPTIMIZE_CLASS_FIRST` flag so IE8 will optimize by className before tagName in select_regular(). [jddalton]
 

@@ -693,8 +693,8 @@
 
             case 'focus':
               return !ctx_notHTML && (NATIVE_HAS_FOCUS ?
-                'if(e===d.activeElement&&e.tabIndex>-1&&d.hasFocus()){' + source + '}' :
-                'if(e===d.activeElement&&e.tabIndex>-1){' + source + '}');
+                'if(e===d.activeElement&&d.hasFocus()&&(e.type||e.href)){' + source + '}' :
+                'if(e===d.activeElement&&(e.type||e.href)){' + source + '}');
 
             /* CSS2 :contains and :selected pseudo-classes */
             // not currently part of CSS3 drafts
