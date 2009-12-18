@@ -41,25 +41,32 @@ function Describe(description,specBuilder){
 	descriptionParent = description;
 	
 	// Build the spec object
-	specBuilder(specs,global.context);
+	try {specBuilder(specs,global.context);}
 	
-	// Create the tests and go!
-	var spec_count = 0;
-	var specnames = [];
-	for (var specname in specs){
-		if (/^(before|after)[_ ](all|each)$/.test(specname)) continue;
-		if (!specs[specname]) continue;
-		spec_count++;
-		specnames.push(description+specname);
-	}
-	if (spec_count && !uniquespecs[specnames]){
-		describe(description, specs);
-		uniquespecs[specnames] = true;
+	catch(e) {
+		setTimeout(function(){throw e;}, 0);
 	}
 	
-	// Reset
-	descriptionParent = old_descriptionParent;
-	specs = spec = it = its = old_specs;
+	finally {
+		// Create the tests and go!
+		var spec_count = 0;
+		var specnames = [];
+		for (var specname in specs){
+			if (/^(before|after)[_ ](all|each)$/.test(specname)) continue;
+			if (!specs[specname]) continue;
+			spec_count++;
+			specnames.push(description+specname);
+		}
+		if (spec_count && !uniquespecs[specnames]){
+			describe(description, specs);
+			uniquespecs[specnames] = true;
+		}
+		
+		// Reset
+		descriptionParent = old_descriptionParent;
+		specs = spec = it = its = old_specs;
+	}
+	
 };
 
 
@@ -100,7 +107,8 @@ var Mock = (function(){
 		for (var i=0; i < Mock.mocks.length; i++){
 			try {
 				Mock.mocks[i].run();
-			} 
+			}
+			// IE6 won't trigger finally without a catch statement (jddalton)
 			catch(e) { }
 			finally {
 				continue;

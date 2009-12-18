@@ -203,7 +203,7 @@ function specsYUI(specs, context){
 			Assert.isTrue(Selector.test(Y.Dom.get('checkbox-unchecked'), '[type=checkbox], button'), '[type=checkbox], button');
 			Assert.isTrue(Selector.test(Y.Dom.get('checkbox-unchecked'), 'button, [type=checkbox]'), 'button, [type=checkbox]');
 			Assert.isFalse(Selector.test(Y.Dom.get('checkbox-unchecked'), 'foo, button'), 'foo, button');
-			//Assert.isFalse(Selector.test(null, '#foo'), 'null input');
+			Assert.isFalse(Selector.test(null, '#foo'), 'null input');
 			Assert.isFalse(Selector.test(document.createTextNode('foo'), '#foo'), 'textNode input');
 			Assert.isTrue(Selector.test(Y.Dom.get('test-lang-en-us'), '[lang|=en]'), '[lang|=en] (lang="en-us")');
 			Assert.isTrue(Selector.test(Y.Dom.get('test-lang-en'), '[lang|=en]'), '[lang|=en] (lang="en")');

@@ -1,5 +1,4 @@
 (function(global) {
-
   global.Sizzle = function(selector, from, data) {
     if (data) {
       NW.Dom.select(selector, from, function(element) { data.push(element); });
