@@ -223,9 +223,10 @@ test("attributes", function() {
 	t( "Attribute Ends With", "a[href $= 'org/']", ["mark"] );
 	t( "Attribute Contains", "a[href *= 'google']", ["google","groups"] );
 	
-	t("Select options via :selected", "#select1 option:selected", ["option1a"] );
-	t("Select options via :selected", "#select2 option:selected", ["option2d"] );
-	t("Select options via :selected", "#select3 option:selected", ["option3b", "option3c"] );
+  // Replaced :selected with :checked (jddalton)
+  t("Select options via :checked", "#select1 option:checked", ["option1a"] );
+	t("Select options via :checked", "#select2 option:checked", ["option2d"] );
+	t("Select options via :checked", "#select3 option:checked", ["option3b", "option3c"] );
 	
 	t( "Grouped Form Elements", "input[name='foo[bar]']", ["hidden2"] );
 	
@@ -243,14 +244,20 @@ test("pseudo (:) selectors", function() {
 	t( "Enabled UI Element", "#form input:not([type=hidden]):enabled", ["text1","radio1","radio2","check1","check2","hidden2","name"] );
 	t( "Disabled UI Element", "#form input:disabled", ["text2"] );
 	t( "Checked UI Element", "#form input:checked", ["radio2","check1"] );
-	t( "Selected Option Element", "#form option:selected", ["option1a","option2d","option3b","option3c"] );
+	
+  // Replaced :selected with :checked (jddalton)
+	t( "Selected Option Element", "#form option:checked", ["option1a","option2d","option3b","option3c"] );
 	t( "Text Contains", "a:contains('Google')", ["google","groups"] );
 	t( "Text Contains", "a:contains('Google Groups')", ["groups"] );
 	t( "Element Preceded By", "p ~ div", ["foo","fx-queue","fx-tests", "moretests"] );
 	t( "Not", "a.blog:not(.link)", ["mark"] );
-	t( "Not - multiple", "#form option:not(:contains('Nothing'),#option1b,:selected)", ["option1c", "option1d", "option2b", "option2c", "option3d", "option3e"] );
-    t( "Not - complex", "#form option:not([id^='opt']:nth-child(-n+3))", [ "option1d", "option2d", "option3d", "option3e"] );
-	t( "Not - recursive", "#form option:not(:not(:selected))[id^='option3']", [ "option3b", "option3c"] );
+	
+  // Replaced :selected with :checked (jddalton)
+	t( "Not - multiple", "#form option:not(:contains('Nothing'),#option1b,:checked)", ["option1c", "option1d", "option2b", "option2c", "option3d", "option3e"] );
+
+  t( "Not - complex", "#form option:not([id^='opt']:nth-child(-n+3))", [ "option1d", "option2d", "option3d", "option3e"] );
+  // Replaced :selected with :checked (jddalton)
+	t( "Not - recursive", "#form option:not(:not(:checked))[id^='option3']", [ "option3b", "option3c"] );
 
 	t( "nth Element", "p:nth(1)", ["ap"] );
 	t( "First Element", "p:first", ["firstp"] );
