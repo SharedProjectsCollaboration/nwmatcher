@@ -332,9 +332,15 @@
         .appendChild(createInput('checkbox'))
         .checked = true;
 
+      // :checked fails to match selected options (IE8, Chrome 3, Safari 4)
+      // <select><option selected></option></select>
+      ctx_div.appendChild(createElement('select'))
+        .appendChild(createElement('option'))
+        .selected = true;
+
       isBuggy = true;
       try {
-        isBuggy = ctx_div.querySelectorAll(':checked').length !== 1;
+        isBuggy = ctx_div.querySelectorAll(':checked').length !== 2;
       } catch(e) { }
 
       isBuggy && pattern.push(':checked');
