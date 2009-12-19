@@ -1904,6 +1904,15 @@
         // create dummy div used in feature tests
         ctx_div = ctx_doc.createElement('DiV');
 
+        // nodeNames are case sensitive for xml and xhtml
+        isSensitive = ctx_div.nodeName === 'DiV';
+
+        // get unique id used to retrieve cache data
+        uid = ctx_doc[NWID] || (ctx_doc[NWID] = ++UID_COUNT);
+
+        // get/create data object per context
+        ctx_data = cache_data[uid] || (cache_data[uid] = { });
+
         // check if context is not (X)HTML
         ctx_notHTML = !('body' in ctx_doc) || !('innerHTML' in ctx_root)  || isFragment;
 
@@ -1913,12 +1922,8 @@
           (ctx_doc.compatMode ? ctx_doc.compatMode === 'BackCompat' :
            ctx_div.style && (ctx_div.style.width = 1) && (ctx_div.style.width == '1px'));
 
-        // nodeNames are case sensitive for xml and xhtml
-        isSensitive = ctx_div.nodeName === 'DiV';
-
         // detect if nodeName is case sensitive (xhtml, xml, svg)
         ctx_attrCaseTable = isSensitive ? XHTML_TABLE : HTML_TABLE;
-        if (!isSensitive) ctx_attrCaseTable['class'] = ctx_quirks ? 1 : 0;
 
         // compiler string used to set nodeName case
         ctx_cpl_upperCase = isSensitive || typeof ctx_doc.createElementNS == 'function' ?
@@ -1929,12 +1934,13 @@
         ctx_nocache = HOST_SIGNATURE && HOST_SIGNATURE !=
           ((ctx_quirks ? 'q' : '') + (ctx_notHTML ? 'n' : '') + (isSensitive ? 's' : ''));
 
+        // quirks mode special case for class attribute
+        // http://www.whatwg.org/specs/web-apps/current-work/#selectors
+        if (!isSensitive) {
+          ctx_attrCaseTable['class'] = ctx_quirks ? 1 : 0;
+        }
+        // reference or create snapshot if context signature matches host's
         if (NATIVE_MUTATION_EVENTS && !ctx_nocache) {
-          // get unique id used to retrieve cache data
-          uid = ctx_doc[NWID] || (ctx_doc[NWID] = ++UID_COUNT);
-          // get/create data object per context
-          ctx_data = cache_data[uid] || (cache_data[uid] = { });
-          // reference or create snapshot if context signature matches host's
           ctx_snap = ctx_data.snapshot || (ctx_data.snapshot = new Snapshot);
         }
 

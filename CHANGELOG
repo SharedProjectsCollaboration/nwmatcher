@@ -1,3 +1,5 @@
+* Set `ctx_data` even when mutation events are not supported. [jddalton]
+
 * Add `RE_BUGGY_QSA` test for QSA not detecting selected options via the `:checked` pseudo. [Alex Russell, jddalton]
 
 * Remove support for `:selected` as CSS3 draft spec merges it with `:checked`. [Alex Russell, jddalton]
