@@ -1932,7 +1932,7 @@
         // don't cache compiled selectors if context's
         // feature signature doesn't match the host's
         ctx_nocache = HOST_SIGNATURE && HOST_SIGNATURE !=
-          ((ctx_quirks ? 'q' : '') + (ctx_notHTML ? 'n' : '') + (isSensitive ? 's' : ''));
+          ((ctx_quirks ? '+q' : '-q') + (ctx_notHTML ? '+n' : '-n') + (isSensitive ? '+s' : '-s'));
 
         // quirks mode special case for class attribute
         // http://www.whatwg.org/specs/web-apps/current-work/#selectors
@@ -1951,8 +1951,8 @@
       changeContext();
 
       // define host signature
-      HOST_SIGNATURE = ((ctx_quirks ? 'q' : '') + (ctx_notHTML ? 'n' : '') +
-        (ctx_div.nodeName === 'DiV' ? 's' : ''));
+      HOST_SIGNATURE = ((ctx_quirks ? '+q' : '-q') + (ctx_notHTML ? '+n' : '-n') +
+        (ctx_div.nodeName === 'DiV' ? '+s' : '-s'));
 
       return changeContext;
     })(),
