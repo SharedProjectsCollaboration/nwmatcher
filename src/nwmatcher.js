@@ -632,12 +632,12 @@
     // CSS3 :active, :hover, :focus
     // CSS3 :link, :visited
     //
-    // CSS2 :contains, :selected (deprecated)
+    // CSS2 :contains (non-standard)
     // http://www.w3.org/TR/2001/CR-css3-selectors-20011113/#content-selectors
     //
     // TODO: :indeterminate
     'dpseudos': {
-      'expression': /^\:((?:active|checked|disabled|enabled|focus|hover|link|selected|target|visited)(?!\()|(?:contains|lang|not)(?=\())(?:\((["']?)(.*?(?:\(.*\))?[^'"()]*?)\2\))?(.*)/,
+      'expression': /^\:((?:active|checked|disabled|enabled|focus|hover|link|target|visited)(?!\()|(?:contains|lang|not)(?=\())(?:\((["']?)(.*?(?:\(.*\))?[^'"()]*?)\2\))?(.*)/,
       'callback':
         function(match, source) {
           // escape double quotes if not already
@@ -650,9 +650,14 @@
               return value && 'if(!s.match(e,"' + value + '",g)){' + source +'}';
 
             /* CSS3 UI element states */
+            // http://www.w3.org/TR/css3-selectors/#checked
             case 'checked':
-              // only radio buttons and check boxes
-              return 'if("form" in e&&/^(?:radio|checkbox)$/i.test(e.type)&&e.checked){' + source + '}';
+              // fix Safari selectedIndex property bug
+              if (typeof ctx_doc.getElementsByTagName !== 'undefined') {
+                var i = 0, n = ctx_doc.getElementsByTagName('select');
+                while (n[i]) { n[i++].selectedIndex; }
+              }
+              return 'if("form" in e&&(e.checked||e.selected)){' + source + '}';
 
             case 'enabled':
               // we assume form controls have a `form` and `type` property.
@@ -696,18 +701,10 @@
                 'if(e===d.activeElement&&d.hasFocus()&&(e.type||e.href)){' + source + '}' :
                 'if(e===d.activeElement&&(e.type||e.href)){' + source + '}');
 
-            /* CSS2 :contains and :selected pseudo-classes */
+            /* CSS2 :contains */
             // not currently part of CSS3 drafts
             case 'contains':
               return value && 'if(' + CPL_CONTAINS_TEXT + '.indexOf("' + value + '")>-1){' + source + '}';
-
-            case 'selected':
-              // fix Safari selectedIndex property bug
-              if (typeof ctx_doc.getElementsByTagName !== 'undefined') {
-                var i = 0, n = ctx_doc.getElementsByTagName('select');
-                while (n[i]) { n[i++].selectedIndex; }
-              }
-              return 'if(e.selected){' + source + '}';
           }
         }
     },
