@@ -4,16 +4,10 @@
   <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
   <title>jQuery Test Suite</title>
   <link rel="Stylesheet" media="screen" href="jquery/unittest/unittest.css" />
-  <!-- Includes -->
   <script type="text/javascript" src="jquery/jquery.js"></script>
   <script type="text/javascript" src="../src/nwmatcher.js"></script>
   <script type="text/javascript" src="../src/nwmatcher-jquery.js"></script>
   <script type="text/javascript" src="jquery/nwmatcher-sizzle.js"></script>
-	<script type="text/javascript">
-	jQuery.find = Sizzle;
-	jQuery.expr = Sizzle.selectors;
-	jQuery.unique = Sizzle.uniqueSort;
-	</script>
   <script type="text/javascript" src="jquery/unittest/unittest.js"></script>
   <script type="text/javascript" src="jquery/selector1.js"></script>
 </head>
@@ -22,6 +16,7 @@
   <h1 id="header">jQuery Test Suite</h1>
   <h2 id="banner"></h2>
   <h2 id="userAgent"></h2>
+  <ol id="tests"></ol>
 
   <!-- Test HTML -->
   <div id="nothiddendiv" style="height:1px;background:white;">
@@ -63,7 +58,7 @@
 
       <input type="text" id="name" name="name" value="name" />
 
-      <button id="button" name="button">Button</button>
+      <button id="button" name="button" type="button">Button</button>
 
       <textarea id="area1" maxlength="30">foobar</textarea>
 
@@ -193,7 +188,5 @@ Z</textarea>
     </div>
   </div>
   </dl>
-
-  <ol id="tests"></ol>
 </body>
 </html>
