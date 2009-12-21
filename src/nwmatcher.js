@@ -423,21 +423,29 @@
 
   // NOTE: BUGGY_XXXXX check both for existance and no known bugs.
 
+  BROKEN_GEBN = true,
+
   BUGGY_GEBN_MATCH_ID = true,
 
   BUGGY_GEBID =
     (function() {
-      // <a id="x"></p>
-      var x = 'x' + String(+new Date);
+      var uid = +new Date, x = 'x' + uid, y = 'y' + uid;
+
+      // <a id="x"></a><a name="y"></a>
       clearElement(ctx_div).appendChild(createElement('a')).id = x;
+      ctx_div.appendChild(createElement('a')).setAttribute('name', y);
       ctx_root.insertBefore(ctx_div, ctx_root.firstChild);
 
       isBuggy = !NATIVE_GEBID || !ctx_doc.getElementById(x);
 
       // reuse test div for BUGGY_GEBN
       if (NATIVE_GEBN) {
-        // check for a buggy GEBN with id, because unlike GEBID, it will
-        // present the bug before the document has finished loading
+        // changes to the name attribute aren't reflected by
+        // the gEBN results in IE 6/7
+        BROKEN_GEBN = !ctx_doc.getElementsByName(y)[0];
+
+        // check for a buggy gEBN with id, because unlike gEBID,
+        // it will present the bug before the document has finished loading
         BUGGY_GEBN_MATCH_ID = !!ctx_doc.getElementsByName(x)[0];
         if (!isBuggy) isBuggy = BUGGY_GEBN_MATCH_ID;
       }
@@ -1066,17 +1074,13 @@
   // @return array
   byName_regular =
     function(name, from) {
-      if (ctx_notHTML) {
-        return select_regular(' *[name="' + name + '"]', from);
-      }
+      var element, elements, length, node,
+       results = [ ], i = -1, j = i;
 
       name = name.replace(/\\/g, '');
       from || (from = ctx_doc);
 
-      var element, elements, length, node,
-       results = [ ], i = -1, j = i;
-
-      if (from == ctx_doc) {
+      if (!BROKEN_GEBN && !ctx_notHTML && from == ctx_doc) {
         elements = from.getElementsByName(name);
         length = elements.length;
 

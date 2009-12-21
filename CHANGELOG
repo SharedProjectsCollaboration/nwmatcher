@@ -1,3 +1,5 @@
+* Make IE6/7 not use gEBN because changes to the name attribute aren't reflected by the gEBN results. [Diego Perini, jddalton]
+
 * Ensure `NWID` is not assigned to non-html documents because that could throw an error. [jddalton]
 
 * Make `:selected` an alias of `:checked`. [jddalton]
