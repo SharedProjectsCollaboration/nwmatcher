@@ -637,13 +637,11 @@
     // CSS3 :not, :checked, :enabled, :disabled, :target
     // CSS3 :active, :hover, :focus
     // CSS3 :link, :visited
-    //
-    // CSS2 :contains (non-standard)
-    // http://www.w3.org/TR/2001/CR-css3-selectors-20011113/#content-selectors
+    // CSS2 :contains, :selected (non-standard)
     //
     // TODO: :indeterminate
     'dpseudos': {
-      'expression': /^\:((?:active|checked|disabled|enabled|focus|hover|link|target|visited)(?!\()|(?:contains|lang|not)(?=\())(?:\((["']?)(.*?(?:\(.*\))?[^'"()]*?)\2\))?(.*)/,
+      'expression': /^\:((?:active|checked|disabled|enabled|focus|hover|link|selected|target|visited)(?!\()|(?:contains|lang|not)(?=\())(?:\((["']?)(.*?(?:\(.*\))?[^'"()]*?)\2\))?(.*)/,
       'callback':
         function(match, source) {
           // escape double quotes if not already
@@ -657,7 +655,9 @@
 
             /* CSS3 UI element states */
             // http://www.w3.org/TR/css3-selectors/#checked
+            // http://www.w3.org/TR/2001/CR-css3-selectors-20011113/#selection (:selected renamed to :checked)
             case 'checked':
+            case 'selected':
               // fix Safari selectedIndex property bug
               if (typeof ctx_doc.getElementsByTagName !== 'undefined') {
                 var i = 0, n = ctx_doc.getElementsByTagName('select');
@@ -708,7 +708,7 @@
                 'if(e===d.activeElement&&(e.type||e.href)){' + source + '}');
 
             /* CSS2 :contains */
-            // not currently part of CSS3 drafts
+            // http://www.w3.org/TR/2001/CR-css3-selectors-20011113/#content-selectors
             case 'contains':
               return value && 'if(' + CPL_CONTAINS_TEXT + '.indexOf("' + value + '")>-1){' + source + '}';
           }
@@ -1080,10 +1080,10 @@
         elements = from.getElementsByName(name);
         length = elements.length;
 
-        // use gEBTN if no results as on disconnected nodes, or elements with
-        // names that don't officially support name attributes OR
-        // if results contain an element with id="length" because
-        // it will produce incorrect results
+        // use gEBTN if no results as elements with names
+        // that don't officially support name attributes OR
+        // if results contain an element with id="length"
+        // because it will produce incorrect results
         if (!length || length.nodeType) {
           elements = from.getElementsByTagName('*');
         }

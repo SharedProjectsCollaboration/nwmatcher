@@ -1,3 +1,5 @@
+* Make `:selected` an alias of `:checked`. [jddalton]
+
 * Fix regression bug with `HOST_SIGNATURE`. [jddalton]
 
 * Set `ctx_data` even when mutation events are not supported. [jddalton]
