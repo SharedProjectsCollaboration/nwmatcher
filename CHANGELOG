@@ -1,3 +1,5 @@
+* Ensure `NWID` is not assigned to non-html documents because that could throw an error. [jddalton]
+
 * Make `:selected` an alias of `:checked`. [jddalton]
 
 * Fix regression bug with `HOST_SIGNATURE`. [jddalton]

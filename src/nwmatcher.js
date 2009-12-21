@@ -1904,17 +1904,17 @@
         // create dummy div used in feature tests
         ctx_div = ctx_doc.createElement('DiV');
 
+        // check if context is not (X)HTML
+        ctx_notHTML = !('body' in ctx_doc) || !('innerHTML' in ctx_root)  || isFragment;
+
         // nodeNames are case sensitive for xml and xhtml
         isSensitive = ctx_div.nodeName === 'DiV';
 
-        // get unique id used to retrieve cache data
-        uid = ctx_doc[NWID] || (ctx_doc[NWID] = ++UID_COUNT);
+        // get unique id used to retrieve cache data (html only)
+        uid = !ctx_notHTML && (ctx_doc[NWID] || (ctx_doc[NWID] = ++UID_COUNT));
 
-        // get/create data object per context
-        ctx_data = cache_data[uid] || (cache_data[uid] = { });
-
-        // check if context is not (X)HTML
-        ctx_notHTML = !('body' in ctx_doc) || !('innerHTML' in ctx_root)  || isFragment;
+        // get/create data object per context (html only)
+        ctx_data = ctx_notHTML ? { } : (cache_data[uid] || (cache_data[uid] = { }));
 
         // Safari 2 missing document.compatMode property
         // makes it harder to detect Quirks vs. Strict
