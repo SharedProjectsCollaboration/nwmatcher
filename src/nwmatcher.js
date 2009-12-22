@@ -673,9 +673,9 @@
             case 'checked':
             case 'selected':
               // fix Safari selectedIndex property bug
-              if (typeof ctx_doc.getElementsByTagName !== 'undefined') {
-                var i = 0, n = ctx_doc.getElementsByTagName('select');
-                while (n[i]) { n[i++].selectedIndex; }
+              if (!ctx_notHTML) {
+                var i = -1, n = ctx_doc.getElementsByTagName('select');
+                while (n[++i]) { n[i].selectedIndex; }
               }
               return 'if("form" in e&&(e.checked||e.selected)){' + source + '}';
 

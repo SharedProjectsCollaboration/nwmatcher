@@ -1,3 +1,5 @@
+* Only fix Safari bug with `:selected` when the context is from an html document. [jddalton]
+
 * Fix regression by ensuring `ID optimization RTL` in select_regular() passes the context to match(). [jddalton]
 
 * Add setERR() method to enable/disable internal error notification to console for invalid selectors. [Diego Perini]
