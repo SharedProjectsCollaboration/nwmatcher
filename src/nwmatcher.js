@@ -1752,6 +1752,9 @@
 
   /*------------------------------- DEBUG API --------------------------------*/
 
+  // enable/disable notifications
+  VERBOSE = false, 
+
   // compile selectors to functions resolvers
   // @selector string
   // @mode boolean
@@ -1766,7 +1769,7 @@
   // @message string
   emit =
     function(message) {
-      if (global.NW.Dom.debug) {
+      if (VERBOSE) {
         var console = global.console;
         if (console && console.log) {
           console.log(message);
@@ -1779,6 +1782,13 @@
           }
         }
       }
+    },
+
+  // error control
+  // @enable boolean
+  setERR =
+    function(enable) {
+      VERBOSE = !!enable;
     },
 
   // use select_regular() or select_qsa() for select()

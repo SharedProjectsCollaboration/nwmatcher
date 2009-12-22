@@ -1,3 +1,5 @@
+* Add setERR() method to enable/disable internal error notification to console for invalid selectors. [Diego Perini]
+
 * Avoid using slice.call() on nodeLists in Opera 9.25 because they could return an empty array if the nodeList length property is an element. [jddalton]
 
 * Optimize select_qsa() and id, name, and class selectors for non html elements. [jddalton]
