@@ -19,7 +19,7 @@ function q() {
 r'
  */
 function t(a,b,c) {
-	var f = jQuery(b).get(), s = "";
+	var f = Sizzle(b), s = "";
 
 	for ( var i = 0; i < f.length; i++ ) {
 		s += (s && ",") + '"' + f[i].id + '"';

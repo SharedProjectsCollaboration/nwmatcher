@@ -1365,7 +1365,7 @@
         // that are the same type of document as the host
         // (new context xhtml B is like host xhtml A)
         if (ctx_nocache) {
-          compiled = compileGroup(normalized, '', false);
+          compiled = compileSelector(normalized, '', false);
         } else if (!(compiled = cache_compiledMatchers[normalized])) {
           compiled =
           cache_compiledMatchers[selector] =
@@ -1570,7 +1570,7 @@
         // ID optimization RTL
         if ((parts = lastSlice.match(re_optimizeIdAtEnd)) && (token = parts[1])) {
           if ((element = byId(token, from))) {
-            if (match(element, normalized)) {
+            if (match(element, normalized, from)) {
               data = [ element ];
               callback && callback(element);
             }
