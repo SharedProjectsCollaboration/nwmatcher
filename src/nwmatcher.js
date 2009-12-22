@@ -40,7 +40,7 @@
   ctx_quirks,
 
   // checks if nodeName comparisons need to be upperCased
-  ctx_cplUpperCase,
+  ctx_cpl_upperCase,
 
   // processing context
   ctx_doc = global.document,
@@ -139,8 +139,6 @@
   /*----------------------------- LOOKUP OBJECTS -----------------------------*/
 
   LINK_NODES = { 'a': 1, 'A': 1, 'area': 1, 'AREA': 1, 'link': 1, 'LINK': 1 },
-
-  QSA_NODE_TYPES = { '9': 1, '11': 1 },
 
   // attribute referencing URI values need special treatment in IE
   ATTRIBUTES_URI = {
@@ -970,7 +968,7 @@
   byClass_gebcn =
     function(className, from) {
       return ctx_notHTML ?
-        select_regular('*[class~="' + className + '"]', from) :
+        byClass_regular(className, from) :
         // convert to array because accessing elements is faster with arrays
         slice.call((from || ctx_doc).getElementsByClassName(className.replace(/\\/g, '')), 0);
     },
@@ -980,10 +978,7 @@
   // @return array (non html)
   byClass_qsa =
     function(className, from) {
-      if (ctx_notHTML) {
-        return select_regular('*[class~="' + className + '"]', from);
-      }
-      return from && from != ctx_doc || className.indexOf('\\') > -1 ?
+      return ctx_notHTML || from && from != ctx_doc || className.indexOf('\\') > -1 ?
         byClass_regular(className, from) :
         ctx_doc.querySelectorAll('.' + className);
     },
@@ -992,18 +987,15 @@
   // @return array
   byClass_regular =
     function(className, from) {
-      if (ctx_notHTML) {
-        return select_regular('*[class~="' + className + '"]', from);
-      }
-
       var element, i = -1, j = i, results = [ ],
+       attrName = ctx_notHTML ? 'class' : CLASS_ATTRIBUTE_NAME,
        elements = (from || ctx_doc).getElementsByTagName('*'),
        n = ctx_quirks ? className.toLowerCase() : className;
 
       className = ' ' + n.replace(/\\/g, '') + ' ';
       while ((element = elements[++i])) {
         // use getAttribute() with forms to avoid issues with children that have name="className"
-        if ((n = element.submit ? element.getAttribute(CLASS_ATTRIBUTE_NAME) : element.className) &&
+        if ((n = ctx_notHTML || element.submit ? (n = element.getAttributeNode(attrName)) && n.value : element.className) &&
             (' ' + (ctx_quirks ? n.toLowerCase() : n) + ' ')
             .replace(re_edgeSpaces, ' ').indexOf(className) > -1) {
           results[++j] = element;
@@ -1024,16 +1016,11 @@
   // @return element reference or null
   byId =
     function(id, from) {
-      if (ctx_notHTML) {
-        // prefix a <space> so it isn't caught by RE_SIMPLE_SELECTOR
-        return select_regular(' *[id="' + id + '"]', from)[0];
-      }
-
       var element, elements, node, i = -1;
       from || (from = ctx_doc);
       id = id.replace(/\\/g, '');
 
-      if (!from.getElementById) {
+      if (ctx_notHTML || from != ctx_doc) {
         elements = from.getElementsByTagName('*');
       }
       else if ((element = from.getElementById(id)) && BUGGY_GEBID) {
@@ -1046,13 +1033,21 @@
         return element;
       }
 
-      while ((element = elements[++i])) {
-        if (element.submit) {
-          if ((node = element.getAttributeNode('id')) && node.value == id) {
+      if (ctx_notHTML) {
+        while ((element = elements[++i])) {
+          if (element.getAttribute('id') == id) {
             return element;
           }
-        } else if (element.id == id) {
-          return element;
+        }
+      } else {
+        while ((element = elements[++i])) {
+          if (element.submit) {
+            if ((node = element.getAttributeNode('id')) && node.value == id) {
+              return element;
+            }
+          } else if (element.id == id) {
+            return element;
+          }
         }
       }
       return null;
@@ -1062,10 +1057,7 @@
   // @return array
   byName_gebn =
     function(name, from) {
-      if (ctx_notHTML) {
-        return select_regular(' *[name="' + name + '"]', from);
-      }
-      return from && from != ctx_doc ?
+      return ctx_notHTML || from && from != ctx_doc ?
         byName_regular(name, from) :
         slice.call(ctx_doc.getElementsByName(name.replace(/\\/g, '')), 0);
     },
@@ -1106,13 +1098,21 @@
         elements = from.getElementsByTagName('*');
       }
 
-      while ((element = elements[++i])) {
-        if (element.submit) {
-          if ((node = element.getAttributeNode('name')) && node.value == name) {
+      if (ctx_notHTML) {
+        while ((element = elements[++i])) {
+          if (element.getAttribute('name') == name) {
             results[++j] = element;
           }
-        } else if (element.name == name) {
-          results[++j] = element;
+        }
+      } else {
+        while ((element = elements[++i])) {
+          if (element.submit) {
+            if ((node = element.getAttributeNode('name')) && node.value == name) {
+              results[++j] = element;
+            }
+          } else if (element.name == name) {
+            results[++j] = element;
+          }
         }
       }
       return results;
@@ -1414,18 +1414,17 @@
   select_qsa =
     function (selector, from, callback) {
       var element, elements, results, i = -1;
-      selector || (selector = '');
       if (ctx_last != (from || HOST_DOC)) {
         from = changeContext(from);
       }
-      if (RE_SIMPLE_SELECTOR.test(selector)) {
+      if (RE_SIMPLE_SELECTOR.test(selector || '')) {
         return select_simple(selector, from, callback);
       }
       if (!cache_compiledSelectors[selector] &&
           !ctx_notHTML && !RE_BUGGY_QSA.test(selector) &&
-          (!from || QSA_NODE_TYPES[from.nodeType])) {
+          (!from || from == ctx_doc)) {
         try {
-          elements = (from || ctx_doc).querySelectorAll(selector);
+          elements = ctx_doc.querySelectorAll(selector);
         } catch(e) { }
 
         if (elements) {
@@ -1458,7 +1457,7 @@
         }
       }
 
-      // fall back to NWMatcher select
+      // fallback
       return select_regular(selector, from, callback);
     },
 
@@ -1538,7 +1537,7 @@
       /* pre-filtering pass allow to scale proportionally with big DOM trees */
 
       // commas separators are treated sequentially to maintain order
-      if ((isSingle = (parts = normalized.match(re_splitGroup)).length < 2) && !ctx_notHTML) {
+      if ((isSingle = (parts = normalized.match(re_splitGroup)).length < 2)) {
 
         if (hasChanged) {
           // to avoid critical error with trailing commas (div,)
