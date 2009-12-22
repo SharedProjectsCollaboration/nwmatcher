@@ -406,11 +406,19 @@
   // see http://yura.thinkweb2.com/cft/
   NATIVE_SLICE_PROTO =
     (function() {
+      // Opera 9.25 bug
+      // <a id="length"></a>
+      clearElement(ctx_div).appendChild(createElement('a')).id = 'length';
+      ctx_root.insertBefore(ctx_div, ctx_root.firstChild);
+
       try {
-        return !!slice.call(ctx_doc.childNodes, 0)[0];
+        isBuggy = !!slice.call(ctx_div.getElementsByTagName('*'), 0)[0];
       } catch(e) {
-        return false;
+        isBuggy = false;
       }
+
+      ctx_root.removeChild(ctx_div);
+      return isBuggy;
     })(),
 
   // supports the new traversal API
@@ -1133,6 +1141,11 @@
       return ctx_notHTML && typeof from.getElementsByTagName == 'undefined' ?
         byTagInFragments(tag, from) :
         slice.call((from || ctx_doc).getElementsByTagName(tag), 0);
+    } : !BUGGY_GEBTN ?
+    function(tag, from) {
+      return ctx_notHTML && typeof from.getElementsByTagName == 'undefined' ?
+        byTagInFragments(tag, from) :
+        (from || ctx_doc).getElementsByTagName(tag);
     } :
     function(tag, from) {
       // support document fragments

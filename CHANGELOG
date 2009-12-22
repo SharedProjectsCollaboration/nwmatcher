@@ -1,3 +1,5 @@
+* Avoid using slice.call() on nodeLists in Opera 9.25 because they could return an empty array if the nodeList length property is an element. [jddalton]
+
 * Optimize select_qsa() and id, name, and class selectors for non html elements. [jddalton]
 
 * Make IE6/7 not use gEBN because changes to the name attribute aren't reflected by the gEBN results. [Diego Perini, jddalton]
