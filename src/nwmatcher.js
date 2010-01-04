@@ -1503,8 +1503,8 @@
       if (isCacheable) {
         // valid base context storage
         if (ctx_snap && !ctx_snap.isExpired) {
-          if ((elements = ctx_snap.Results[selector]) &&
-            ctx_snap.Contexts[selector] == from) {
+          if (ctx_snap.Contexts[selector] == from &&
+              (elements = ctx_snap.Results[selector])) {
             callback && forEachCall(elements, callback);
             return elements;
           }

@@ -1,3 +1,5 @@
+* Fix bug in select_regular() where variable `elements` was set during a cache check that, if failed, left it populated. [jddalton]
+
 * Ensure getAttribute() returns an empty string for null/undefined attributes. [jddalton]
 
 * Only fix Safari bug with `:selected` when the context is from an html document. [jddalton]
