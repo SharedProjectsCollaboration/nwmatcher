@@ -928,14 +928,13 @@
   // @return string
   getAttribute = NATIVE_HAS_ATTRIBUTE ?
     function(node, attribute) {
-      return node.getAttribute(attribute) + '';
+      return (node.getAttribute(attribute) || '') + '';
     } :
     function(node, attribute) {
       // specific URI attributes (parameter 2 to fix IE bug)
-      if (ATTRIBUTES_URI[attribute]) {
-        return node.getAttribute(attribute, 2) + '';
-      }
-      return (node = node.getAttributeNode(attribute)) ? node.value + '' : '';
+      return ((ATTRIBUTES_URI[attribute] ?
+        node.getAttribute(attribute, 2) :
+        (node = node.getAttributeNode(attribute)) && node.value) || '') + '';
     },
 
   // attribute presence
