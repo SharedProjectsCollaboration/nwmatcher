@@ -1,4 +1,5 @@
 function specsSelectorExhaustive(specs,context){
+  
 	// Converted characters to unicode and renamed `123number` to `number123` because it is an invalid className. (jddalton)
 	var CLASSES = "normal escaped\\,character \u01dd\u0070\u006f\u0254\u0131\u0075\u006e \u7021 with-dash with_underscore number123 MiXeDcAsE".split(' ');
 	

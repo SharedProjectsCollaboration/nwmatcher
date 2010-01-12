@@ -29,6 +29,9 @@
  * Namespace
  */
 
+var baseQueryString = window.location.search.replace(/&?rerun=.*?(&|$)/ig,'').replace(/&$/,'');
+if (!baseQueryString) baseQueryString = '?'; else baseQueryString += '&';
+
 var JSSpec = {
 	specs: [],
 	
@@ -473,15 +476,15 @@ JSSpec.Logger.prototype.onRunnerStart = function() {
 	var title = document.createElement("DIV");
 	title.id = "title";
 	title.innerHTML = [
-		'<h1><a href="http://jania.pe.kr/aw/moin.cgi/JSSpec">JSSpec</a></h1>',
 		'<ul>',
-		JSSpec.options.rerun ? '<li>[<a href="?" title="rerun all specs">X</a>] ' + JSSpec.util.escapeTags(decodeURIComponent(JSSpec.options.rerun)) + '</li>' : '',
+		JSSpec.options.rerun ? '<li><a href="' + baseQueryString + '" title="rerun all specs">X</a> ' + JSSpec.util.escapeTags(decodeURIComponent(JSSpec.options.rerun)) + ' </li>' : '',
 		'	<li><span id="total_examples">' + JSSpec.runner.totalExamples + '</span> examples</li>',
 		'	<li><span id="total_failures">0</span> failures</li>',
 		'	<li><span id="total_errors">0</span> errors</li>',
 		'	<li><span id="progress">0</span>% done</li>',
 		'	<li><span id="total_elapsed">0</span> secs</li>',
 		'</ul>',
+		'<h1><a href="http://jania.pe.kr/aw/moin.cgi/JSSpec">JSSpec </a></h1>',
 	].join("");
 	container.appendChild(title);
 
@@ -495,7 +498,7 @@ JSSpec.Logger.prototype.onRunnerStart = function() {
 			var sb = [];
 			for(var i = 0; i < specs.length; i++) {
 				var spec = specs[i];
-				sb.push('<li id="spec_' + specs[i].id + '_list"><h3><a href="#spec_' + specs[i].id + '">' + JSSpec.util.escapeTags(specs[i].context) + '</a> [<a href="?rerun=' + encodeURIComponent(specs[i].context) + '">rerun</a>]</h3> </li>');
+				sb.push('<li id="spec_' + specs[i].id + '_list"><h3><a href="#spec_' + specs[i].id + '">' + JSSpec.util.escapeTags(specs[i].context) + '</a> [<a href="' + baseQueryString + 'rerun=' + encodeURIComponent(specs[i].context) + '">rerun</a>]</h3> </li>');
 			}
 			return sb.join("");
 		}(),
@@ -514,7 +517,7 @@ JSSpec.Logger.prototype.onRunnerStart = function() {
 			for(var i = 0; i < specs.length; i++) {
 				var spec = specs[i];
 				sb.push('	<li id="spec_' + specs[i].id + '">');
-				sb.push('		<h3>' + JSSpec.util.escapeTags(specs[i].context) + ' [<a href="?rerun=' + encodeURIComponent(specs[i].context) + '">rerun</a>]</h3>');
+				sb.push('		<h3>' + JSSpec.util.escapeTags(specs[i].context) + ' [<a href="' + baseQueryString + 'rerun=' + encodeURIComponent(specs[i].context) + '">rerun</a>]</h3>');
 				sb.push('		<ul id="spec_' + specs[i].id + '_examples" class="examples">');
 				for(var j = 0; j < spec.examples.length; j++) {
 					var example = spec.examples[j];

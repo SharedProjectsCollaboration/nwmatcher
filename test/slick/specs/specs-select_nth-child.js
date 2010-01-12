@@ -24,11 +24,13 @@ function specsSelectNthChild(){
 		};
 		
 		it['should match by index'] = function(){
-			should_select(':nth-child(-1)', []);
 			should_select(':nth-child(0)', []);
 			should_select(':nth-child(1)', [1]);
 			should_select(':nth-child(10)', [10]);
 			should_select(':nth-child(11)', []);
+		};
+		it['should match by index with negative'] = function(){
+			should_select(':nth-child(-1)', []);
 		};
 		it['should match even'] = function(){
 			should_select(':nth-child(even)', [2, 4, 6, 8, 10]);

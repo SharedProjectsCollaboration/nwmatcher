@@ -10,7 +10,7 @@
   };
 
 	global.SELECT1 = function(from, selector){
-		return global.Slick(from, selector)[0];
+		return global.Slick(from, selector)[0] || null;
 	};
 
   global.document.search = function(selector) {
