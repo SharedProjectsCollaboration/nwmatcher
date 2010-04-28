@@ -13,7 +13,7 @@ test("element", function() {
 	t( "Element Selector", "html", ["html"] );
 	t( "Parent Element", "div p", ["firstp","ap","sndp","en","sap","first"] );
 	equals( Sizzle("param", document.getElementById("object1")).length, 2, "Object/param as context" );
-	
+
 	ok( Sizzle("#length").length, '&lt;input name="length"&gt; cannot be found under IE, see #945' );
 	ok( Sizzle("#lengthtest input").length, '&lt;input name="length"&gt; cannot be found under IE, see #945' );
 });
@@ -33,13 +33,14 @@ test("broken", function() {
 	expect(7);
 	function broken(name, selector) {
 		try {
+		  // Modified to report empty results (jddalton)
 			t( name, selector, [] );
 		} catch(e){
 			ok(  typeof e === "string" && e.indexOf("Syntax error") >= 0,
 				name + ": " + selector );
 		}
 	}
-	
+
 	broken( "Broken Selector", "[", [] );
 	broken( "Broken Selector", "(", [] );
 	broken( "Broken Selector", "{", [] );
@@ -60,27 +61,27 @@ test("id", function() {
 	t( "Multiple ID selectors using UTF8", "#台北Táiběi, #台北", ["台北Táiběi","台北"] );
 	t( "Descendant ID selector using UTF8", "div #台北", ["台北"] );
 	t( "Child ID selector using UTF8", "form > #台北", ["台北"] );
-	
+
 	t( "Escaped ID", "#foo\\:bar", ["foo:bar"] );
 	t( "Escaped ID", "#test\\.foo\\[5\\]bar", ["test.foo[5]bar"] );
 	t( "Descendant escaped ID", "div #foo\\:bar", ["foo:bar"] );
 	t( "Descendant escaped ID", "div #test\\.foo\\[5\\]bar", ["test.foo[5]bar"] );
 	t( "Child escaped ID", "form > #foo\\:bar", ["foo:bar"] );
 	t( "Child escaped ID", "form > #test\\.foo\\[5\\]bar", ["test.foo[5]bar"] );
-	
+
 	t( "ID Selector, child ID present", "#form > #radio1", ["radio1"] ); // bug #267
 	t( "ID Selector, not an ancestor ID", "#form #first", [] );
 	t( "ID Selector, not a child ID", "#form > #option1a", [] );
-	
+
 	t( "All Children of ID", "#foo > *", ["sndp", "en", "sap"] );
 	t( "All Children of ID with no children", "#firstUL > *", [] );
-	
-    var main = document.getElementById('main');
+
+	var main = document.getElementById('main');
 	main.appendChild(toDOMFragment('<a>tName1 A</a><a name="tName2">tName2 A</a><span id="tName1">tName1 Div</span>'));
 	equals( Sizzle("#tName1")[0].id, 'tName1', "ID selector with same value for a name attribute" );
 	equals( Sizzle("#tName2").length, 0, "ID selector non-existing but name attribute on an A tag" );
 	t( "ID Selector on Form with an input that has a name of 'id'", "#lengthtest", ["lengthtest"] );
-	
+
 	t( "ID selector with non-existant ancestor", "#asdfasdf #foobar", [] ); // bug #986
 
 	isSet( Sizzle("div#form", document.body), [], "ID selector within the context of another element" );
@@ -92,14 +93,14 @@ test("class", function() {
 	t( "Class Selector", ".blog.link", ["simon"] );
 	t( "Class Selector w/ Element", "a.blog", ["mark","simon"] );
 	t( "Parent Class Selector", "p .blog", ["mark","simon"] );
-	
+
 	t( "Class selector using UTF8", ".台北Táiběi", ["utf8class1"] );
 	t( "Class selector using UTF8", ".台北", ["utf8class1","utf8class2"] );
 	t( "Class selector using UTF8", ".台北Táiběi.台北", ["utf8class1"] );
 	t( "Class selector using UTF8", ".台北Táiběi, .台北", ["utf8class1","utf8class2"] );
 	t( "Descendant class selector using UTF8", "div .台北Táiběi", ["utf8class1"] );
 	t( "Child class selector using UTF8", "form > .台北Táiběi", ["utf8class1"] );
-	
+
 	t( "Escaped Class", ".foo\\:bar", ["foo:bar"] );
 	t( "Escaped Class", ".test\\.foo\\[5\\]bar", ["test.foo[5]bar"] );
 	t( "Descendant scaped Class", "div .foo\\:bar", ["foo:bar"] );
@@ -126,13 +127,11 @@ test("name", function() {
 
 test("multiple", function() {
 	expect(4);
-	
-	var results = ["mark","simon","firstp","ap","sndp","en","sap","first"];
-	
-	if ( document.querySelectorAll || NW.Dom ) {
-		results = ["firstp","ap","mark","sndp","en","sap","simon","first"];
-	}
-	
+
+	// Enforce correct source order (jdalton)
+	//var results = ["mark","simon","firstp","ap","sndp","en","sap","first"];
+	results = ["firstp","ap","mark","sndp","en","sap","simon","first"];
+
 	t( "Comma Support", "a.blog, p", results);
 	t( "Comma Support", "a.blog , p", results);
 	t( "Comma Support", "a.blog ,p", results);
@@ -156,13 +155,13 @@ test("child and adjacent", function() {
 	t( "Comma, Child, and Adjacent", "a + a, code > a", ["groups","anchor1","anchor2"] );
 
 	t( "Non-existant ancestors", ".fototab > .thumbnails > a", [] );
-	
+
 	t( "First Child", "p:first-child", ["firstp","sndp"] );
 	t( "Nth Child", "p:nth-child(1)", ["firstp","sndp"] );
-	
+
 	t( "Last Child", "p:last-child", ["sap"] );
 	t( "Last Child", "a:last-child", ["simon1","anchor1","mark","yahoo","anchor2","simon"] );
-	
+
 	t( "Nth-child", "#main form#form > *:nth-child(2)", ["text1"] );
 	t( "Nth-child", "#main form#form > :nth-child(2)", ["text1"] );
 
@@ -187,13 +186,13 @@ test("child and adjacent", function() {
 });
 
 test("attributes", function() {
-  var isLessIE8 = jQuery.browser.msie && jQuery.browser.version < 8;
+	var isLessIE8 = jQuery.browser.msie && jQuery.browser.version < 8;
 
 	expect(isLessIE8 ? 22 : 23);
 	t( "Attribute Exists", "a[title]", ["google"] );
 	t( "Attribute Exists", "*[title]", ["google"] );
 	t( "Attribute Exists", "[title]", ["google"] );
-	
+
 	t( "Attribute Equals", "a[rel='bookmark']", ["simon1"] );
 	t( "Attribute Equals", 'a[rel="bookmark"]', ["simon1"] );
 	t( "Attribute Equals", "a[rel=bookmark]", ["simon1"] );
@@ -201,34 +200,32 @@ test("attributes", function() {
 
 	t( "for Attribute", "label[for]", ["label-for"] );
 	t( "for Attribute in form", "#form [for=action]", ["label-for"] );
-	
-	var results = ["hidden1","radio1","radio2"];
-	
-	if ( document.querySelectorAll || NW.Dom ) {
-		results = ["radio1", "radio2", "hidden1"];
-	}
-	
+
+	// Enforce correct source order (jdalton)
+	//var results = ["hidden1","radio1","radio2"];
+	results = ["radio1", "radio2", "hidden1"];
+
 	t( "Multiple Attribute Equals", "#form input[type='hidden'],#form input[type='radio']", results );
 	t( "Multiple Attribute Equals", "#form input[type=\"hidden\"],#form input[type='radio']", results );
 	t( "Multiple Attribute Equals", "#form input[type=hidden],#form input[type=radio]", results );
-	
+
 	t( "Attribute selector using UTF8", "span[lang=中文]", ["台北"] );
 
-  // This test is invalid when attemped from a webserver with an address that includes `http://www`
-  // Both jQuery and NWMatcher would fail this test in IE 6 (jdalton)
-  if (!isLessIE8) {
+	// This test is invalid when attemped from a webserver with an
+	// address that includes `http://www` in IE < 8 (jdalton)
+	if (!isLessIE8) {
 	  t( "Attribute Begins With", "a[href ^= 'http://www']", ["google","yahoo"] );
-  }
+	}
 
 	t( "Attribute Ends With", "a[href $= 'org/']", ["mark"] );
 	t( "Attribute Contains", "a[href *= 'google']", ["google","groups"] );
-	
+
 	t("Select options via :selected", "#select1 option:selected", ["option1a"] );
 	t("Select options via :selected", "#select2 option:selected", ["option2d"] );
 	t("Select options via :selected", "#select3 option:selected", ["option3b", "option3c"] );
-	
+
 	t( "Grouped Form Elements", "input[name='foo[bar]']", ["hidden2"] );
-	
+
 	t( ":not() Existing attribute", "#form select:not([multiple])", ["select1", "select2"]);
 	t( ":not() Equals attribute", "#form select:not([name=select1])", ["select2", "select3"]);
 	t( ":not() Equals quoted attribute", "#form select:not([name='select1'])", ["select2", "select3"]);
@@ -263,23 +260,21 @@ test("pseudo (:) selectors", function() {
 	t( "Is A Parent", "p:parent", ["firstp","ap","sndp","en","sap","first"] );
 	t( "Is Visible", "#form input:visible", ["text1","text2","radio1","radio2","check1","check2","name"] );
 	t( "Is Hidden", "#form input:hidden", ["hidden1","hidden2"] );
-	
+
 	t( "Form element :input", "#form :input", ["text1", "text2", "radio1", "radio2", "check1", "check2", "hidden1", "hidden2", "name", "button", "area1", "select1", "select2", "select3"] );
 	t( "Form element :radio", "#form :radio", ["radio1", "radio2"] );
 	t( "Form element :checkbox", "#form :checkbox", ["check1", "check2"] );
 	t( "Form element :text", "#form :text", ["text1", "text2", "hidden2", "name"] );
 	t( "Form element :radio:checked", "#form :radio:checked", ["radio2"] );
 	t( "Form element :checkbox:checked", "#form :checkbox:checked", ["check1"] );
-	
-	var results = ["check1","radio2"];
-	
-	if ( document.querySelectorAll || NW.Dom ) {
-		results = ["radio2", "check1"];
-	}
-	
+
+	// Enforce correct source order (jdalton)
+	//var results = ["check1","radio2"];
+	results = ["radio2", "check1"];
+
 	t( "Form element :checkbox:checked, :radio:checked", "#form :checkbox:checked, #form :radio:checked", results );
-	
+
 	t( "Headers", ":header", ["header", "banner", "userAgent"] );
 	t( "Has Children - :has()", "p:has(a)", ["firstp","ap","en","sap"] );
-	
+
 });

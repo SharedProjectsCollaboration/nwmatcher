@@ -16,7 +16,7 @@ test("element", function() {
 	t( "Parent Element", "div p", ["firstp","ap","sndp","en","sap","first"] );
 	equals( Sizzle("param", jQuery("#object1")[0]).length, 2, "Object/param as context" );
 
-  // Commetned out API specific tests (jddalton)
+	// Commetned out API specific tests (jddalton)
 	//same( jQuery("p", document.getElementsByTagName("div")), q("firstp","ap","sndp","en","sap","first"), "Finding elements with a context." );
 	//same( jQuery("p", "div"), q("firstp","ap","sndp","en","sap","first"), "Finding elements with a context." );
 	//same( jQuery("p", jQuery("div")), q("firstp","ap","sndp","en","sap","first"), "Finding elements with a context." );
@@ -24,7 +24,7 @@ test("element", function() {
 	same( Sizzle("div p"), q("firstp","ap","sndp","en","sap","first"), "Finding elements with a context." );
 
 	same( Sizzle("#form select"), q("select1","select2","select3"), "Finding selects with a context." );
-	
+
 	ok( Sizzle("#length").length, '&lt;input name="length"&gt; cannot be found under IE, see #945' );
 	ok( Sizzle("#lengthtest input").length, '&lt;input name="length"&gt; cannot be found under IE, see #945' );
 
@@ -65,7 +65,7 @@ test("broken", function() {
 				name + ": " + selector );
 		}
 	}
-	
+
 	broken( "Broken Selector", "[", [] );
 	broken( "Broken Selector", "(", [] );
 	broken( "Broken Selector", "{", [] );
@@ -87,28 +87,28 @@ test("id", function() {
 	t( "Multiple ID selectors using UTF8", "#台北Táiběi, #台北", ["台北Táiběi","台北"] );
 	t( "Descendant ID selector using UTF8", "div #台北", ["台北"] );
 	t( "Child ID selector using UTF8", "form > #台北", ["台北"] );
-	
+
 	t( "Escaped ID", "#foo\\:bar", ["foo:bar"] );
 	t( "Escaped ID", "#test\\.foo\\[5\\]bar", ["test.foo[5]bar"] );
 	t( "Descendant escaped ID", "div #foo\\:bar", ["foo:bar"] );
 	t( "Descendant escaped ID", "div #test\\.foo\\[5\\]bar", ["test.foo[5]bar"] );
 	t( "Child escaped ID", "form > #foo\\:bar", ["foo:bar"] );
 	t( "Child escaped ID", "form > #test\\.foo\\[5\\]bar", ["test.foo[5]bar"] );
-	
+
 	t( "ID Selector, child ID present", "#form > #radio1", ["radio1"] ); // bug #267
 	t( "ID Selector, not an ancestor ID", "#form #first", [] );
 	t( "ID Selector, not a child ID", "#form > #option1a", [] );
-	
+
 	t( "All Children of ID", "#foo > *", ["sndp", "en", "sap"] );
 	t( "All Children of ID with no children", "#firstUL > *", [] );
-	
+
 	var a = jQuery('<div><a name="tName1">tName1 A</a><a name="tName2">tName2 A</a><div id="tName1">tName1 Div</div></div>').appendTo('#main');
 	equals( Sizzle("#tName1")[0].id, 'tName1', "ID selector with same value for a name attribute" );
 	equals( Sizzle("#tName2").length, 0, "ID selector non-existing but name attribute on an A tag" );
 	a.remove();
 
 	t( "ID Selector on Form with an input that has a name of 'id'", "#lengthtest", ["lengthtest"] );
-	
+
 	t( "ID selector with non-existant ancestor", "#asdfasdf #foobar", [] ); // bug #986
 
 	same( Sizzle("body div#form"), [], "ID selector within the context of another element" );
@@ -127,13 +127,13 @@ test("class", function() {
 	t( "Class Selector w/ Element", "a.blog", ["mark","simon"] );
 	t( "Parent Class Selector", "p .blog", ["mark","simon"] );
 
-  // Commented out API specific tests (jddalton)
+	// Commented out API specific tests (jddalton)
 	//same( jQuery(".blog", document.getElementsByTagName("p")), q("mark", "simon"), "Finding elements with a context." );
 	//same( Sizzle(".blog", "p"), q("mark", "simon"), "Finding elements with a context." );
 	//same( Sizzle(".blog", Sizzle("p")), q("mark", "simon"), "Finding elements with a context." );
 
-  same( Sizzle("p .blog"), q("mark", "simon"), "Finding elements with a context." );
-	
+	same( Sizzle("p .blog"), q("mark", "simon"), "Finding elements with a context." );
+
 	t( "Class selector using UTF8", ".台北Táiběi", ["utf8class1"] );
 	t( "Class selector using UTF8", ".台北", ["utf8class1","utf8class2"] );
 	t( "Class selector using UTF8", ".台北Táiběi.台北", ["utf8class1"] );
@@ -149,7 +149,7 @@ test("class", function() {
 	t( "Child escaped Class", "form > .test\\.foo\\[5\\]bar", ["test.foo[5]bar"] );
 
 	var div = document.createElement("div");
-  div.innerHTML = "<div class='test e'></div><div class='test'></div>";
+	div.innerHTML = "<div class='test e'></div><div class='test'></div>";
 	same( Sizzle(".e", div), [ div.firstChild ], "Finding a second class." );
 
 	div.lastChild.className = "e";
@@ -187,7 +187,7 @@ test("name", function() {
 
 test("multiple", function() {
 	expect(4);
-	
+
 	t( "Comma Support", "h2, p", ["qunit-banner","qunit-userAgent","firstp","ap","sndp","en","sap","first"]);
 	t( "Comma Support", "h2 , p", ["qunit-banner","qunit-userAgent","firstp","ap","sndp","en","sap","first"]);
 	t( "Comma Support", "h2 , p", ["qunit-banner","qunit-userAgent","firstp","ap","sndp","en","sap","first"]);
@@ -230,7 +230,7 @@ test("child and adjacent", function() {
 });
 
 test("attributes", function() {
-  var isLessIE8 = jQuery.browser.msie && jQuery.browser.version < 8;
+	var isLessIE8 = jQuery.browser.msie && jQuery.browser.version < 8;
 
 	expect(isLessIE8 ? 33 : 34);
 	t( "Attribute Exists", "a[title]", ["google"] );
@@ -258,18 +258,18 @@ test("attributes", function() {
 	t( "Attribute containing []", "input[name$='[bar]']", ["hidden2"] );
 	t( "Attribute containing []", "input[name$='foo[bar]']", ["hidden2"] );
 	t( "Attribute containing []", "input[name*='foo[bar]']", ["hidden2"] );
-	
+
 	t( "Multiple Attribute Equals", "#form input[type='radio'], #form input[type='hidden']", ["radio1", "radio2", "hidden1"] );
 	t( "Multiple Attribute Equals", "#form input[type='radio'], #form input[type=\"hidden\"]", ["radio1", "radio2", "hidden1"] );
 	t( "Multiple Attribute Equals", "#form input[type='radio'], #form input[type=hidden]", ["radio1", "radio2", "hidden1"] );
-	
+
 	t( "Attribute selector using UTF8", "span[lang=中文]", ["台北"] );
-	
-  // This test is invalid when attemped from a webserver with an address that includes `http://www`
-  // Both jQuery and NWMatcher would fail this test in IE 6 (jdalton)
-  if (!isLessIE8) {
+
+	// This test is invalid when attemped from a webserver with an
+	// address that includes `http://www` in IE < 8 (jdalton)
+	if (!isLessIE8) {
 	  t( "Attribute Begins With", "a[href ^= 'http://www']", ["google","yahoo"] );
-  }
+	}
 
 	t( "Attribute Ends With", "a[href $= 'org/']", ["mark"] );
 	t( "Attribute Contains", "a[href *= 'google']", ["google","groups"] );
@@ -277,11 +277,11 @@ test("attributes", function() {
 
 	t("Empty values", "#select1 option[value='']", ["option1a"]);
 	t("Empty values", "#select1 option[value!='']", ["option1b","option1c","option1d"]);
-	
+
 	t("Select options via :selected", "#select1 option:selected", ["option1a"] );
 	t("Select options via :selected", "#select2 option:selected", ["option2d"] );
 	t("Select options via :selected", "#select3 option:selected", ["option3b", "option3c"] );
-	
+
 	t( "Grouped Form Elements", "input[name='foo[bar]']", ["hidden2"] );
 });
 
@@ -304,10 +304,10 @@ test("pseudo - child", function() {
 	t( "First Child", "p:first-child", [] );
 
 	reset();
-	
+
 	t( "Last Child", "p:last-child", ["sap"] );
 	t( "Last Child", "a:last-child", ["simon1","anchor1","mark","yahoo","anchor2","simon","liveLink1","liveLink2"] );
-	
+
 	t( "Nth-child", "#main form#form > *:nth-child(2)", ["text1"] );
 	t( "Nth-child", "#main form#form > :nth-child(2)", ["text1"] );
 

@@ -447,7 +447,7 @@
         },
 
         testCommasFor$$: function() {
-          // in nwmatcher the next two asserts would return document ordered lists of matching elements (dp)
+          // ensure document ordered lists of matching elements (dp)
           this.assertEnumEqual($('p', 'link_1', 'list', 'item_1', 'item_3', 'troubleForm'), $$('#list, .first,*[xml:lang="es-us"] , #troubleForm'));
           this.assertEnumEqual($('p', 'link_1', 'list', 'item_1', 'item_3', 'troubleForm'), $$('#list, .first,', '*[xml:lang="es-us"] , #troubleForm'));
           this.assertEnumEqual($('commaParent', 'commaChild'), $$('form[title*="commas,"], input[value="#commaOne,#commaTwo"]'));
